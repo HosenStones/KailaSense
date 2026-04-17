@@ -68,35 +68,35 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-[#f7f7fc]">
       {/* Top Bar */}
-      <header className="bg-[#3d3a9e] h-14 flex items-center justify-between px-6 sticky top-0 z-50">
+      <header className="bg-gradient-to-r from-[#2a7c7c] to-[#3d9e9e] h-14 flex items-center justify-between px-6 sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5">
+          <div className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5">
             <Image
               src="/images/kaila-logo-horizontal.png"
               alt="Kaila"
               width={100}
               height={30}
-              className="h-6 w-auto brightness-0 invert"
+              className="h-6 w-auto"
             />
           </div>
-          <span className="text-white/60 text-sm border-r border-white/20 pr-4">דשבורד ניהולי</span>
+          <span className="text-white/70 text-sm border-r border-white/20 pr-4">דשבורד ניהולי</span>
         </div>
 
         <div className="flex items-center gap-3">
           <select
             value={selectedDepartment}
             onChange={(e) => setSelectedDepartment(e.target.value)}
-            className="bg-white/10 border border-white/20 text-white text-sm rounded-lg px-3 py-1.5 focus:border-[#2ecfaa] outline-none"
+            className="bg-white/15 border border-white/25 text-white text-sm rounded-lg px-3 py-1.5 focus:border-[#7dd3d3] outline-none"
           >
             {departments.map((dept) => (
-              <option key={dept.id} value={dept.id} className="bg-[#3d3a9e] text-white">
+              <option key={dept.id} value={dept.id} className="bg-[#2a7c7c] text-white">
                 {dept.name}
               </option>
             ))}
           </select>
 
-          <div className="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-1.5">
-            <div className="w-6 h-6 bg-[#2ecfaa] rounded-full flex items-center justify-center text-xs font-bold text-[#1e4a40]">
+          <div className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5">
+            <div className="w-6 h-6 bg-[#7dd3d3] rounded-full flex items-center justify-center text-xs font-bold text-[#1e4a40]">
               א
             </div>
             <span className="text-white text-sm font-semibold">אדמין</span>
@@ -105,7 +105,7 @@ export default function AdminDashboardPage() {
           <Button
             variant="ghost"
             onClick={handleSignOut}
-            className="text-white/80 hover:text-white hover:bg-white/10 text-sm border border-white/20 rounded-lg px-3 py-1.5 h-auto"
+            className="text-white/80 hover:text-white hover:bg-white/15 text-sm border border-white/25 rounded-lg px-3 py-1.5 h-auto"
           >
             יציאה
           </Button>
@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors ${
               activeTab === tab.id
-                ? 'text-[#3d3a9e] border-[#2ecfaa]'
+                ? 'text-[#2a7c7c] border-[#3d9e9e]'
                 : 'text-[#a8a6c4] border-transparent hover:text-[#6b6890]'
             }`}
           >

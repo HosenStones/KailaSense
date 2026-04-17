@@ -1,28 +1,61 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import type { Question, Response } from '@/lib/types'
 
 interface SurveyThankYouProps {
   departmentName: string
   onClose?: () => void
+  onRestart?: () => void
+  responses?: Record<string, Partial<Response>>
+  questions?: Question[]
 }
 
-export function SurveyThankYou({ departmentName, onClose }: SurveyThankYouProps) {
+export function SurveyThankYou({ departmentName, onClose, onRestart, responses, questions }: SurveyThankYouProps) {
+  const [showAnswers, setShowAnswers] = useState(false)
+
+  const getAnswerDisplay = (question: Question, response: Partial<Response> | undefined) => {
+    if (!response) return 'לא נענה'
+    
+    switch (question.questionType) {
+      case 'emoji':
+        const emojis = ['😢', '😕', '😐', '🙂', '😊']
+        return response.answerValue ? emojis[response.answerValue - 1] : 'לא נענה'
+      case 'stars':
+        return response.answerValue ? '⭐'.repeat(response.answerValue) : 'לא נענה'
+      case 'choice':
+        const option = question.options?.find(o => o.value === response.answerValue)
+        return option?.label || 'לא נענה'
+      case 'multi_choice':
+        const selectedOptions = question.options?.filter(o => response.answerValues?.includes(o.value))
+        return selectedOptions?.map(o => o.label).join(', ') || 'לא נענה'
+      case 'open_text':
+        return response.answerText || 'לא נענה'
+      default:
+        return 'לא נענה'
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f7fc] flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-[#e8e7f5] px-4 py-3 text-center">
-        <div className="flex items-center justify-center gap-3">
+        <button 
+          onClick={onRestart}
+          className="flex items-center justify-center gap-3 mx-auto hover:opacity-80 transition-opacity"
+          title="מילוי מחדש"
+        >
           <Image
             src="/images/kaila-logo-horizontal.png"
-            alt="Kaila"
+            alt="Kaila - לחץ למילוי מחדש"
             width={80}
             height={24}
             className="h-6 w-auto"
           />
-        </div>
+        </button>
       </header>
 
       {/* Content */}
@@ -67,13 +100,52 @@ export function SurveyThankYou({ departmentName, onClose }: SurveyThankYouProps)
             תודה שעזרת לנו להשתפר
           </p>
 
-          {/* Close Button */}
-          <Button
-            asChild
-            className="w-full bg-[#2ecfaa] hover:bg-[#26b896] text-[#1e4a40] font-bold py-4 rounded-xl"
-          >
-            <Link href="/">סיום</Link>
-          </Button>
+          {/* View Answers Toggle */}
+          {questions && questions.length > 0 && responses && (
+            <button
+              onClick={() => setShowAnswers(!showAnswers)}
+              className="text-sm text-[#3d3a9e] underline mb-4 hover:text-[#2ecfaa] transition-colors"
+            >
+              {showAnswers ? 'הסתר תשובות' : 'צפה בתשובות שלי'}
+            </button>
+          )}
+
+          {/* Answers Summary */}
+          {showAnswers && questions && responses && (
+            <div className="bg-white rounded-2xl p-4 mb-6 border border-[#e8e7f5] text-right max-h-60 overflow-y-auto">
+              <div className="text-xs text-[#a8a6c4] mb-3 font-semibold">התשובות שלי</div>
+              <div className="flex flex-col gap-3">
+                {questions.map((question, index) => (
+                  <div key={question.id} className="border-b border-[#e8e7f5] pb-2 last:border-0">
+                    <div className="text-xs text-[#6b6890] mb-1">{index + 1}. {question.questionText}</div>
+                    <div className="text-sm text-[#1e1c4a] font-medium">
+                      {getAnswerDisplay(question, responses[question.id])}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex flex-col gap-3">
+            <Button
+              asChild
+              className="w-full bg-[#2ecfaa] hover:bg-[#26b896] text-[#1e4a40] font-bold py-4 rounded-xl"
+            >
+              <Link href="/">סיום</Link>
+            </Button>
+            
+            {onRestart && (
+              <Button
+                onClick={onRestart}
+                variant="outline"
+                className="w-full border-[#3d3a9e] text-[#3d3a9e] hover:bg-[#3d3a9e] hover:text-white font-bold py-4 rounded-xl"
+              >
+                מילוי מחדש
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

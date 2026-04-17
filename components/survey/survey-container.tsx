@@ -27,6 +27,13 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
 
   const currentQuestion = questions[currentIndex]
 
+  const handleRestart = useCallback(() => {
+    setStep('welcome')
+    setCurrentIndex(0)
+    setResponses({})
+    setSessionId(null)
+  }, [])
+
   const handleStart = useCallback(async () => {
     try {
       const id = await createSurveySession(department.id, source)
@@ -114,23 +121,34 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   }
 
   if (step === 'thankyou') {
-    return <SurveyThankYou departmentName={department.name} />
+    return (
+      <SurveyThankYou 
+        departmentName={department.name} 
+        onRestart={handleRestart}
+        responses={responses}
+        questions={questions}
+      />
+    )
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f7fc] flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-[#e8e7f5] px-4 py-3 text-center">
-        <div className="flex items-center justify-center gap-3 mb-1">
+        <button 
+          onClick={handleRestart}
+          className="flex items-center justify-center gap-3 mb-1 mx-auto hover:opacity-80 transition-opacity"
+          title="חזרה להתחלה"
+        >
           <Image
             src="/images/kaila-logo-horizontal.png"
-            alt="Kaila"
+            alt="Kaila - לחץ לחזרה להתחלה"
             width={80}
             height={24}
             className="h-6 w-auto"
           />
           <span className="text-sm font-bold text-[#3d3a9e]">- {department.name}</span>
-        </div>
+        </button>
       </header>
 
       {/* Progress */}

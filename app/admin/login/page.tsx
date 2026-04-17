@@ -79,7 +79,7 @@ export default function AdminLoginPage() {
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#3d3a9e] hover:bg-[#302d8a] text-white font-bold py-4 text-base rounded-xl transition-colors"
+            className="w-full bg-gradient-to-r from-[#2a7c7c] to-[#3d9e9e] hover:from-[#236969] hover:to-[#358a8a] text-white font-bold py-4 text-base rounded-xl transition-colors"
           >
             {isLoading ? 'מתחבר...' : 'כניסה'}
           </Button>
