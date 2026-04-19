@@ -1,141 +1,75 @@
 'use client'
 
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect } from 'react'
+import { getResponsesByDepartment, getQuestionsByDepartment } from '@/lib/firebase/firestore'
+import type { Response, Question } from '@/lib/types'
 
 interface AdminCommentsProps {
   departmentId: string
 }
 
-interface Comment {
-  id: string
-  text: string
-  sentiment: 'pos' | 'neg' | 'neu'
-  stars: number
-  date: string
-  time: string
-}
-
 export function AdminComments({ departmentId }: AdminCommentsProps) {
-  const [filter, setFilter] = useState<'all' | 'pos' | 'neg' | 'neu'>('all')
+  const [comments, setComments] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const comments: Comment[] = [
-    {
-      id: '1',
-      text: 'הצוות היה מדהים! תודה רבה על הטיפול המסור והיחס האישי',
-      sentiment: 'pos',
-      stars: 5,
-      date: '17.04.26',
-      time: '14:32',
-    },
-    {
-      id: '2',
-      text: 'הכל היה מעולה, מאוד מרוצה מהשירות',
-      sentiment: 'pos',
-      stars: 4,
-      date: '17.04.26',
-      time: '12:15',
-    },
-    {
-      id: '3',
-      text: 'זמן ההמתנה היה ארוך מדי, היה קשה לחכות כל כך הרבה זמן',
-      sentiment: 'neg',
-      stars: 2,
-      date: '17.04.26',
-      time: '10:08',
-    },
-    {
-      id: '4',
-      text: 'הטיפול היה טוב, אבל אפשר לשפר את התקשורת עם המטופל',
-      sentiment: 'neu',
-      stars: 3,
-      date: '16.04.26',
-      time: '18:45',
-    },
-    {
-      id: '5',
-      text: 'מרוצה מאוד! ממליץ בחום',
-      sentiment: 'pos',
-      stars: 5,
-      date: '16.04.26',
-      time: '15:22',
-    },
-  ]
+  useEffect(() => {
+    async function loadData() {
+      setIsLoading(true)
+      try {
+        // טעינת שאלות ותגובות במקביל
+        const [allResponses, allQuestions] = await Promise.all([
+          getResponsesByDepartment(departmentId),
+          getQuestionsByDepartment(departmentId)
+        ])
 
-  const filteredComments = filter === 'all' 
-    ? comments 
-    : comments.filter(c => c.sentiment === filter)
+        // סינון רק של תגובות טקסטואליות וחיבור לטקסט השאלה
+        const textComments = allResponses
+          .filter(r => r.answerText && r.answerText.trim() !== '')
+          .map(r => {
+            const question = allQuestions.find(q => q.id === r.questionId)
+            return {
+              ...r,
+              questionText: question ? question.questionText : 'שאלה לא ידועה'
+            }
+          })
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+        setComments(textComments)
+      } catch (error) {
+        console.error("Error loading comments:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (departmentId) loadData()
+  }, [departmentId])
+
+  if (isLoading) return <div className="text-center p-8 text-[#a8a6c4]">טוען תגובות...</div>
 
   return (
-    <div>
-      {/* Filters */}
-      <div className="flex items-center gap-3 mb-4 flex-wrap">
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as typeof filter)}
-          className="px-3 py-2 border border-[#e8e7f5] rounded-lg text-sm text-[#1e1c4a] bg-white outline-none focus:border-[#2ecfaa]"
-        >
-          <option value="all">כל התגובות</option>
-          <option value="pos">חיוביות</option>
-          <option value="neg">שליליות</option>
-          <option value="neu">ניטרליות</option>
-        </select>
-
-        <input
-          type="date"
-          className="px-3 py-2 border border-[#e8e7f5] rounded-lg text-sm text-[#1e1c4a] bg-white outline-none focus:border-[#2ecfaa]"
-        />
-
-        <Button
-          variant="outline"
-          className="mr-auto bg-[#e5f3f3] border-[#b8e0e0] text-[#2a7c7c] font-bold text-sm hover:bg-[#b8e0e0]"
-        >
-          ייצוא לאקסל
-        </Button>
-      </div>
-
-      {/* Comments Table */}
-      <div className="bg-white rounded-2xl border border-[#e8e7f5] overflow-hidden">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-[#f7f7fc]">
-              <th className="text-right px-4 py-3 text-xs font-bold text-[#a8a6c4] uppercase tracking-wide">סנטימנט</th>
-              <th className="text-right px-4 py-3 text-xs font-bold text-[#a8a6c4] uppercase tracking-wide">תגובה</th>
-              <th className="text-right px-4 py-3 text-xs font-bold text-[#a8a6c4] uppercase tracking-wide">דירוג</th>
-              <th className="text-right px-4 py-3 text-xs font-bold text-[#a8a6c4] uppercase tracking-wide">תאריך</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredComments.map((comment) => (
-              <tr key={comment.id} className="border-t border-[#f7f7fc]">
-                <td className="px-4 py-3">
-                  <span
-                    className={`text-[10px] px-2 py-1 rounded-full font-bold ${
-                      comment.sentiment === 'pos'
-                        ? 'bg-[#e4faf5] text-[#0a5c4a]'
-                        : comment.sentiment === 'neg'
-                        ? 'bg-[#fde8f2] text-[#8a0040]'
-                        : 'bg-[#f0f0f0] text-[#666666]'
-                    }`}
-                  >
-                    {comment.sentiment === 'pos' ? 'חיובי' : comment.sentiment === 'neg' ? 'שלילי' : 'ניטרלי'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <p className="text-sm text-[#1e1c4a]">{comment.text}</p>
-                </td>
-                <td className="px-4 py-3">
-                  <span className="text-sm">{'⭐'.repeat(comment.stars)}</span>
-                </td>
-                <td className="px-4 py-3">
-                  <p className="text-xs text-[#a8a6c4]">{comment.date}</p>
-                  <p className="text-xs text-[#a8a6c4]">{comment.time}</p>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-4">
+      <h3 className="text-sm font-bold text-[#1e1c4a] mb-4">תגובות והערות מטופלים ({comments.length})</h3>
+      
+      {comments.length === 0 ? (
+        <div className="bg-white rounded-xl p-8 text-center border border-[#e8e7f5] text-[#a8a6c4]">
+          לא נמצאו תגובות טקסטואליות במחלקה זו.
+        </div>
+      ) : (
+        comments.map((comment) => (
+          <div key={comment.id} className="bg-white rounded-xl p-4 border border-[#e8e7f5] shadow-sm">
+            <div className="flex justify-between items-start mb-2">
+              <span className="text-[10px] font-bold text-[#2a7c7c] bg-[#e5f3f3] px-2 py-0.5 rounded-full uppercase">
+                {new Date(comment.createdAt).toLocaleDateString('he-IL')}
+              </span>
+            </div>
+            <p className="text-xs text-[#6b6890] mb-2 font-medium">שאלה: {comment.questionText}</p>
+            <p className="text-sm text-[#1e1c4a] bg-[#f7f7fc] p-3 rounded-lg border-r-4 border-[#2ecfaa]">
+              "{comment.answerText}"
+            </p>
+          </div>
+        ))
+      )}
     </div>
   )
 }
