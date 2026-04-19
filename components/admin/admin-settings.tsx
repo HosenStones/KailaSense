@@ -3,136 +3,67 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { getDepartment, updateDepartment, createAdminUser } from '@/lib/firebase/firestore'
+import { getAllDepartments, updateDepartment } from '@/lib/firebase/firestore'
 import type { Department } from '@/lib/types'
 
 export function AdminSettings({ departmentId }: { departmentId: string }) {
-  const [dept, setDept] = useState<Department | null>(null)
+  const [department, setDepartment] = useState<Department | null>(null)
+  const [name, setName] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  
-  // New user state
-  const [newUserName, setNewUserName] = useState('')
-  const [newUserEmail, setNewUserEmail] = useState('')
+  const [message, setMessage] = useState('')
 
   useEffect(() => {
     async function loadDept() {
-      if (!departmentId) return
-      const data = await getDepartment(departmentId)
-      setDept(data)
+      const all = await getAllDepartments()
+      const current = all.find(d => d.id === departmentId)
+      if (current) {
+        setDepartment(current)
+        setName(current.name)
+      }
     }
-    loadDept()
+    if (departmentId) loadDept()
   }, [departmentId])
 
-  const handleSaveDept = async () => {
-    if (!dept) return
+  const handleSave = async () => {
+    if (!department) return
     setIsSaving(true)
     try {
-      await updateDepartment(dept.id, {
-        name: dept.name,
-        managerName: dept.managerName,
-        managerEmail: dept.managerEmail
-      })
-      alert('Changes saved successfully')
-    } catch (e) {
-      console.error(e)
-      alert('Error saving changes')
+      await updateDepartment(department.id, { name })
+      setMessage('ההגדרות נשמרו בהצלחה')
+      setTimeout(() => setMessage(''), 3000)
+    } catch (error) {
+      setMessage('שגיאה בשמירת הנתונים')
     } finally {
       setIsSaving(false)
     }
   }
-
-  const handleAddUser = async () => {
-    if (!newUserName || !newUserEmail) return
-    setIsSaving(true)
-    try {
-      const tempId = `user_${Date.now()}`
-      await createAdminUser(tempId, {
-        fullName: newUserName,
-        email: newUserEmail,
-        role: 'admin',
-        departmentId: departmentId
-      })
-      setNewUserName('')
-      setNewUserEmail('')
-      alert('User added successfully')
-    } catch (e) {
-      alert('Error adding user')
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  if (!dept) return <div className="p-8 text-center text-[#6b6890]">Loading settings...</div>
 
   return (
-    <div className="space-y-8" dir="rtl">
-      {/* Department Info Section */}
-      <section className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
-        <h3 className="text-lg font-bold text-[#1e1c4a] mb-6">General Settings</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-[#6b6890]">Department Name</label>
+    <div className="max-w-2xl bg-white rounded-2xl border border-[#e8e7f5] p-6 space-y-6" dir="rtl">
+      <div>
+        <h3 className="text-lg font-bold text-[#1e1c4a] mb-4">הגדרות מחלקה</h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#6b6890] mb-1">שם המחלקה (עברית)</label>
             <Input 
-              value={dept.name} 
-              onChange={e => setDept({...dept, name: e.target.value})} 
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-[#6b6890]">WhatsApp Status</label>
-            <div className="p-3 bg-[#f7f7fc] border border-[#e8e7f5] rounded-lg text-sm text-[#a8a6c4]">
-              Not connected
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-[#6b6890]">Manager Name</label>
-            <Input 
-              value={dept.managerName || ''} 
-              onChange={e => setDept({...dept, managerName: e.target.value})} 
-              placeholder="e.g. Dr. Sara Levi"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-[#6b6890]">Manager Email</label>
-            <Input 
-              value={dept.managerEmail || ''} 
-              onChange={e => setDept({...dept, managerEmail: e.target.value})} 
-              dir="ltr"
+              value={name} 
+              onChange={(e) => setName(e.target.value)} 
+              placeholder="לדוגמה: קרדיולוגיה"
             />
           </div>
         </div>
-        <Button 
-          onClick={handleSaveDept} 
-          disabled={isSaving}
-          className="mt-6 bg-[#2a7c7c] hover:bg-[#236969] text-white"
-        >
-          Save Department Changes
-        </Button>
-      </section>
+      </div>
 
-      {/* User Management Section */}
-      <section className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
-        <h3 className="text-lg font-bold text-[#1e1c4a] mb-4">Add Department Users</h3>
-        <div className="flex flex-col md:flex-row gap-4">
-          <Input 
-            placeholder="Full Name" 
-            value={newUserName} 
-            onChange={e => setNewUserName(e.target.value)} 
-          />
-          <Input 
-            placeholder="Email Address" 
-            value={newUserEmail} 
-            onChange={e => setNewUserEmail(e.target.value)} 
-            dir="ltr"
-          />
-          <Button 
-            onClick={handleAddUser} 
-            disabled={isSaving}
-            className="bg-[#3d3a9e] hover:bg-[#2e2b85] text-white whitespace-nowrap"
-          >
-            Add User
-          </Button>
-        </div>
-      </section>
+      <div className="pt-4 border-t border-[#e8e7f5] flex items-center justify-between">
+        <Button 
+          onClick={handleSave} 
+          disabled={isSaving}
+          className="bg-[#2ecfaa] hover:bg-[#26b091] text-white px-8"
+        >
+          {isSaving ? 'שומר...' : 'שמור שינויים'}
+        </Button>
+        {message && <span className="text-sm font-medium text-[#2a7c7c]">{message}</span>}
+      </div>
     </div>
   )
 }
