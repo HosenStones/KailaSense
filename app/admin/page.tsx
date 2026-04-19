@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase/config'
-import { getAdminUser, getAllDepartments } from '@/lib/firebase/firestore'
+import { getAdminUserByEmail, getAllDepartments } from '@/lib/firebase/firestore'
 import type { AdminUser, Department } from '@/lib/types'
 import { AdminInsights } from '@/components/admin/admin-insights'
 import { AdminQuestions } from '@/components/admin/admin-questions'
@@ -31,8 +31,13 @@ export default function AdminDashboardPage() {
         return
       }
 
+      if (!user.email) {
+        setStatus('error')
+        return
+      }
+
       try {
-        const adminUser = await getAdminUser(user.uid)
+        const adminUser = await getAdminUserByEmail(user.email)
         
         if (!adminUser || !adminUser.role) {
           setStatus('error')
@@ -51,7 +56,7 @@ export default function AdminDashboardPage() {
 
         setStatus('ready')
       } catch (err) {
-        console.error("Initialization error:", err)
+        console.error("Dashboard initialization error:", err)
         setStatus('error')
       }
     })
@@ -63,7 +68,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
         <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div className="text-[#6b6890] font-bold">טוען את ממשק הניהול...</div>
+        <div className="text-[#6b6890] font-bold">טוען את נתוני המחלקה...</div>
       </div>
     )
   }
@@ -72,7 +77,11 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
         <h1 className="text-2xl font-bold text-[#1e1c4a] mb-2">גישה נדחתה</h1>
-        <p className="text-[#6b6890] mb-6">לא נמצאו הרשאות ניהול עבור המשתמש שלך בבסיס הנתונים.</p>
+        <p className="text-[#6b6890] mb-6">לא נמצאו הרשאות ניהול עבור המשתמש שלך.</p>
+        <div className="bg-gray-100 p-4 rounded-lg mb-6 text-sm break-all">
+          <p className="font-bold mb-1">האימייל איתו ניסית להתחבר:</p>
+          <code>{auth?.currentUser?.email}</code>
+        </div>
         <button onClick={() => window.location.reload()} className="bg-[#2a7c7c] text-white px-6 py-2 rounded-lg">נסה שוב</button>
       </div>
     )
@@ -109,7 +118,7 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1">
+      <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1 overflow-x-auto">
         {[
           { id: 'insights', label: 'תובנות', icon: '📊' },
           { id: 'questions', label: 'שאלות', icon: '📋' },
@@ -119,7 +128,7 @@ export default function AdminDashboardPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as TabId)}
-            className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors ${
+            className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
               activeTab === tab.id ? 'text-[#2a7c7c] border-[#3d9e9e]' : 'text-[#a8a6c4] border-transparent hover:text-[#6b6890]'
             }`}
           >
