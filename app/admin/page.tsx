@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase/config'
 import { signOut } from '@/lib/firebase/auth-context'
@@ -70,15 +71,15 @@ export default function AdminDashboardPage() {
       {/* Top Bar */}
       <header className="bg-gradient-to-r from-[#2a7c7c] to-[#3d9e9e] h-14 flex items-center justify-between px-6 sticky top-0 z-50">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5">
+          <Link href="/" className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-colors">
             <Image
               src="/images/kaila-logo-horizontal.png"
-              alt="Kaila"
+              alt="Kaila - לחץ לחזרה לסקר"
               width={100}
               height={30}
               className="h-6 w-auto"
             />
-          </div>
+          </Link>
           <span className="text-white/70 text-sm border-r border-white/20 pr-4">ממשק מנהלים</span>
         </div>
 

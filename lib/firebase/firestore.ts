@@ -267,3 +267,61 @@ export async function getResponsesByDepartment(departmentId: string): Promise<Su
   
   return allResponses
 }
+
+// Get department statistics for thank you page
+export async function getDepartmentStats(departmentId: string): Promise<{
+  totalResponses: number
+  satisfactionPercentage: number
+  totalComments: number
+}> {
+  if (!db) return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 }
+  
+  try {
+    // Get completed sessions count
+    const sessionsQuery = query(
+      collection(db, 'survey_sessions'),
+      where('departmentId', '==', departmentId),
+      where('isCompleted', '==', true)
+    )
+    const sessionsSnapshot = await getDocs(sessionsQuery)
+    const totalResponses = sessionsSnapshot.size
+    
+    if (totalResponses === 0) {
+      return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 }
+    }
+    
+    // Get all responses for satisfaction calculation
+    const sessionIds = sessionsSnapshot.docs.map(d => d.id)
+    let allResponses: { answerValue?: number; answerText?: string }[] = []
+    
+    for (let i = 0; i < sessionIds.length; i += 10) {
+      const batchIds = sessionIds.slice(i, i + 10)
+      const responsesQuery = query(
+        collection(db, 'responses'),
+        where('sessionId', 'in', batchIds)
+      )
+      const responsesSnapshot = await getDocs(responsesQuery)
+      allResponses = allResponses.concat(
+        responsesSnapshot.docs.map(d => ({
+          answerValue: d.data().answerValue,
+          answerText: d.data().answerText
+        }))
+      )
+    }
+    
+    // Calculate satisfaction (answers 4 or 5 out of 5)
+    const ratingResponses = allResponses.filter(r => r.answerValue !== undefined && r.answerValue >= 1 && r.answerValue <= 5)
+    const satisfiedResponses = ratingResponses.filter(r => r.answerValue! >= 4)
+    const satisfactionPercentage = ratingResponses.length > 0 
+      ? Math.round((satisfiedResponses.length / ratingResponses.length) * 100)
+      : 0
+    
+    // Count text comments
+    const totalComments = allResponses.filter(r => r.answerText && r.answerText.trim().length > 0).length
+    
+    return { totalResponses, satisfactionPercentage, totalComments }
+  } catch (error) {
+    console.error('Error getting department stats:', error)
+    return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 }
+  }
+}

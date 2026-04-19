@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { signIn } from '@/lib/firebase/auth-context'
@@ -33,16 +34,16 @@ export default function AdminLoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eeedf9] to-[#e4faf5] px-4">
       <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-2">
+        <Link href="/" className="flex items-center justify-center gap-3 mb-2 hover:opacity-80 transition-opacity">
           <Image
             src="/images/kaila-logo-horizontal.png"
-            alt="Kaila Sense"
+            alt="Kaila Sense - לחץ לחזרה לסקר"
             width={180}
             height={60}
             className="h-12 w-auto"
             priority
           />
-        </div>
+        </Link>
         <p className="text-center text-[#a8a6c4] text-sm mb-8">ממשק ניהול</p>
 
         <h2 className="text-xl font-bold text-[#1e1c4a] text-center mb-6">כניסה למערכת</h2>
@@ -86,7 +87,7 @@ export default function AdminLoginPage() {
         </form>
 
         <p className="text-center text-[#a8a6c4] text-xs mt-6">
-          לצורכי דמו: צור משתמש ב-Firebase Authentication
+          בעיות בכניסה? פנה למנהל המערכת
         </p>
       </div>
     </div>

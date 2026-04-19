@@ -123,7 +123,8 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   if (step === 'thankyou') {
     return (
       <SurveyThankYou 
-        departmentName={department.name} 
+        departmentName={department.name}
+        departmentId={department.id}
         onRestart={handleRestart}
         responses={responses}
         questions={questions}
@@ -147,7 +148,7 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
             height={24}
             className="h-6 w-auto"
           />
-          <span className="text-sm font-bold text-[#3d3a9e]">- {department.name}</span>
+          <span className="text-sm font-bold text-[#2a7c7c]">- {department.name}</span>
         </button>
       </header>
 

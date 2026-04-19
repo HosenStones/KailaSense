@@ -1,21 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import type { Question, Response } from '@/lib/types'
+import { getDepartmentStats } from '@/lib/firebase/firestore'
 
 interface SurveyThankYouProps {
   departmentName: string
+  departmentId: string
   onClose?: () => void
   onRestart?: () => void
   responses?: Record<string, Partial<Response>>
   questions?: Question[]
 }
 
-export function SurveyThankYou({ departmentName, onClose, onRestart, responses, questions }: SurveyThankYouProps) {
+export function SurveyThankYou({ departmentName, departmentId, onClose, onRestart, responses, questions }: SurveyThankYouProps) {
   const [showAnswers, setShowAnswers] = useState(false)
+  const [stats, setStats] = useState({ totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 })
+  const [loadingStats, setLoadingStats] = useState(true)
+
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const data = await getDepartmentStats(departmentId)
+        setStats(data)
+      } catch (error) {
+        console.error('Error fetching stats:', error)
+      } finally {
+        setLoadingStats(false)
+      }
+    }
+    fetchStats()
+  }, [departmentId])
 
   const getAnswerDisplay = (question: Question, response: Partial<Response> | undefined) => {
     if (!response) return 'לא נענה'
@@ -76,21 +94,25 @@ export function SurveyThankYou({ departmentName, onClose, onRestart, responses, 
 
           {/* Impact Card */}
           <div className="bg-[#f7f7fc] rounded-2xl p-4 mb-6 border border-[#e8e7f5]">
-            <div className="text-xs text-[#a8a6c4] mb-3">ההשפעה של המשוב שלך החודש</div>
-            <div className="flex">
-              <div className="flex-1 text-center">
-                <div className="text-xl font-bold text-[#3d3a9e]">142</div>
-                <div className="text-xs text-[#a8a6c4]">משיבים</div>
+            <div className="text-xs text-[#a8a6c4] mb-3">ההשפעה של המשוב שלך</div>
+            {loadingStats ? (
+              <div className="text-sm text-[#a8a6c4]">טוען נתונים...</div>
+            ) : (
+              <div className="flex">
+                <div className="flex-1 text-center">
+                  <div className="text-xl font-bold text-[#2a7c7c]">{stats.totalResponses}</div>
+                  <div className="text-xs text-[#a8a6c4]">משיבים</div>
+                </div>
+                <div className="flex-1 text-center border-r border-[#e8e7f5]">
+                  <div className="text-xl font-bold text-[#2a7c7c]">{stats.satisfactionPercentage}%</div>
+                  <div className="text-xs text-[#a8a6c4]">שביעות</div>
+                </div>
+                <div className="flex-1 text-center border-r border-[#e8e7f5]">
+                  <div className="text-xl font-bold text-[#2a7c7c]">{stats.totalComments}</div>
+                  <div className="text-xs text-[#a8a6c4]">תגובות</div>
+                </div>
               </div>
-              <div className="flex-1 text-center border-r border-[#e8e7f5]">
-                <div className="text-xl font-bold text-[#3d3a9e]">94%</div>
-                <div className="text-xs text-[#a8a6c4]">שביעות</div>
-              </div>
-              <div className="flex-1 text-center border-r border-[#e8e7f5]">
-                <div className="text-xl font-bold text-[#3d3a9e]">+850</div>
-                <div className="text-xs text-[#a8a6c4]">תגובות</div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Note */}
@@ -104,7 +126,7 @@ export function SurveyThankYou({ departmentName, onClose, onRestart, responses, 
           {questions && questions.length > 0 && responses && (
             <button
               onClick={() => setShowAnswers(!showAnswers)}
-              className="text-sm text-[#3d3a9e] underline mb-4 hover:text-[#2ecfaa] transition-colors"
+              className="text-sm text-[#2a7c7c] underline mb-4 hover:text-[#2ecfaa] transition-colors"
             >
               {showAnswers ? 'הסתר תשובות' : 'צפה בתשובות שלי'}
             </button>
@@ -140,7 +162,7 @@ export function SurveyThankYou({ departmentName, onClose, onRestart, responses, 
               <Button
                 onClick={onRestart}
                 variant="outline"
-                className="w-full border-[#3d3a9e] text-[#3d3a9e] hover:bg-[#3d3a9e] hover:text-white font-bold py-4 rounded-xl"
+                className="w-full border-[#2a7c7c] text-[#2a7c7c] hover:bg-[#2a7c7c] hover:text-white font-bold py-4 rounded-xl"
               >
                 מילוי מחדש
               </Button>
