@@ -120,12 +120,14 @@ export default function AdminDashboardPage() {
           )}
 
           <div className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5">
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
               currentUser?.role === 'super_admin' ? 'bg-[#ffd700] text-[#1a5c5c]' : 'bg-[#7dd3d3] text-[#1e4a40]'
             }`}>
-              {currentUser?.fullName?.charAt(0) || 'א'}
+              {currentUser?.fullName 
+                ? currentUser.fullName.split(' ').map(n => n.charAt(0)).slice(0, 2).join('')
+                : '??'}
             </div>
-            <span className="text-white text-sm font-semibold">{currentUser?.fullName || 'אדמין'}</span>
+            <span className="text-white text-sm font-semibold">{currentUser?.fullName || 'משתמש'}</span>
           </div>
 
           {currentUser?.role === 'super_admin' && (

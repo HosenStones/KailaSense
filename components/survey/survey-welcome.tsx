@@ -70,10 +70,7 @@ export function SurveyWelcome({ department, onStart }: SurveyWelcomeProps) {
           {"לחץ/י כאן למשוב 💬"}
         </Button>
 
-        {/* Privacy note */}
-        <p className="text-[#a8a6c4] text-xs mt-4">
-          🔒 ללא הרשמה - ללא אפליקציה - אנונימי לחלוטין
-        </p>
+        
       </div>
     </div>
   )

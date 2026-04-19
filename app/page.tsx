@@ -157,9 +157,7 @@ export default function HomePage() {
           התחל משוב
         </Button>
 
-        <p className="text-[#8fa3b1] text-xs mt-4 text-center">
-          ללא הרשמה - ללא אפליקציה - אנונימי לחלוטין
-        </p>
+        
 
         <Link 
           href="/admin/login" 
@@ -173,7 +171,20 @@ export default function HomePage() {
 
   // Thank You Screen
   if (step === 'thankyou') {
-    return <SurveyThankYou departmentName={department.name} />
+    return (
+      <SurveyThankYou 
+        departmentName={department.name}
+        departmentId={department.id}
+        onRestart={() => {
+          setStep('welcome')
+          setCurrentIndex(0)
+          setResponses({})
+          setSessionId(null)
+        }}
+        responses={responses}
+        questions={questions}
+      />
+    )
   }
 
   // Questions Screen
