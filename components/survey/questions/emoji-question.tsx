@@ -9,11 +9,11 @@ interface EmojiQuestionProps {
 }
 
 const defaultOptions: QuestionOption[] = [
-  { value: '1', label: 'גרוע מאוד', emoji: '😡' },
-  { value: '2', label: 'לא טוב', emoji: '😟' },
-  { value: '3', label: 'בסדר', emoji: '😐' },
-  { value: '4', label: 'טוב', emoji: '😊' },
   { value: '5', label: 'מעולה', emoji: '😍' },
+  { value: '4', label: 'טוב', emoji: '😊' },
+  { value: '3', label: 'בסדר', emoji: '😐' },
+  { value: '2', label: 'לא טוב', emoji: '😟' },
+  { value: '1', label: 'גרוע מאוד', emoji: '😡' },
 ]
 
 export function EmojiQuestion({ question, value, onChange }: EmojiQuestionProps) {

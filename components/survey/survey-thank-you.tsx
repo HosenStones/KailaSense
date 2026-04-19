@@ -149,7 +149,7 @@ export function SurveyThankYou({ departmentName, departmentId, onClose, onRestar
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Action Button */}
           <div className="flex flex-col gap-3">
             {onRestart && (
               <Button
@@ -159,14 +159,6 @@ export function SurveyThankYou({ departmentName, departmentId, onClose, onRestar
                 מילוי סקר חדש
               </Button>
             )}
-            
-            <Button
-              asChild
-              variant="outline"
-              className="w-full border-[#2a7c7c] text-[#2a7c7c] hover:bg-[#2a7c7c] hover:text-white font-bold py-4 rounded-xl"
-            >
-              <Link href="/">חזרה לדף הבית</Link>
-            </Button>
           </div>
         </div>
       </div>
