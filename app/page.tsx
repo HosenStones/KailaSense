@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link' // השורה הזו הייתה חסרה וגרמה לקריסה
 import { getAllDepartments } from '@/lib/firebase/firestore'
 import type { Department } from '@/lib/types'
 import { Button } from '@/components/ui/button'
@@ -21,10 +22,10 @@ export default function HomePage() {
   const router = useRouter()
 
   useEffect(() => {
-    // Fetch departments and sort alphabetically
     async function fetchDepts() {
       try {
         const depts = await getAllDepartments()
+        // Sorting alphabetically by Hebrew name
         const sorted = [...depts].sort((a, b) => a.name.localeCompare(b.name, 'he'))
         setDepartments(sorted)
       } catch (error) {
@@ -55,7 +56,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6" dir="rtl">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-[#e8e7f5] p-8 text-center">
         
-        {/* Vertical Logo as requested */}
         <div className="flex justify-center mb-8">
           <Image 
             src="/images/kaila-logo-vertical.png" 
