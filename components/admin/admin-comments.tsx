@@ -3,8 +3,16 @@
 import { useState, useEffect } from 'react'
 import { getResponsesByDepartment, getQuestionsByDepartment } from '@/lib/firebase/firestore'
 
+// Defined strict interface instead of 'any' to fix Vercel build errors
+interface CommentDisplay {
+  id: string
+  createdAt: string
+  questionText: string
+  answerText: string
+}
+
 export function AdminComments({ departmentId }: { departmentId: string }) {
-  const [comments, setComments] = useState<any[]>([])
+  const [comments, setComments] = useState<CommentDisplay[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -16,10 +24,13 @@ export function AdminComments({ departmentId }: { departmentId: string }) {
         getQuestionsByDepartment(departmentId)
       ])
 
-      const textComments = allResponses
+      // Map and format the responses into the strict interface structure
+      const textComments: CommentDisplay[] = allResponses
         .filter(r => r.answerText && r.answerText.trim() !== '')
         .map(r => ({
-          ...r,
+          id: r.id,
+          createdAt: r.createdAt,
+          answerText: r.answerText as string,
           questionText: allQuestions.find(q => q.id === r.questionId)?.questionText || 'שאלה כללית'
         }))
 
