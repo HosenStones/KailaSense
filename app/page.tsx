@@ -1,234 +1,133 @@
-"use client"
+'use client'
 
-import { useState, useCallback } from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { SurveyProgress } from '@/components/survey/survey-progress'
-import { SurveyQuestion } from '@/components/survey/survey-question'
-import { SurveyNavigation } from '@/components/survey/survey-navigation'
-import { SurveyThankYou } from '@/components/survey/survey-thank-you'
-import { demoQuestions, demoDepartment } from '@/lib/demo-data'
-import { createSurveySession, saveResponse, completeSurveySession } from '@/lib/firebase/firestore'
-import type { Response } from '@/lib/types'
-import { Button } from '@/components/ui/button'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from '@/lib/firebase/config'
+import { getAdminUser, getAllDepartments } from '@/lib/firebase/firestore'
+import type { AdminUser, Department } from '@/lib/types'
+import { AdminInsights } from '@/components/admin/admin-insights'
+import { AdminQuestions } from '@/components/admin/admin-questions'
+import { AdminComments } from '@/components/admin/admin-comments'
+import { AdminSettings } from '@/components/admin/admin-settings'
+import { AdminHeader } from '@/components/admin/admin-header'
 
-type SurveyStep = 'welcome' | 'questions' | 'thankyou'
+type TabId = 'insights' | 'questions' | 'comments' | 'settings'
 
-export default function HomePage() {
-  const [step, setStep] = useState<SurveyStep>('welcome')
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [responses, setResponses] = useState<Record<string, Partial<Response>>>({})
-  const [sessionId, setSessionId] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+export default function AdminDashboardPage() {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null)
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [activeTab, setActiveTab] = useState<TabId>('insights')
+  const [selectedDepartment, setSelectedDepartment] = useState('')
 
-  const questions = demoQuestions
-  const department = demoDepartment
-  const currentQuestion = questions[currentIndex]
-
-  const handleStart = useCallback(async () => {
-    try {
-      const id = await createSurveySession(department.id, 'web')
-      setSessionId(id)
-      setStep('questions')
-    } catch (error) {
-      console.error('Error starting survey:', error)
-      setSessionId('demo-session-' + Date.now())
-      setStep('questions')
+  useEffect(() => {
+    if (!auth) {
+      router.push('/admin/login')
+      return
     }
-  }, [department.id])
 
-  const handleResponse = useCallback((response: Partial<Response>) => {
-    setResponses((prev) => ({
-      ...prev,
-      [response.questionId!]: response,
-    }))
-  }, [])
-
-  const handleNext = useCallback(() => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex((prev) => prev + 1)
-    }
-  }, [currentIndex, questions.length])
-
-  const handleBack = useCallback(() => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1)
-    }
-  }, [currentIndex])
-
-  const handleSubmit = useCallback(async () => {
-    if (!sessionId) return
-
-    setIsSubmitting(true)
-
-    try {
-      for (const response of Object.values(responses)) {
-        if (response.questionId) {
-          await saveResponse({
-            sessionId,
-            questionId: response.questionId,
-            answerValue: response.answerValue,
-            answerValues: response.answerValues,
-            answerText: response.answerText,
-          })
-        }
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push('/admin/login')
+        return
       }
 
-      await completeSurveySession(sessionId)
-      setStep('thankyou')
-    } catch (error) {
-      console.error('Error submitting survey:', error)
-      setStep('thankyou')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [sessionId, responses])
+      // טעינת פרטי מנהל
+      const adminUser = await getAdminUser(user.uid)
+      setCurrentUser(adminUser)
 
-  const isAnswered = useCallback((questionId: string, questionType: string) => {
-    const response = responses[questionId]
-    if (!response) return false
+      // טעינת מחלקות
+      const allDepts = await getAllDepartments()
+      setDepartments(allDepts)
 
-    switch (questionType) {
-      case 'emoji':
-      case 'choice':
-      case 'stars':
-        return !!response.answerValue
-      case 'multi_choice':
-        return (response.answerValues?.length ?? 0) > 0
-      case 'open_text':
-        return !!response.answerText?.trim()
-      default:
-        return false
-    }
-  }, [responses])
+      // בחירת מחלקה דיפולטיבית
+      if (adminUser?.departmentId) {
+        setSelectedDepartment(adminUser.departmentId)
+      } else if (allDepts.length > 0) {
+        setSelectedDepartment(allDepts[0].id)
+      }
 
-  // Welcome Screen
-  if (step === 'welcome') {
+      setIsLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [router])
+
+  if (isLoading) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-[#e8faf5] via-white to-[#f0eff9] flex flex-col items-center justify-center px-4 py-8">
-        <div className="flex items-center justify-center mb-8">
-          <Image
-            src="/images/kaila-logo-vertical.png"
-            alt="Kaila Sense"
-            width={140}
-            height={140}
-            className="h-32 w-auto"
-            priority
-          />
-        </div>
-
-        <div className="w-16 h-16 bg-gradient-to-br from-[#2ecfaa] to-[#26b896] rounded-full flex items-center justify-center mb-6 shadow-lg">
-          <span className="text-3xl text-white">&#128153;</span>
-        </div>
-
-        <h1 className="text-2xl font-bold text-[#1e3a5f] mb-3 text-center">
-          המשוב שלך חשוב לנו
-        </h1>
-        <p className="text-[#5a7184] text-center mb-8 leading-relaxed max-w-xs">
-          תודה שבחרת להשתתף.
-          <br />
-          המשוב שלך עוזר לנו לשפר את השירות.
-        </p>
-
-        <div className="flex gap-3 mb-8 w-full max-w-sm">
-          <div className="flex-1 bg-white rounded-xl p-3 text-center shadow-sm border border-[#e0f5ef]">
-            <div className="text-[#2ecfaa] font-bold text-sm">{"<2 דק'"}</div>
-            <div className="text-[#8fa3b1] text-xs mt-0.5">זמן מילוי</div>
-          </div>
-          <div className="flex-1 bg-white rounded-xl p-3 text-center shadow-sm border border-[#e0f5ef]">
-            <div className="text-[#2ecfaa] font-bold text-sm">&#128274;</div>
-            <div className="text-[#8fa3b1] text-xs mt-0.5">אנונימי</div>
-          </div>
-          <div className="flex-1 bg-white rounded-xl p-3 text-center shadow-sm border border-[#e0f5ef]">
-            <div className="text-[#2ecfaa] font-bold text-sm">AI</div>
-            <div className="text-[#8fa3b1] text-xs mt-0.5">ניתוח חכם</div>
-          </div>
-        </div>
-
-        <div className="bg-[#f0eff9] rounded-xl p-4 w-full max-w-sm mb-8 border border-[#dddaf0]">
-          <div className="text-[#1e3a5f] font-semibold text-sm">{department.name}</div>
-          <div className="text-[#5a7184] text-xs mt-1">השאלון נשלח אליך אוטומטית לאחר הטיפול</div>
-        </div>
-
-        <Button 
-          onClick={handleStart}
-          className="w-full max-w-sm bg-gradient-to-r from-[#2ecfaa] to-[#26b896] hover:from-[#26b896] hover:to-[#1fa789] text-white font-bold py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
-        >
-          התחל משוב
-        </Button>
-
-        
-
-        <Link 
-          href="/admin/login" 
-          className="mt-10 text-[#5a7184] text-sm underline hover:text-[#2ecfaa] transition-colors"
-        >
-          כניסת מנהלים
-        </Link>
-      </main>
+      <div className="min-h-screen bg-[#f7f7fc] flex items-center justify-center">
+        <div className="text-[#6b6890]">טוען נתונים...</div>
+      </div>
     )
   }
 
-  // Thank You Screen
-  if (step === 'thankyou') {
-    return (
-      <SurveyThankYou 
-        departmentName={department.name}
-        departmentId={department.id}
-        onRestart={() => {
-          setStep('welcome')
-          setCurrentIndex(0)
-          setResponses({})
-          setSessionId(null)
-        }}
-        responses={responses}
-        questions={questions}
-      />
-    )
-  }
+  const tabs: { id: TabId; label: string; icon: string }[] = [
+    { id: 'insights', label: 'תובנות', icon: '📊' },
+    { id: 'questions', label: 'שאלות', icon: '📋' },
+    { id: 'comments', label: 'תגובות', icon: '💬' },
+    { id: 'settings', label: 'הגדרות', icon: '⚙️' },
+  ]
 
-  // Questions Screen
+  // סינון מחלקות בהתאם להרשאות המשתמש
+  const availableDepartments = currentUser?.role === 'super_admin' 
+    ? departments 
+    : departments.filter(d => d.id === currentUser?.departmentId)
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f9fb] flex flex-col">
-      <header className="bg-white border-b border-[#e8f0f5] px-4 py-3 text-center shadow-sm">
-        <div className="flex items-center justify-center gap-3">
-          <Image
-            src="/images/kaila-logo-horizontal.png"
-            alt="Kaila"
-            width={80}
-            height={24}
-            className="h-6 w-auto"
-          />
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#f7f7fc]" dir="rtl">
+      {/* שימוש ברכיב ההידר המשותף שלנו */}
+      <AdminHeader user={currentUser} title="ממשק מנהלים" />
 
-      <SurveyProgress current={currentIndex + 1} total={questions.length} />
-
-      <div className="flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <SurveyQuestion
-            question={currentQuestion}
-            response={responses[currentQuestion.id] || null}
-            onResponse={handleResponse}
-          />
-        </div>
+      {/* אזור בחירת מחלקה נפרד וברור */}
+      <div className="bg-white px-6 py-3 border-b border-[#e8e7f5] flex items-center gap-4">
+        {availableDepartments.length > 1 ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-semibold text-[#1e1c4a]">בחר מחלקה:</span>
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="bg-[#f7f7fc] border border-[#e8e7f5] text-[#1e1c4a] text-sm rounded-lg px-3 py-1.5 focus:border-[#2a7c7c] outline-none"
+            >
+              {availableDepartments.map((dept) => (
+                <option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="text-sm font-semibold text-[#1e1c4a]">
+            מחלקה נוכחית: {availableDepartments[0]?.name || 'לא נבחרה מחלקה'}
+          </div>
+        )}
       </div>
 
-      <div className="p-4 pb-6">
-        <div className="max-w-md mx-auto">
-          <SurveyNavigation
-            canGoBack={currentIndex > 0}
-            canGoForward={currentIndex < questions.length - 1}
-            isLastQuestion={currentIndex === questions.length - 1}
-            isAnswered={isAnswered(currentQuestion.id, currentQuestion.questionType)}
-            isRequired={currentQuestion.isRequired}
-            onBack={handleBack}
-            onNext={handleNext}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-          />
-        </div>
-      </div>
+      {/* ניווט בין הלשוניות */}
+      <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors ${
+              activeTab === tab.id
+                ? 'text-[#2a7c7c] border-[#3d9e9e]'
+                : 'text-[#a8a6c4] border-transparent hover:text-[#6b6890]'
+            }`}
+          >
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* תוכן הלשונית הנבחרת */}
+      <main className="p-6 max-w-6xl mx-auto">
+        {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
+        {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
+        {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
+        {activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
+      </main>
     </div>
   )
 }
