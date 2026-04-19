@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         // Fetch admin user data from Firestore
         try {
-          const adminDoc = await getDoc(doc(db, 'admin_users', firebaseUser.uid))
+          const adminDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
           if (adminDoc.exists()) {
             const data = adminDoc.data()
             setAdminUser({
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     
     // Create admin user document
-    await setDoc(doc(db, 'admin_users', userCredential.user.uid), {
+    await setDoc(doc(db, 'users', userCredential.user.uid), {
       email,
       fullName,
       role: 'admin',
