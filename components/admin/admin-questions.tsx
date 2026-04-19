@@ -106,7 +106,15 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     }
   }
 
-  if (isLoading) return <div className="text-center p-4 text-[#a8a6c4]">Loading questions...</div>
+  // Inside app/admin/page.tsx - update the loading state
+if (status === 'loading') {
+  return (
+    <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
+      <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
+      <div className="text-[#6b6890] font-bold">טוען שאלות...</div>
+    </div>
+  )
+}
 
   return (
     <div>
