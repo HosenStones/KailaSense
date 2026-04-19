@@ -75,7 +75,7 @@ export function AdminInsights({ departmentId }: AdminInsightsProps) {
 
   const emojiDist = [
     { emoji: '&#128525;', label: 'excellent', pct: totalEmoji > 0 ? Math.round((emojiCounts['5'] / totalEmoji) * 100) : 0, color: '#2ecfaa' },
-    { emoji: '&#128522;', label: 'good', pct: totalEmoji > 0 ? Math.round((emojiCounts['4'] / totalEmoji) * 100) : 0, color: '#6b68c4' },
+    { emoji: '&#128522;', label: 'good', pct: totalEmoji > 0 ? Math.round((emojiCounts['4'] / totalEmoji) * 100) : 0, color: '#3d9e9e' },
     { emoji: '&#128528;', label: 'neutral', pct: totalEmoji > 0 ? Math.round((emojiCounts['3'] / totalEmoji) * 100) : 0, color: '#f0a030' },
     { emoji: '&#128543;', label: 'bad', pct: totalEmoji > 0 ? Math.round(((emojiCounts['2'] + emojiCounts['1']) / totalEmoji) * 100) : 0, color: '#e83f8a' },
   ]
@@ -83,7 +83,7 @@ export function AdminInsights({ departmentId }: AdminInsightsProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-[#6b68c4]">טוען נתונים...</div>
+        <div className="text-[#3d9e9e]">טוען נתונים...</div>
       </div>
     )
   }

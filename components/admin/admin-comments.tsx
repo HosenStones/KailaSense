@@ -88,7 +88,7 @@ export function AdminComments({ departmentId }: AdminCommentsProps) {
 
         <Button
           variant="outline"
-          className="mr-auto bg-[#eeedf9] border-[#d4d2f0] text-[#3d3a9e] font-bold text-sm hover:bg-[#d4d2f0]"
+          className="mr-auto bg-[#e5f3f3] border-[#b8e0e0] text-[#2a7c7c] font-bold text-sm hover:bg-[#b8e0e0]"
         >
           ייצוא לאקסל
         </Button>
@@ -115,7 +115,7 @@ export function AdminComments({ departmentId }: AdminCommentsProps) {
                         ? 'bg-[#e4faf5] text-[#0a5c4a]'
                         : comment.sentiment === 'neg'
                         ? 'bg-[#fde8f2] text-[#8a0040]'
-                        : 'bg-[#eeedf9] text-[#3d3a9e]'
+                        : 'bg-[#f0f0f0] text-[#666666]'
                     }`}
                   >
                     {comment.sentiment === 'pos' ? 'חיובי' : comment.sentiment === 'neg' ? 'שלילי' : 'ניטרלי'}

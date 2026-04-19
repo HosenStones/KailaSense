@@ -42,7 +42,7 @@ export function AdminSettings({ departmentId }: AdminSettingsProps) {
           />
         </div>
 
-        <Button className="w-full bg-[#3d3a9e] hover:bg-[#302d8a] text-white font-bold py-3 rounded-xl">
+        <Button className="w-full bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold py-3 rounded-xl">
           שמור שינויים
         </Button>
       </div>
@@ -75,7 +75,7 @@ export function AdminSettings({ departmentId }: AdminSettingsProps) {
           </select>
         </div>
 
-        <Button className="w-full bg-[#3d3a9e] hover:bg-[#302d8a] text-white font-bold py-3 rounded-xl">
+        <Button className="w-full bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold py-3 rounded-xl">
           שמור הגדרות
         </Button>
       </div>
@@ -87,12 +87,12 @@ export function AdminSettings({ departmentId }: AdminSettingsProps) {
           <div className="flex-1 min-w-[180px] bg-[#f7f7fc] rounded-xl p-4 border border-[#e8e7f5]">
             <p className="text-sm font-bold text-[#1e1c4a] mb-1">ד״ר שרה לוי</p>
             <p className="text-xs text-[#a8a6c4] mb-2">מנהלת מחלקה</p>
-            <button className="text-xs text-[#3d3a9e] font-semibold hover:underline">ערוך</button>
+            <button className="text-xs text-[#2a7c7c] font-semibold hover:underline">ערוך</button>
           </div>
           <div className="flex-1 min-w-[180px] bg-[#f7f7fc] rounded-xl p-4 border border-[#e8e7f5]">
             <p className="text-sm font-bold text-[#1e1c4a] mb-1">רחל כהן</p>
             <p className="text-xs text-[#a8a6c4] mb-2">אחות אחראית</p>
-            <button className="text-xs text-[#3d3a9e] font-semibold hover:underline">ערוך</button>
+            <button className="text-xs text-[#2a7c7c] font-semibold hover:underline">ערוך</button>
           </div>
           <div className="flex-1 min-w-[180px] border-2 border-dashed border-[#e8e7f5] rounded-xl p-4 flex items-center justify-center cursor-pointer hover:bg-[#e4faf5] hover:border-[#2ecfaa] transition-colors">
             <span className="text-sm text-[#a8a6c4] font-semibold">+ הוסף משתמש</span>

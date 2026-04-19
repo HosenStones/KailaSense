@@ -56,7 +56,7 @@ export default function AdminDashboardPage() {
 
   const tabs: { id: TabId; label: string; icon: string }[] = [
     { id: 'insights', label: 'תובנות', icon: '📊' },
-    { id: 'questions', label: 'שאלות', icon: '❓' },
+    { id: 'questions', label: 'שאלות', icon: '📋' },
     { id: 'comments', label: 'תגובות', icon: '💬' },
     { id: 'settings', label: 'הגדרות', icon: '⚙️' },
   ]
@@ -79,7 +79,7 @@ export default function AdminDashboardPage() {
               className="h-6 w-auto"
             />
           </div>
-          <span className="text-white/70 text-sm border-r border-white/20 pr-4">דשבורד ניהולי</span>
+          <span className="text-white/70 text-sm border-r border-white/20 pr-4">ממשק מנהלים</span>
         </div>
 
         <div className="flex items-center gap-3">
