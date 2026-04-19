@@ -12,10 +12,11 @@ const firebaseConfig = {
   measurementId: "G-4ELNCVQ8ZX"
 };
 
-// Initialize Firebase
+// Initialize Firebase once
 const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Export services
-export const auth: Auth = getAuth(app);
-export const db: Firestore = getFirestore(app);
-export default app;
+// Initialize services directly for compatibility with Vercel
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
+
+export { app, auth, db };
