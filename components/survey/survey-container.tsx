@@ -34,18 +34,42 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
     setSessionId(null)
   }, [])
 
-  const handleStart = useCallback(async () => {
-    try {
-      const id = await createSurveySession(department.id, source)
-      setSessionId(id)
-      setStep('questions')
-    } catch (error) {
-      console.error('Error starting survey:', error)
-      // Still proceed even if Firebase fails (for demo purposes)
-      setSessionId('demo-session')
-      setStep('questions')
+const handleStart = useCallback(async () => {
+  try {
+    const id = await createSurveySession(department.id, source)
+    setSessionId(id)
+    setStep('questions')
+  } catch (error) {
+    console.error('Error starting survey:', error)
+    alert('שגיאה בחיבור למסד הנתונים. אנא בדקי את חוקי האבטחה ב-Firebase.')
+  }
+}, [department.id, source])
+
+const handleSubmit = useCallback(async () => {
+  if (!sessionId) return
+  setIsSubmitting(true)
+
+  try {
+    for (const response of Object.values(responses)) {
+      if (response.questionId) {
+        await saveResponse({
+          sessionId,
+          questionId: response.questionId,
+          answerValue: response.answerValue,
+          answerValues: response.answerValues,
+          answerText: response.answerText,
+        })
+      }
     }
-  }, [department.id, source])
+    await completeSurveySession(sessionId)
+    setStep('thankyou')
+  } catch (error) {
+    console.error('Error submitting survey:', error)
+    alert('שגיאה בשמירת התשובות. הנתונים לא נשמרו.')
+  } finally {
+    setIsSubmitting(false)
+  }
+}, [sessionId, responses])
 
   const handleResponse = useCallback((response: Partial<Response>) => {
     setResponses((prev) => ({
@@ -65,38 +89,6 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
       setCurrentIndex((prev) => prev - 1)
     }
   }, [currentIndex])
-
-  const handleSubmit = useCallback(async () => {
-    if (!sessionId) return
-
-    setIsSubmitting(true)
-
-    try {
-      // Save all responses
-      for (const response of Object.values(responses)) {
-        if (response.questionId) {
-          await saveResponse({
-            sessionId,
-            questionId: response.questionId,
-            answerValue: response.answerValue,
-            answerValues: response.answerValues,
-            answerText: response.answerText,
-          })
-        }
-      }
-
-      // Mark session as complete
-      await completeSurveySession(sessionId)
-      
-      setStep('thankyou')
-    } catch (error) {
-      console.error('Error submitting survey:', error)
-      // Still show thank you even if Firebase fails (for demo)
-      setStep('thankyou')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }, [sessionId, responses])
 
   const isAnswered = useCallback((question: Question) => {
     const response = responses[question.id]
