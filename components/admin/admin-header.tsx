@@ -10,17 +10,11 @@ import type { AdminUser } from '@/lib/types'
 interface AdminHeaderProps {
   user: AdminUser | null
   title: string
-  // Callback to trigger navigation to the settings tab
+  // Callback to change the active tab to settings
   onProfileClick?: () => void 
-  gradientClass?: string
 }
 
-export function AdminHeader({ 
-  user, 
-  title, 
-  onProfileClick, 
-  gradientClass = "from-[#2a7c7c] to-[#3d9e9e]" 
-}: AdminHeaderProps) {
+export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
   const router = useRouter()
 
   const handleSignOut = async () => {
@@ -29,7 +23,7 @@ export function AdminHeader({
   }
 
   return (
-    <header className={`bg-gradient-to-r ${gradientClass} h-14 flex items-center justify-between px-6 sticky top-0 z-50`} dir="rtl">
+    <header className="bg-gradient-to-r from-[#2a7c7c] to-[#3d9e9e] h-14 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm" dir="rtl">
       <div className="flex items-center gap-4">
         <Link href="/" className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-colors">
           <Image 
@@ -44,11 +38,10 @@ export function AdminHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Clickable profile area that invokes the onProfileClick callback */}
+        {/* User profile box - clickable to trigger settings tab */}
         <button
           onClick={onProfileClick}
           className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-all text-right"
-          type="button"
         >
           <div className="w-7 h-7 rounded-full bg-[#7dd3d3] flex items-center justify-center text-xs font-bold text-[#1e4a40]">
             {user?.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??'}
