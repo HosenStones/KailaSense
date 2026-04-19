@@ -10,10 +10,11 @@ import {
   where, 
   orderBy,
   Timestamp,
-  writeBatch
+  writeBatch,
+  setDoc
 } from 'firebase/firestore'
 import { db } from './config'
-import type { Department, Question, SurveySession, Response as SurveyResponse } from '../types'
+import type { Department, Question, SurveySession, Response as SurveyResponse, AdminUser } from '../types'
 
 // Helper to convert Firestore timestamp to ISO string
 const toISOString = (timestamp: Timestamp | string | undefined): string => {
@@ -266,6 +267,162 @@ export async function getResponsesByDepartment(departmentId: string): Promise<Su
   }
   
   return allResponses
+}
+
+// ============ Admin User Management ============
+
+export async function getAdminUser(uid: string): Promise<AdminUser | null> {
+  if (!db) return null
+  const docRef = doc(db, 'admin_users', uid)
+  const docSnap = await getDoc(docRef)
+  if (!docSnap.exists()) return null
+  const data = docSnap.data()
+  return {
+    id: docSnap.id,
+    email: data.email,
+    fullName: data.fullName,
+    role: data.role,
+    departmentId: data.departmentId,
+    createdAt: toISOString(data.createdAt),
+    updatedAt: toISOString(data.updatedAt),
+  }
+}
+
+export async function createAdminUser(uid: string, user: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
+  if (!db) throw new Error('Firebase not initialized')
+  await setDoc(doc(db, 'admin_users', uid), {
+    ...user,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  })
+}
+
+export async function updateAdminUser(uid: string, updates: Partial<AdminUser>): Promise<void> {
+  if (!db) throw new Error('Firebase not initialized')
+  const docRef = doc(db, 'admin_users', uid)
+  await updateDoc(docRef, {
+    ...updates,
+    updatedAt: Timestamp.now(),
+  })
+}
+
+export async function deleteAdminUser(uid: string): Promise<void> {
+  if (!db) throw new Error('Firebase not initialized')
+  await deleteDoc(doc(db, 'admin_users', uid))
+}
+
+export async function getAllAdminUsers(): Promise<AdminUser[]> {
+  if (!db) return []
+  const querySnapshot = await getDocs(collection(db, 'admin_users'))
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data()
+    return {
+      id: doc.id,
+      email: data.email,
+      fullName: data.fullName,
+      role: data.role,
+      departmentId: data.departmentId,
+      createdAt: toISOString(data.createdAt),
+      updatedAt: toISOString(data.updatedAt),
+    }
+  })
+}
+
+export async function getAdminUsersByDepartment(departmentId: string): Promise<AdminUser[]> {
+  if (!db) return []
+  const q = query(
+    collection(db, 'admin_users'),
+    where('departmentId', '==', departmentId)
+  )
+  const querySnapshot = await getDocs(q)
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data()
+    return {
+      id: doc.id,
+      email: data.email,
+      fullName: data.fullName,
+      role: data.role,
+      departmentId: data.departmentId,
+      createdAt: toISOString(data.createdAt),
+      updatedAt: toISOString(data.updatedAt),
+    }
+  })
+}
+
+// ============ Department Management ============
+
+export async function createDepartment(department: Omit<Department, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  if (!db) throw new Error('Firebase not initialized')
+  const docRef = await addDoc(collection(db, 'departments'), {
+    ...department,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+  })
+  return docRef.id
+}
+
+export async function updateDepartment(id: string, updates: Partial<Department>): Promise<void> {
+  if (!db) throw new Error('Firebase not initialized')
+  const docRef = doc(db, 'departments', id)
+  await updateDoc(docRef, {
+    ...updates,
+    updatedAt: Timestamp.now(),
+  })
+}
+
+export async function deleteDepartment(id: string): Promise<void> {
+  if (!db) throw new Error('Firebase not initialized')
+  // Also delete all questions and sessions for this department
+  const batch = writeBatch(db)
+  
+  // Delete department
+  batch.delete(doc(db, 'departments', id))
+  
+  // Delete questions
+  const questionsQuery = query(collection(db, 'questions'), where('departmentId', '==', id))
+  const questionsSnapshot = await getDocs(questionsQuery)
+  questionsSnapshot.docs.forEach(doc => batch.delete(doc.ref))
+  
+  // Delete sessions
+  const sessionsQuery = query(collection(db, 'survey_sessions'), where('departmentId', '==', id))
+  const sessionsSnapshot = await getDocs(sessionsQuery)
+  sessionsSnapshot.docs.forEach(doc => batch.delete(doc.ref))
+  
+  await batch.commit()
+}
+
+// Copy default questions to a new department
+export async function copyDefaultQuestionsToDepartment(targetDepartmentId: string, sourceDepartmentId?: string): Promise<void> {
+  if (!db) throw new Error('Firebase not initialized')
+  
+  // Get questions from source department or use default questions
+  const sourceId = sourceDepartmentId || 'internal-medicine' // Default source
+  const q = query(
+    collection(db, 'questions'),
+    where('departmentId', '==', sourceId),
+    where('isDefault', '==', true)
+  )
+  const querySnapshot = await getDocs(q)
+  
+  const batch = writeBatch(db)
+  querySnapshot.docs.forEach((docSnap, index) => {
+    const data = docSnap.data()
+    const newDocRef = doc(collection(db, 'questions'))
+    batch.set(newDocRef, {
+      departmentId: targetDepartmentId,
+      questionText: data.questionText,
+      questionType: data.questionType,
+      options: data.options || null,
+      isRequired: data.isRequired ?? true,
+      isDefault: true,
+      displayOrder: index,
+      isActive: true,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    })
+  })
+  
+  await batch.commit()
 }
 
 // Get department statistics for thank you page
