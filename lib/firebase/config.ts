@@ -10,7 +10,7 @@ const firebaseConfig = {
   messagingSenderId: "936710809739",
   appId: "1:936710809739:web:81c97608c50f79d70bcc8e",
   measurementId: "G-4ELNCVQ8ZX"
-}
+};
 
 // Initialize Firebase - works both on client and server
 const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
