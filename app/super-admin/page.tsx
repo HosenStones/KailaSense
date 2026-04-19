@@ -62,6 +62,11 @@ export default function SuperAdminPage() {
 
   const loadData = async () => {
     const [depts, users] = await Promise.all([getAllDepartments(), getAllAdminUsers()])
+    // Sort departments by name (Hebrew Aleph-Bet)
+  const sortedDepts = [...depts].sort((a, b) => a.name.localeCompare(b.name, 'he'));
+  
+  // Sort users by full name (Hebrew Aleph-Bet)
+  const sortedUsers = [...users].sort((a, b) => a.fullName.localeCompare(b.fullName, 'he'));
     setDepartments(depts)
     setAdminUsers(users)
   }
