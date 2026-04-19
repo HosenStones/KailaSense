@@ -41,7 +41,7 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
     }
   }
 
-  if (isLoading) return <div className="p-4 text-center text-[#6b6890]">טוען הגדרות מחלקה...</div>
+  if (isLoading) return <div className="p-4 text-center text-[#6b6890] font-medium">טוען הגדרות מחלקה...</div>
 
   return (
     <div className="max-w-2xl bg-white rounded-2xl border border-[#e8e7f5] p-6 space-y-6" dir="rtl">
@@ -63,7 +63,7 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
         <Button 
           onClick={handleSave} 
           disabled={isSaving}
-          className="bg-[#2ecfaa] hover:bg-[#26b091] text-white px-8"
+          className="bg-[#2ecfaa] hover:bg-[#26b091] text-white px-8 font-medium"
         >
           {isSaving ? 'שומר...' : 'שמור שינויים'}
         </Button>
