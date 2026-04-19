@@ -15,8 +15,7 @@ const firebaseConfig = {
 // Initialize Firebase once
 const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize services directly for compatibility with Vercel
-const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
-
-export { app, auth, db };
+// Direct exports - Firebase SDK handles the environment check internally
+export const auth: Auth = getAuth(app);
+export const db: Firestore = getFirestore(app);
+export default app;
