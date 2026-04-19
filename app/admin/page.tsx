@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
         <h1 className="text-2xl font-bold text-[#1e1c4a] mb-2">גישה נדחתה</h1>
         <p className="text-[#6b6890] mb-6">לא נמצאו הרשאות ניהול עבור המייל המחובר.</p>
         <div className="bg-gray-100 p-4 rounded-lg mb-6 text-sm break-all">
-          <p className="font-bold mb-1">המייל איתו את מחוברת:</p>
+          <p className="font-bold mb-1">המייל איתו התחברת:</p>
           <code>{auth?.currentUser?.email}</code>
         </div>
         <button onClick={() => window.location.reload()} className="bg-[#2a7c7c] text-white px-6 py-2 rounded-lg">נסה שוב</button>
