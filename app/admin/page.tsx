@@ -32,21 +32,19 @@ export default function AdminDashboardPage() {
       }
 
       try {
-        // Fetch user permissions from 'users' collection
+        console.log("Logged in user UID:", user.uid);
         const adminUser = await getAdminUser(user.uid)
         
-        if (!adminUser) {
+        if (!adminUser || !adminUser.role) {
+          console.error("User found but has no role or record in 'users' collection");
           setStatus('error')
           return
         }
 
         setCurrentUser(adminUser)
-
-        // Load department data
         const allDepts = await getAllDepartments()
         setDepartments(allDepts)
 
-        // Default selection logic
         if (adminUser.departmentId) {
           setSelectedDepartment(adminUser.departmentId)
         } else if (allDepts.length > 0) {
@@ -75,8 +73,12 @@ export default function AdminDashboardPage() {
   if (status === 'error') {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
-        <h1 className="text-2xl font-bold text-[#1e1c4a] mb-2">גישה נדחתה או שגיאת חיבור</h1>
-        <p className="text-[#6b6890] mb-6">לא מצאנו הרשאות ניהול עבור המשתמש שלך בבסיס הנתונים.</p>
+        <h1 className="text-2xl font-bold text-[#1e1c4a] mb-2">גישה נדחתה</h1>
+        <p className="text-[#6b6890] mb-6 max-w-md">
+          לא נמצאו הרשאות ניהול עבור המשתמש שלך. 
+          ודאי שב-Firebase קיים מסמך בקולקשן <code className="bg-gray-200 px-1 rounded">users</code> 
+          שה-ID שלו הוא ה-UID שלך, ושיש לו שדה <code className="bg-gray-200 px-1 rounded">role</code> עם הערך <code className="bg-gray-200 px-1 rounded">super_admin</code>.
+        </p>
         <button 
           onClick={() => window.location.reload()} 
           className="bg-[#2a7c7c] text-white px-6 py-2 rounded-lg"
@@ -100,14 +102,12 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f7fc]" dir="rtl">
-      {/* Header with profile navigation */}
       <AdminHeader 
         user={currentUser} 
         title="ממשק מנהלים" 
         onProfileClick={() => setActiveTab('settings')}
       />
 
-      {/* Select Department Row */}
       <div className="bg-white px-6 py-3 border-b border-[#e8e7f5] flex items-center gap-4">
         {availableDepartments.length > 1 ? (
           <div className="flex items-center gap-3">
@@ -129,7 +129,6 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      {/* Navigation Tabs */}
       <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1">
         {tabs.map((tab) => (
           <button
@@ -146,7 +145,6 @@ export default function AdminDashboardPage() {
         ))}
       </nav>
 
-      {/* Main Tab Content */}
       <main className="p-6 max-w-6xl mx-auto">
         {!selectedDepartment ? (
           <div className="text-center p-12 text-[#a8a6c4]">אנא בחרי מחלקה לצפייה בנתונים</div>
