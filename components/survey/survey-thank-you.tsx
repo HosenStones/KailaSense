@@ -17,7 +17,7 @@ interface SurveyThankYouProps {
 }
 
 export function SurveyThankYou({ departmentName, departmentId, onClose, onRestart, responses, questions }: SurveyThankYouProps) {
-  const [showAnswers, setShowAnswers] = useState(false)
+  const [showAnswers, setShowAnswers] = useState(true) // Show answers by default
   const [stats, setStats] = useState({ totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 })
   const [loadingStats, setLoadingStats] = useState(true)
 
@@ -61,19 +61,19 @@ export function SurveyThankYou({ departmentName, departmentId, onClose, onRestar
     <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f7fc] flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-[#e8e7f5] px-4 py-3 text-center">
-        <button 
-          onClick={onRestart}
+        <Link 
+          href="/"
           className="flex items-center justify-center gap-3 mx-auto hover:opacity-80 transition-opacity"
-          title="מילוי מחדש"
+          title="חזרה לדף הבית"
         >
           <Image
             src="/images/kaila-logo-horizontal.png"
-            alt="Kaila - לחץ למילוי מחדש"
+            alt="Kaila - לחץ לחזרה לדף הבית"
             width={80}
             height={24}
             className="h-6 w-auto"
           />
-        </button>
+        </Link>
       </header>
 
       {/* Content */}
@@ -151,22 +151,22 @@ export function SurveyThankYou({ departmentName, departmentId, onClose, onRestar
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-3">
-            <Button
-              asChild
-              className="w-full bg-[#2ecfaa] hover:bg-[#26b896] text-[#1e4a40] font-bold py-4 rounded-xl"
-            >
-              <Link href="/">סיום</Link>
-            </Button>
-            
             {onRestart && (
               <Button
                 onClick={onRestart}
-                variant="outline"
-                className="w-full border-[#2a7c7c] text-[#2a7c7c] hover:bg-[#2a7c7c] hover:text-white font-bold py-4 rounded-xl"
+                className="w-full bg-[#2ecfaa] hover:bg-[#26b896] text-[#1e4a40] font-bold py-4 rounded-xl"
               >
-                מילוי מחדש
+                מילוי סקר חדש
               </Button>
             )}
+            
+            <Button
+              asChild
+              variant="outline"
+              className="w-full border-[#2a7c7c] text-[#2a7c7c] hover:bg-[#2a7c7c] hover:text-white font-bold py-4 rounded-xl"
+            >
+              <Link href="/">חזרה לדף הבית</Link>
+            </Button>
           </div>
         </div>
       </div>
