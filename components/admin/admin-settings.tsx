@@ -1,104 +1,138 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { getDepartment, updateDepartment, createAdminUser } from '@/lib/firebase/firestore'
+import type { Department } from '@/lib/types'
 
-interface AdminSettingsProps {
-  departmentId: string
-}
+export function AdminSettings({ departmentId }: { departmentId: string }) {
+  const [dept, setDept] = useState<Department | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  
+  // New user state
+  const [newUserName, setNewUserName] = useState('')
+  const [newUserEmail, setNewUserEmail] = useState('')
 
-export function AdminSettings({ departmentId }: AdminSettingsProps) {
-  const [departmentName, setDepartmentName] = useState('מחלקת קרדיולוגיה')
-  const [whatsappEnabled, setWhatsappEnabled] = useState(true)
+  useEffect(() => {
+    async function loadDept() {
+      if (!departmentId) return
+      const data = await getDepartment(departmentId)
+      setDept(data)
+    }
+    loadDept()
+  }, [departmentId])
+
+  const handleSaveDept = async () => {
+    if (!dept) return
+    setIsSaving(true)
+    try {
+      await updateDepartment(dept.id, {
+        name: dept.name,
+        managerName: dept.managerName,
+        managerEmail: dept.managerEmail
+      })
+      alert('Changes saved successfully')
+    } catch (e) {
+      console.error(e)
+      alert('Error saving changes')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleAddUser = async () => {
+    if (!newUserName || !newUserEmail) return
+    setIsSaving(true)
+    try {
+      const tempId = `user_${Date.now()}`
+      await createAdminUser(tempId, {
+        fullName: newUserName,
+        email: newUserEmail,
+        role: 'admin',
+        departmentId: departmentId
+      })
+      setNewUserName('')
+      setNewUserEmail('')
+      alert('User added successfully')
+    } catch (e) {
+      alert('Error adding user')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (!dept) return <div className="p-8 text-center text-[#6b6890]">Loading settings...</div>
 
   return (
-    <div className="grid grid-cols-2 gap-4">
-      {/* Department Settings */}
-      <div className="bg-white rounded-2xl p-5 border border-[#e8e7f5]">
-        <h3 className="text-sm font-bold text-[#1e1c4a] mb-4">הגדרות מחלקה</h3>
-        
-        {/* Logo Upload */}
-        <div className="border-2 border-dashed border-[#e8e7f5] rounded-xl p-5 text-center cursor-pointer mb-4 hover:border-[#2ecfaa] hover:bg-[#e4faf5] transition-colors">
-          <div className="text-2xl mb-2">📷</div>
-          <div className="text-xs text-[#a8a6c4]">לחץ להעלאת לוגו מחלקה</div>
+    <div className="space-y-8" dir="rtl">
+      {/* Department Info Section */}
+      <section className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
+        <h3 className="text-lg font-bold text-[#1e1c4a] mb-6">General Settings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[#6b6890]">Department Name</label>
+            <Input 
+              value={dept.name} 
+              onChange={e => setDept({...dept, name: e.target.value})} 
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[#6b6890]">WhatsApp Status</label>
+            <div className="p-3 bg-[#f7f7fc] border border-[#e8e7f5] rounded-lg text-sm text-[#a8a6c4]">
+              Not connected
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[#6b6890]">Manager Name</label>
+            <Input 
+              value={dept.managerName || ''} 
+              onChange={e => setDept({...dept, managerName: e.target.value})} 
+              placeholder="e.g. Dr. Sara Levi"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[#6b6890]">Manager Email</label>
+            <Input 
+              value={dept.managerEmail || ''} 
+              onChange={e => setDept({...dept, managerEmail: e.target.value})} 
+              dir="ltr"
+            />
+          </div>
         </div>
-
-        <div className="mb-3">
-          <label className="block text-xs text-[#a8a6c4] font-semibold mb-1 uppercase tracking-wide">שם המחלקה</label>
-          <Input
-            value={departmentName}
-            onChange={(e) => setDepartmentName(e.target.value)}
-            className="w-full px-3 py-2 border-[#e8e7f5] rounded-lg text-sm focus:border-[#2ecfaa]"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-xs text-[#a8a6c4] font-semibold mb-1 uppercase tracking-wide">מנהל המחלקה</label>
-          <Input
-            value="ד״ר שרה לוי"
-            className="w-full px-3 py-2 border-[#e8e7f5] rounded-lg text-sm focus:border-[#2ecfaa]"
-            readOnly
-          />
-        </div>
-
-        <Button className="w-full bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold py-3 rounded-xl">
-          שמור שינויים
+        <Button 
+          onClick={handleSaveDept} 
+          disabled={isSaving}
+          className="mt-6 bg-[#2a7c7c] hover:bg-[#236969] text-white"
+        >
+          Save Department Changes
         </Button>
-      </div>
+      </section>
 
-      {/* Integration Settings */}
-      <div className="bg-white rounded-2xl p-5 border border-[#e8e7f5]">
-        <h3 className="text-sm font-bold text-[#1e1c4a] mb-4">אינטגרציות</h3>
-        
-        {whatsappEnabled && (
-          <div className="bg-[#e4faf5] rounded-xl p-3 mb-4 flex items-center gap-2 border border-[#b8eedd]">
-            <span className="text-lg">✓</span>
-            <span className="text-sm font-semibold text-[#0a5c4a]">WhatsApp מחובר</span>
-          </div>
-        )}
-
-        <div className="mb-3">
-          <label className="block text-xs text-[#a8a6c4] font-semibold mb-1 uppercase tracking-wide">מספר WhatsApp</label>
-          <Input
-            value="+972-50-1234567"
-            className="w-full px-3 py-2 border-[#e8e7f5] rounded-lg text-sm focus:border-[#2ecfaa]"
+      {/* User Management Section */}
+      <section className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
+        <h3 className="text-lg font-bold text-[#1e1c4a] mb-4">Add Department Users</h3>
+        <div className="flex flex-col md:flex-row gap-4">
+          <Input 
+            placeholder="Full Name" 
+            value={newUserName} 
+            onChange={e => setNewUserName(e.target.value)} 
           />
+          <Input 
+            placeholder="Email Address" 
+            value={newUserEmail} 
+            onChange={e => setNewUserEmail(e.target.value)} 
+            dir="ltr"
+          />
+          <Button 
+            onClick={handleAddUser} 
+            disabled={isSaving}
+            className="bg-[#3d3a9e] hover:bg-[#2e2b85] text-white whitespace-nowrap"
+          >
+            Add User
+          </Button>
         </div>
-
-        <div className="mb-4">
-          <label className="block text-xs text-[#a8a6c4] font-semibold mb-1 uppercase tracking-wide">תבנית הודעה</label>
-          <select className="w-full px-3 py-2 border border-[#e8e7f5] rounded-lg text-sm text-[#1e1c4a] bg-white outline-none focus:border-[#2ecfaa]">
-            <option>תבנית ברירת מחדל</option>
-            <option>תבנית מקוצרת</option>
-            <option>תבנית מורחבת</option>
-          </select>
-        </div>
-
-        <Button className="w-full bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold py-3 rounded-xl">
-          שמור הגדרות
-        </Button>
-      </div>
-
-      {/* User Management */}
-      <div className="col-span-2 bg-white rounded-2xl p-5 border border-[#e8e7f5]">
-        <h3 className="text-sm font-bold text-[#1e1c4a] mb-4">ניהול משתמשים</h3>
-        <div className="flex gap-3 flex-wrap">
-          <div className="flex-1 min-w-[180px] bg-[#f7f7fc] rounded-xl p-4 border border-[#e8e7f5]">
-            <p className="text-sm font-bold text-[#1e1c4a] mb-1">ד״ר שרה לוי</p>
-            <p className="text-xs text-[#a8a6c4] mb-2">מנהלת מחלקה</p>
-            <button className="text-xs text-[#2a7c7c] font-semibold hover:underline">ערוך</button>
-          </div>
-          <div className="flex-1 min-w-[180px] bg-[#f7f7fc] rounded-xl p-4 border border-[#e8e7f5]">
-            <p className="text-sm font-bold text-[#1e1c4a] mb-1">רחל כהן</p>
-            <p className="text-xs text-[#a8a6c4] mb-2">אחות אחראית</p>
-            <button className="text-xs text-[#2a7c7c] font-semibold hover:underline">ערוך</button>
-          </div>
-          <div className="flex-1 min-w-[180px] border-2 border-dashed border-[#e8e7f5] rounded-xl p-4 flex items-center justify-center cursor-pointer hover:bg-[#e4faf5] hover:border-[#2ecfaa] transition-colors">
-            <span className="text-sm text-[#a8a6c4] font-semibold">+ הוסף משתמש</span>
-          </div>
-        </div>
-      </div>
+      </section>
     </div>
   )
 }
