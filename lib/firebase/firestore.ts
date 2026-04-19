@@ -172,10 +172,25 @@ export async function completeSurveySession(sessionId: string): Promise<void> {
 // Responses
 export async function saveResponse(response: Omit<SurveyResponse, 'id' | 'createdAt'>): Promise<string> {
   if (!db) throw new Error('Firebase not initialized')
-  const docRef = await addDoc(collection(db, 'responses'), {
-    ...response,
+  
+  // Remove undefined values - Firebase doesn't accept them
+  const cleanResponse: Record<string, unknown> = {
+    sessionId: response.sessionId,
+    questionId: response.questionId,
     createdAt: Timestamp.now(),
-  })
+  }
+  
+  if (response.answerValue !== undefined) {
+    cleanResponse.answerValue = response.answerValue
+  }
+  if (response.answerValues !== undefined && response.answerValues.length > 0) {
+    cleanResponse.answerValues = response.answerValues
+  }
+  if (response.answerText !== undefined && response.answerText.trim() !== '') {
+    cleanResponse.answerText = response.answerText
+  }
+  
+  const docRef = await addDoc(collection(db, 'responses'), cleanResponse)
   return docRef.id
 }
 
