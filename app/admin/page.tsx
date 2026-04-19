@@ -27,48 +27,62 @@ export default function AdminDashboardPage() {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        router.push('/admin/login')
-        return
+        console.log("Auth: No user logged in, redirecting to login...");
+        router.push('/admin/login');
+        return;
       }
 
+      console.log("Auth: User logged in as:", user.email);
+
       if (!user.email) {
-        setStatus('error')
-        return
+        console.error("Auth: User has no email!");
+        setStatus('error');
+        return;
       }
 
       try {
-        const adminUser = await getAdminUserByEmail(user.email)
+        // Search for user permissions in Firestore
+        const adminUser = await getAdminUserByEmail(user.email);
         
-        if (!adminUser || !adminUser.role) {
-          setStatus('error')
-          return
+        if (!adminUser) {
+          console.error("Permissions: Email not found in 'users' collection.");
+          setStatus('error');
+          return;
         }
 
-        setCurrentUser(adminUser)
-        const allDepts = await getAllDepartments()
-        setDepartments(allDepts)
+        if (!adminUser.role) {
+          console.error("Permissions: User found but is missing the 'role' field.");
+          setStatus('error');
+          return;
+        }
+
+        console.log("Permissions: Access granted with role:", adminUser.role);
+        setCurrentUser(adminUser);
+        
+        const allDepts = await getAllDepartments();
+        setDepartments(allDepts);
 
         if (adminUser.departmentId) {
-          setSelectedDepartment(adminUser.departmentId)
+          setSelectedDepartment(adminUser.departmentId);
         } else if (allDepts.length > 0) {
-          setSelectedDepartment(allDepts[0].id)
+          setSelectedDepartment(allDepts[0].id);
         }
 
-        setStatus('ready')
+        setStatus('ready');
       } catch (err) {
-        console.error("Dashboard initialization error:", err)
-        setStatus('error')
+        console.error("Initialization Error:", err);
+        setStatus('error');
       }
-    })
+    });
 
-    return () => unsubscribe()
-  }, [router])
+    return () => unsubscribe();
+  }, [router]);
 
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
         <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
-        <div className="text-[#6b6890] font-bold">טוען את נתוני המחלקה...</div>
+        <div className="text-[#6b6890] font-bold">בודק הרשאות גישה...</div>
       </div>
     )
   }
@@ -77,9 +91,9 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
         <h1 className="text-2xl font-bold text-[#1e1c4a] mb-2">גישה נדחתה</h1>
-        <p className="text-[#6b6890] mb-6">לא נמצאו הרשאות ניהול עבור המשתמש שלך.</p>
+        <p className="text-[#6b6890] mb-6">לא נמצאו הרשאות ניהול עבור המייל המחובר.</p>
         <div className="bg-gray-100 p-4 rounded-lg mb-6 text-sm break-all">
-          <p className="font-bold mb-1">האימייל איתו ניסית להתחבר:</p>
+          <p className="font-bold mb-1">המייל איתו את מחוברת:</p>
           <code>{auth?.currentUser?.email}</code>
         </div>
         <button onClick={() => window.location.reload()} className="bg-[#2a7c7c] text-white px-6 py-2 rounded-lg">נסה שוב</button>
