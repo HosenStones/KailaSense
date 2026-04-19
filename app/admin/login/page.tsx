@@ -3,93 +3,84 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link'
+import { signIn } from '@/lib/firebase/auth-context'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { signIn } from '@/lib/firebase/auth-context'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 
-export default function AdminLoginPage() {
-  const router = useRouter()
+export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
     setIsLoading(true)
-
+    setError('')
     try {
       await signIn(email, password)
       router.push('/admin')
-    } catch {
-      setError('שם משתמש או סיסמה שגויים')
+    } catch (err: any) {
+      setError('פרטי התחברות שגויים. אנא נסי שוב.')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#eeedf9] to-[#e4faf5] px-4">
-      <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-xl">
-        {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-3 mb-2 hover:opacity-80 transition-opacity">
-          <Image
-            src="/images/kaila-logo-horizontal.png"
-            alt="Kaila Sense - לחץ לחזרה לסקר"
-            width={180}
-            height={60}
-            className="h-12 w-auto"
-            priority
-          />
-        </Link>
-        <p className="text-center text-[#a8a6c4] text-sm mb-8">ממשק ניהול</p>
-
-        <h2 className="text-xl font-bold text-[#1e1c4a] text-center mb-6">כניסה למערכת</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-[#6b6890] mb-2">אימייל</label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@hospital.org.il"
-              className="w-full px-4 py-3 bg-[#f7f7fc] border-[#e8e7f5] rounded-xl focus:border-[#2ecfaa] focus:ring-[#2ecfaa]"
-              required
+    <div className="min-h-screen bg-[#f7f7fc] flex items-center justify-center p-4" dir="rtl">
+      <Card className="max-w-md w-full border-[#e8e7f5] shadow-sm">
+        <CardHeader className="space-y-4 text-center pb-8">
+          <div className="flex justify-center mb-2">
+            <Image 
+              src="/images/kaila-logo-vertical.png" 
+              alt="KailaSense" 
+              width={120} 
+              height={80} 
+              className="h-16 w-auto"
             />
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-[#6b6890] mb-2">סיסמה</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 bg-[#f7f7fc] border-[#e8e7f5] rounded-xl focus:border-[#2ecfaa] focus:ring-[#2ecfaa]"
-              required
-            />
-          </div>
-
-          {error && (
-            <p className="text-[#e83f8a] text-sm text-center">{error}</p>
-          )}
-
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-[#2a7c7c] to-[#3d9e9e] hover:from-[#236969] hover:to-[#358a8a] text-white font-bold py-4 text-base rounded-xl transition-colors"
-          >
-            {isLoading ? 'מתחבר...' : 'כניסה'}
-          </Button>
-        </form>
-
-        <p className="text-center text-[#a8a6c4] text-xs mt-6">
-          בעיות בכניסה? פנה למנהל המערכת
-        </p>
-      </div>
+          <CardTitle className="text-2xl font-bold text-[#1e1c4a]">כניסה למערכת</CardTitle>
+          <CardDescription className="text-[#6b6890]">הזיני אימייל וסיסמה כדי לנהל את הסקרים</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#1e1c4a]">אימייל</label>
+              <Input 
+                type="email" 
+                placeholder="name@hospital.org.il" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border-[#e8e7f5] focus:border-[#2a7c7c]"
+                required
+                dir="ltr"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-[#1e1c4a]">סיסמה</label>
+              <Input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="border-[#e8e7f5] focus:border-[#2a7c7c]"
+                required
+                dir="ltr"
+              />
+            </div>
+            {error && <div className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border border-red-100">{error}</div>}
+            <Button 
+              type="submit" 
+              className="w-full bg-[#2a7c7c] hover:bg-[#236969] text-white py-6 text-lg font-semibold"
+              disabled={isLoading}
+            >
+              {isLoading ? 'מתחבר...' : 'כניסה'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }
