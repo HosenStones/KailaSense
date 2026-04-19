@@ -39,12 +39,15 @@ export default function SuperAdminPage() {
   useEffect(() => {
     if (!auth) return
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // Validate login status and email presence
       if (!user || !user.email) { 
         router.push('/admin/login')
         return 
       }
       
       const adminData = await getAdminUserByEmail(user.email)
+      
+      // Enforce super_admin role check
       if (adminData?.role !== 'super_admin') { 
         router.push('/admin')
         return 
@@ -105,7 +108,7 @@ export default function SuperAdminPage() {
   if (loading) return (
     <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
       <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
-      <div className="text-[#6b6890] font-bold">מוודא הרשאות סופר-אדמין...</div>
+      <div className="text-[#6b6890] font-bold">מוודא הרשאות סופר אדמין...</div>
     </div>
   )
 
