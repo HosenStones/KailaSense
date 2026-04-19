@@ -10,7 +10,7 @@ import type { AdminUser } from '@/lib/types'
 interface AdminHeaderProps {
   user: AdminUser | null
   title: string
-  // Callback function to handle navigation to settings
+  // Callback to trigger navigation to the settings tab
   onProfileClick?: () => void 
   gradientClass?: string
 }
@@ -31,7 +31,6 @@ export function AdminHeader({
   return (
     <header className={`bg-gradient-to-r ${gradientClass} h-14 flex items-center justify-between px-6 sticky top-0 z-50`} dir="rtl">
       <div className="flex items-center gap-4">
-        {/* Home link and Logo */}
         <Link href="/" className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-colors">
           <Image 
             src="/images/kaila-logo-horizontal.png" 
@@ -45,7 +44,7 @@ export function AdminHeader({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Clickable Profile Section */}
+        {/* Clickable profile area that invokes the onProfileClick callback */}
         <button
           onClick={onProfileClick}
           className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-all text-right"
@@ -59,7 +58,6 @@ export function AdminHeader({
           </span>
         </button>
 
-        {/* Sign Out Button */}
         <Button 
           variant="ghost" 
           onClick={handleSignOut} 
