@@ -8,18 +8,22 @@ import { AdminUser, Department, Question, Response } from '../types';
 // Fetch user by email to support manual creation in 'users' collection
 export async function getAdminUserByEmail(email: string): Promise<AdminUser | null> {
   try {
+    // Querying the 'users' collection for the specific email
     const q = query(collection(db, 'users'), where('email', '==', email), limit(1));
     const querySnapshot = await getDocs(q);
     
     if (querySnapshot.empty) {
-      console.warn(`No user found with email: ${email}`);
+      console.warn(`Firestore: No document found in 'users' collection with email: ${email}`);
       return null;
     }
     
     const userDoc = querySnapshot.docs[0];
-    return { id: userDoc.id, ...userDoc.data() } as AdminUser;
+    const data = userDoc.data();
+    console.log("Firestore: User document found:", data);
+    
+    return { id: userDoc.id, ...data } as AdminUser;
   } catch (error) {
-    console.error("Error fetching admin user by email:", error);
+    console.error("Firestore: Error fetching admin user by email:", error);
     return null;
   }
 }
