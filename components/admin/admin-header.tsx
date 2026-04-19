@@ -7,59 +7,31 @@ import { signOut } from '@/lib/firebase/auth-context'
 import { useRouter } from 'next/navigation'
 import type { AdminUser } from '@/lib/types'
 
-interface AdminHeaderProps {
-  user: AdminUser | null
-  title: string
-  onProfileClick?: () => void 
-}
-
-export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
+export function AdminHeader({ user, title, onProfileClick }: { user: AdminUser | null, title: string, onProfileClick?: () => void }) {
   const router = useRouter()
-
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/admin/login')
-  }
-
-  // Changed text to "ממשק ניהול" and matched styling to user name
   const displayTitle = title === "ממשק מנהלים" ? "ממשק ניהול" : title
 
   return (
     <header className="bg-gradient-to-r from-[#2a7c7c] to-[#3d9e9e] h-14 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm" dir="rtl">
       <div className="flex items-center gap-4">
-        {/* Logo container */}
         <Link href="/" className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-colors">
-          <Image 
-            src="/images/kaila-logo-vertical.png" 
-            alt="Kaila" 
-            width={40} 
-            height={40} 
-            className="h-8 w-auto" 
-          />
+          <Image src="/images/kaila-logo-vertical.png" alt="Kaila" width={40} height={40} className="h-8 w-auto" />
         </Link>
-        {/* Styled "ממשק ניהול" to match user name style */}
-        <span className="text-white text-sm font-semibold border-r border-white/20 pr-4">
+        {/* Adjusted title style to match user name: Bold, White, same size */}
+        <span className="text-white text-sm font-bold border-r border-white/20 pr-4">
           {displayTitle}
         </span>
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Profile button */}
-        <button
-          onClick={onProfileClick}
-          className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-all text-right"
-        >
+        <button onClick={onProfileClick} className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-all text-right">
           <div className="w-7 h-7 rounded-full bg-[#7dd3d3] flex items-center justify-center text-xs font-bold text-[#1e4a40]">
             {user?.fullName?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??'}
           </div>
-          <span className="text-white text-sm font-semibold">{user?.fullName || 'משתמש'}</span>
+          <span className="text-white text-sm font-bold">{user?.fullName || 'משתמש'}</span>
         </button>
 
-        <Button 
-          variant="ghost" 
-          onClick={handleSignOut} 
-          className="text-white/80 hover:text-white hover:bg-white/15 text-sm border border-white/25 rounded-lg px-3 py-1.5 h-auto"
-        >
+        <Button variant="ghost" onClick={() => signOut().then(() => router.push('/admin/login'))} className="text-white/80 hover:text-white hover:bg-white/15 text-sm border border-white/25 rounded-lg px-3 py-1.5 h-auto">
           יציאה
         </Button>
       </div>
