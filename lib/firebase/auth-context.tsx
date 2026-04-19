@@ -5,26 +5,17 @@ import {
   User, 
   onAuthStateChanged, 
   signInWithEmailAndPassword, 
-  signOut as firebaseSignOut,
-  createUserWithEmailAndPassword
+  signOut as firebaseSignOut
 } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { auth, db } from './config'
-
-interface AdminUser {
-  id: string
-  email: string
-  fullName: string
-  role: 'admin' | 'super_admin'
-  departmentId: string | null
-}
+import { auth } from './config'
+import { getAdminUserByEmail } from './firestore'
+import type { AdminUser } from '../types'
 
 interface AuthContextType {
   user: User | null
   adminUser: AdminUser | null
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, fullName: string, departmentId?: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -36,29 +27,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !auth) return
+    if (!auth) return;
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser)
       
-      if (firebaseUser) {
-        // Fetch admin user data from Firestore
+      if (firebaseUser?.email) {
         try {
-          const adminDoc = await getDoc(doc(db, 'users', firebaseUser.uid))
-          if (adminDoc.exists()) {
-            const data = adminDoc.data()
-            setAdminUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email || '',
-              fullName: data.fullName || '',
-              role: data.role || 'admin',
-              departmentId: data.departmentId || null,
-            })
-          } else {
-            setAdminUser(null)
-          }
+          // Fetch from 'users' collection as defined in firestore.ts
+          const data = await getAdminUserByEmail(firebaseUser.email)
+          setAdminUser(data)
         } catch (error) {
-          console.error('Error fetching admin user:', error)
+          console.error('AuthContext: Error fetching user:', error)
           setAdminUser(null)
         }
       } else {
@@ -72,33 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    if (!auth) throw new Error('Firebase not initialized')
-    await signInWithEmailAndPassword(auth, email, password)
-  }
-
-  const signUp = async (email: string, password: string, fullName: string, departmentId?: string) => {
-    if (!auth || !db) throw new Error('Firebase not initialized')
-    
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-    
-    // Create admin user document
-    await setDoc(doc(db, 'users', userCredential.user.uid), {
-      email,
-      fullName,
-      role: 'admin',
-      departmentId: departmentId || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    })
+    return signInWithEmailAndPassword(auth, email, password)
   }
 
   const signOut = async () => {
-    if (!auth) throw new Error('Firebase not initialized')
-    await firebaseSignOut(auth)
+    return firebaseSignOut(auth)
   }
 
   return (
-    <AuthContext.Provider value={{ user, adminUser, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, adminUser, loading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
@@ -112,13 +74,10 @@ export function useAuth() {
   return context
 }
 
-// Export standalone auth functions for use outside of context
 export async function signIn(email: string, password: string) {
-  if (!auth) throw new Error('Firebase not initialized')
   return signInWithEmailAndPassword(auth, email, password)
 }
 
 export async function signOut() {
-  if (!auth) throw new Error('Firebase not initialized')
   return firebaseSignOut(auth)
 }
