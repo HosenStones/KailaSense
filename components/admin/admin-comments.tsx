@@ -40,8 +40,15 @@ export function AdminComments({ departmentId }: { departmentId: string }) {
     loadComments()
   }, [departmentId])
 
-  if (loading) return <div className="p-8 text-center">טוען תגובות...</div>
-
+ // Inside app/admin/page.tsx - update the loading state
+if (status === 'loading') {
+  return (
+    <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
+      <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
+      <div className="text-[#6b6890] font-bold">טוען תגובות...</div>
+    </div>
+  )
+}
   return (
     <div className="space-y-4" dir="rtl">
       {comments.length === 0 ? (
