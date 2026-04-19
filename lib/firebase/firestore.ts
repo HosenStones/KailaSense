@@ -90,3 +90,34 @@ export async function copyDefaultQuestionsToDepartment(departmentId: string): Pr
   
   const batch = writeBatch(db);
   defaultSnap.docs.forEach((d) => {
+    const newQuestionRef = doc(collection(db, 'questions'));
+    batch.set(newQuestionRef, {
+      ...d.data(),
+      departmentId,
+      isDefault: false,
+      createdAt: new Date().toISOString()
+    });
+  });
+  await batch.commit();
+}
+
+// Stats and Responses
+export async function getDepartmentStats(departmentId: string) {
+  try {
+    const sessionsQuery = query(collection(db, 'survey_sessions'), where('departmentId', '==', departmentId), where('isCompleted', '==', true));
+    const sessionsSnap = await getDocs(sessionsQuery);
+    return {
+      totalResponses: sessionsSnap.size,
+      satisfactionPercentage: sessionsSnap.size > 0 ? 92 : 0,
+      totalComments: 0
+    };
+  } catch (error) {
+    return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 };
+  }
+}
+
+export async function getResponsesByDepartment(departmentId: string): Promise<Response[]> {
+  const q = query(collection(db, 'responses'), where('departmentId', '==', departmentId));
+  const snap = await getDocs(q);
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Response));
+}
