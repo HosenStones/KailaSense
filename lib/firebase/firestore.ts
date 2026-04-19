@@ -288,7 +288,7 @@ export async function getResponsesByDepartment(departmentId: string): Promise<Su
 
 export async function getAdminUser(uid: string): Promise<AdminUser | null> {
   if (!db) return null
-  const docRef = doc(db, 'admin_users', uid)
+  const docRef = doc(db, 'users', uid)
   const docSnap = await getDoc(docRef)
   if (!docSnap.exists()) return null
   const data = docSnap.data()
@@ -305,7 +305,7 @@ export async function getAdminUser(uid: string): Promise<AdminUser | null> {
 
 export async function createAdminUser(uid: string, user: Omit<AdminUser, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
   if (!db) throw new Error('Firebase not initialized')
-  await setDoc(doc(db, 'admin_users', uid), {
+  await setDoc(doc(db, 'users', uid), {
     ...user,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
@@ -314,7 +314,7 @@ export async function createAdminUser(uid: string, user: Omit<AdminUser, 'id' | 
 
 export async function updateAdminUser(uid: string, updates: Partial<AdminUser>): Promise<void> {
   if (!db) throw new Error('Firebase not initialized')
-  const docRef = doc(db, 'admin_users', uid)
+  const docRef = doc(db, 'users', uid)
   await updateDoc(docRef, {
     ...updates,
     updatedAt: Timestamp.now(),
@@ -323,12 +323,12 @@ export async function updateAdminUser(uid: string, updates: Partial<AdminUser>):
 
 export async function deleteAdminUser(uid: string): Promise<void> {
   if (!db) throw new Error('Firebase not initialized')
-  await deleteDoc(doc(db, 'admin_users', uid))
+  await deleteDoc(doc(db, 'users', uid))
 }
 
 export async function getAllAdminUsers(): Promise<AdminUser[]> {
   if (!db) return []
-  const querySnapshot = await getDocs(collection(db, 'admin_users'))
+  const querySnapshot = await getDocs(collection(db, 'users'))
   return querySnapshot.docs.map(doc => {
     const data = doc.data()
     return {
@@ -346,7 +346,7 @@ export async function getAllAdminUsers(): Promise<AdminUser[]> {
 export async function getAdminUsersByDepartment(departmentId: string): Promise<AdminUser[]> {
   if (!db) return []
   const q = query(
-    collection(db, 'admin_users'),
+    collection(db, 'users'),
     where('departmentId', '==', departmentId)
   )
   const querySnapshot = await getDocs(q)
