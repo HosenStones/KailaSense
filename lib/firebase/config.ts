@@ -1,4 +1,4 @@
-import { initializeApp, getApps, FirebaseApp } from 'firebase/app'
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
 import { getAuth, Auth } from 'firebase/auth'
 import { getFirestore, Firestore } from 'firebase/firestore'
 
@@ -12,14 +12,10 @@ const firebaseConfig = {
   measurementId: "G-4ELNCVQ8ZX"
 };
 
-// Initialize Firebase - works both on client and server
-const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
-const db: Firestore = getFirestore(app)
+// Initialize Firebase
+const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Auth only available on client side
-let auth: Auth | null = null
-if (typeof window !== 'undefined') {
-  auth = getAuth(app)
-}
-
-export { app, auth, db }
+// Export services
+export const auth: Auth = getAuth(app);
+export const db: Firestore = getFirestore(app);
+export default app;
