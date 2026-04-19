@@ -32,11 +32,9 @@ export default function AdminDashboardPage() {
       }
 
       try {
-        console.log("Logged in user UID:", user.uid);
         const adminUser = await getAdminUser(user.uid)
         
         if (!adminUser || !adminUser.role) {
-          console.error("User found but has no role or record in 'users' collection");
           setStatus('error')
           return
         }
@@ -53,7 +51,7 @@ export default function AdminDashboardPage() {
 
         setStatus('ready')
       } catch (err) {
-        console.error("Dashboard init error:", err)
+        console.error("Initialization error:", err)
         setStatus('error')
       }
     })
@@ -74,27 +72,11 @@ export default function AdminDashboardPage() {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
         <h1 className="text-2xl font-bold text-[#1e1c4a] mb-2">גישה נדחתה</h1>
-        <p className="text-[#6b6890] mb-6 max-w-md">
-          לא נמצאו הרשאות ניהול עבור המשתמש שלך. 
-          ודאי שב-Firebase קיים מסמך בקולקשן <code className="bg-gray-200 px-1 rounded">users</code> 
-          שה-ID שלו הוא ה-UID שלך, ושיש לו שדה <code className="bg-gray-200 px-1 rounded">role</code> עם הערך <code className="bg-gray-200 px-1 rounded">super_admin</code>.
-        </p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="bg-[#2a7c7c] text-white px-6 py-2 rounded-lg"
-        >
-          נסה שוב
-        </button>
+        <p className="text-[#6b6890] mb-6">לא נמצאו הרשאות ניהול עבור המשתמש שלך בבסיס הנתונים.</p>
+        <button onClick={() => window.location.reload()} className="bg-[#2a7c7c] text-white px-6 py-2 rounded-lg">נסה שוב</button>
       </div>
     )
   }
-
-  const tabs: { id: TabId; label: string; icon: string }[] = [
-    { id: 'insights', label: 'תובנות', icon: '📊' },
-    { id: 'questions', label: 'שאלות', icon: '📋' },
-    { id: 'comments', label: 'תגובות', icon: '💬' },
-    { id: 'settings', label: 'הגדרות', icon: '⚙️' },
-  ]
 
   const availableDepartments = currentUser?.role === 'super_admin' 
     ? departments 
@@ -123,21 +105,22 @@ export default function AdminDashboardPage() {
             </select>
           </div>
         ) : (
-          <div className="text-sm font-semibold text-[#1e1c4a]">
-            מחלקה: {availableDepartments[0]?.name || 'כללי'}
-          </div>
+          <div className="text-sm font-semibold text-[#1e1c4a]">מחלקה: {availableDepartments[0]?.name || 'כללי'}</div>
         )}
       </div>
 
       <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1">
-        {tabs.map((tab) => (
+        {[
+          { id: 'insights', label: 'תובנות', icon: '📊' },
+          { id: 'questions', label: 'שאלות', icon: '📋' },
+          { id: 'comments', label: 'תגובות', icon: '💬' },
+          { id: 'settings', label: 'הגדרות', icon: '⚙️' },
+        ].map((tab) => (
           <button
             key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => setActiveTab(tab.id as TabId)}
             className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors ${
-              activeTab === tab.id
-                ? 'text-[#2a7c7c] border-[#3d9e9e]'
-                : 'text-[#a8a6c4] border-transparent hover:text-[#6b6890]'
+              activeTab === tab.id ? 'text-[#2a7c7c] border-[#3d9e9e]' : 'text-[#a8a6c4] border-transparent hover:text-[#6b6890]'
             }`}
           >
             {tab.icon} {tab.label}
@@ -146,16 +129,10 @@ export default function AdminDashboardPage() {
       </nav>
 
       <main className="p-6 max-w-6xl mx-auto">
-        {!selectedDepartment ? (
-          <div className="text-center p-12 text-[#a8a6c4]">אנא בחרי מחלקה לצפייה בנתונים</div>
-        ) : (
-          <>
-            {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
-            {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
-            {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
-            {activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
-          </>
-        )}
+        {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
+        {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
+        {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
+        {activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
       </main>
     </div>
   )
