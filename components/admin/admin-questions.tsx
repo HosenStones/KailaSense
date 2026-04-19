@@ -20,22 +20,20 @@ import {
 import { getQuestionsByDepartment, deleteQuestion, addQuestion } from '@/lib/firebase/firestore'
 import type { Question } from '@/lib/types'
 
-interface AdminQuestionsProps {
-  departmentId: string
-}
+type QuestionTypeOption = 'emoji' | 'choice' | 'multi_choice' | 'stars' | 'open_text'
 
-export function AdminQuestions({ departmentId }: AdminQuestionsProps) {
+export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [isLoading, setIsLoading] = useState(true)
   
   // State for Add Question Modal
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newQuestionText, setNewQuestionText] = useState('')
-  const [newQuestionType, setNewQuestionType] = useState<'emoji' | 'choice' | 'multi_choice' | 'stars' | 'open_text'>('emoji')
+  const [newQuestionType, setNewQuestionType] = useState<QuestionTypeOption>('emoji')
   const [isAdding, setIsAdding] = useState(false)
 
   const typeLabels: Record<string, string> = {
-    emoji: 'אמוג\'י',
+    emoji: "אמוג'י",
     choice: 'בחירה',
     multi_choice: 'רב-בחירה',
     stars: 'כוכבים',
@@ -108,9 +106,7 @@ export function AdminQuestions({ departmentId }: AdminQuestionsProps) {
     }
   }
 
-  if (isLoading) {
-    return <div className="text-center p-4 text-[#a8a6c4]">טוען שאלות...</div>
-  }
+  if (isLoading) return <div className="text-center p-4 text-[#a8a6c4]">Loading questions...</div>
 
   return (
     <div>
@@ -139,7 +135,7 @@ export function AdminQuestions({ departmentId }: AdminQuestionsProps) {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-[#1e1c4a]">סוג תגובה</label>
-                  <Select value={newQuestionType} onValueChange={(v: any) => setNewQuestionType(v)}>
+                  <Select value={newQuestionType} onValueChange={(v: QuestionTypeOption) => setNewQuestionType(v)}>
                     <SelectTrigger className="mt-1 text-right" dir="rtl">
                       <SelectValue />
                     </SelectTrigger>
