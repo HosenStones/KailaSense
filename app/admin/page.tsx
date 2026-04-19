@@ -16,7 +16,7 @@ type TabId = 'insights' | 'questions' | 'comments' | 'settings'
 
 export default function AdminDashboardPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
+  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null)
   const [departments, setDepartments] = useState<Department[]>([])
   const [activeTab, setActiveTab] = useState<TabId>('insights')
@@ -31,30 +31,58 @@ export default function AdminDashboardPage() {
         return
       }
 
-      // Fetch user from 'users' collection
-      const adminUser = await getAdminUser(user.uid)
-      setCurrentUser(adminUser)
+      try {
+        // Fetch user permissions from 'users' collection
+        const adminUser = await getAdminUser(user.uid)
+        
+        if (!adminUser) {
+          setStatus('error')
+          return
+        }
 
-      // Initial data fetch
-      const allDepts = await getAllDepartments()
-      setDepartments(allDepts)
+        setCurrentUser(adminUser)
 
-      if (adminUser?.departmentId) {
-        setSelectedDepartment(adminUser.departmentId)
-      } else if (allDepts.length > 0) {
-        setSelectedDepartment(allDepts[0].id)
+        // Load department data
+        const allDepts = await getAllDepartments()
+        setDepartments(allDepts)
+
+        // Default selection logic
+        if (adminUser.departmentId) {
+          setSelectedDepartment(adminUser.departmentId)
+        } else if (allDepts.length > 0) {
+          setSelectedDepartment(allDepts[0].id)
+        }
+
+        setStatus('ready')
+      } catch (err) {
+        console.error("Dashboard init error:", err)
+        setStatus('error')
       }
-
-      setIsLoading(false)
     })
 
     return () => unsubscribe()
   }, [router])
 
-  if (isLoading) {
+  if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-[#f7f7fc] flex items-center justify-center" dir="rtl">
-        <div className="text-[#6b6890] font-medium">טוען את ממשק הניהול...</div>
+      <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
+        <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="text-[#6b6890] font-bold">טוען את ממשק הניהול...</div>
+      </div>
+    )
+  }
+
+  if (status === 'error') {
+    return (
+      <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <h1 className="text-2xl font-bold text-[#1e1c4a] mb-2">גישה נדחתה או שגיאת חיבור</h1>
+        <p className="text-[#6b6890] mb-6">לא מצאנו הרשאות ניהול עבור המשתמש שלך בבסיס הנתונים.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="bg-[#2a7c7c] text-white px-6 py-2 rounded-lg"
+        >
+          נסה שוב
+        </button>
       </div>
     )
   }
@@ -72,22 +100,22 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f7f7fc]" dir="rtl">
-      {/* Header with profile navigation logic */}
+      {/* Header with profile navigation */}
       <AdminHeader 
         user={currentUser} 
         title="ממשק מנהלים" 
         onProfileClick={() => setActiveTab('settings')}
       />
 
-      {/* Department Selector */}
+      {/* Select Department Row */}
       <div className="bg-white px-6 py-3 border-b border-[#e8e7f5] flex items-center gap-4">
         {availableDepartments.length > 1 ? (
           <div className="flex items-center gap-3">
-            <span className="text-sm font-semibold text-[#1e1c4a]">בחר מחלקה לצפייה:</span>
+            <span className="text-sm font-semibold text-[#1e1c4a]">בחר מחלקה:</span>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="bg-[#f7f7fc] border border-[#e8e7f5] text-[#1e1c4a] text-sm rounded-lg px-3 py-1.5 outline-none focus:border-[#2a7c7c]"
+              className="bg-[#f7f7fc] border border-[#e8e7f5] text-[#1e1c4a] text-sm rounded-lg px-3 py-1.5 focus:border-[#2a7c7c] outline-none"
             >
               {availableDepartments.map((dept) => (
                 <option key={dept.id} value={dept.id}>{dept.name}</option>
@@ -96,12 +124,12 @@ export default function AdminDashboardPage() {
           </div>
         ) : (
           <div className="text-sm font-semibold text-[#1e1c4a]">
-            מציג נתונים עבור: {availableDepartments[0]?.name || 'מחלקה כללית'}
+            מחלקה: {availableDepartments[0]?.name || 'כללי'}
           </div>
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Navigation Tabs */}
       <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1">
         {tabs.map((tab) => (
           <button
@@ -118,10 +146,10 @@ export default function AdminDashboardPage() {
         ))}
       </nav>
 
-      {/* Tab Content Area */}
+      {/* Main Tab Content */}
       <main className="p-6 max-w-6xl mx-auto">
         {!selectedDepartment ? (
-          <div className="text-center p-12 text-[#a8a6c4]">אנא בחרי מחלקה כדי לצפות בנתונים</div>
+          <div className="text-center p-12 text-[#a8a6c4]">אנא בחרי מחלקה לצפייה בנתונים</div>
         ) : (
           <>
             {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
