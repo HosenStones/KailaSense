@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase/config'
 import { 
-  getAdminUser, getAllDepartments, getAllAdminUsers,
+  getAdminUserByEmail, getAllDepartments, getAllAdminUsers,
   createDepartment, updateDepartment, deleteDepartment,
   createAdminUser, updateAdminUser, deleteAdminUser,
   copyDefaultQuestionsToDepartment
@@ -25,13 +25,11 @@ export default function SuperAdminPage() {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
   const [activeTab, setActiveTab] = useState<'departments' | 'users'>('departments')
   
-  // Edit and Add States
   const [editDept, setEditDept] = useState<Department | null>(null)
   const [editUser, setEditUser] = useState<AdminUser | null>(null)
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
   const [isAddDeptOpen, setIsAddDeptOpen] = useState(false)
 
-  // Form states for new items
   const [newDeptName, setNewDeptName] = useState('')
   const [newUserEmail, setNewUserEmail] = useState('')
   const [newUserName, setNewUserName] = useState('')
@@ -41,9 +39,17 @@ export default function SuperAdminPage() {
   useEffect(() => {
     if (!auth) return
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) { router.push('/admin/login'); return }
-      const adminData = await getAdminUser(user.uid)
-      if (adminData?.role !== 'super_admin') { router.push('/admin'); return }
+      if (!user || !user.email) { 
+        router.push('/admin/login')
+        return 
+      }
+      
+      const adminData = await getAdminUserByEmail(user.email)
+      if (adminData?.role !== 'super_admin') { 
+        router.push('/admin')
+        return 
+      }
+      
       setCurrentUser(adminData)
       await loadData()
       setLoading(false)
@@ -57,7 +63,6 @@ export default function SuperAdminPage() {
     setAdminUsers(users)
   }
 
-  // Handlers for Department
   const handleUpdateDept = async () => {
     if (!editDept) return
     await updateDepartment(editDept.id, { name: editDept.name, nameEn: editDept.nameEn })
@@ -74,7 +79,6 @@ export default function SuperAdminPage() {
     await loadData()
   }
 
-  // Handlers for User
   const handleUpdateUser = async () => {
     if (!editUser) return
     await updateAdminUser(editUser.id, { fullName: editUser.fullName, role: editUser.role, departmentId: editUser.departmentId })
@@ -98,31 +102,33 @@ export default function SuperAdminPage() {
     await loadData()
   }
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  if (loading) return (
+    <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
+      <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
+      <div className="text-[#6b6890] font-bold">מוודא הרשאות סופר-אדמין...</div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-[#f7f7fc]" dir="rtl">
-      {/* Header */}
       <AdminHeader user={currentUser} title="סופר אדמין" gradientClass="from-[#1a5c5c] to-[#2a7c7c]" />
       
-      {/* Tabs */}
       <nav className="bg-white border-b border-[#e8e7f5] flex gap-4 px-6">
-        <button onClick={() => setActiveTab('departments')} className={`py-4 px-2 border-b-2 ${activeTab === 'departments' ? 'border-[#1a5c5c] text-[#1a5c5c]' : 'border-transparent'}`}>מחלקות</button>
-        <button onClick={() => setActiveTab('users')} className={`py-4 px-2 border-b-2 ${activeTab === 'users' ? 'border-[#1a5c5c] text-[#1a5c5c]' : 'border-transparent'}`}>משתמשים</button>
+        <button onClick={() => setActiveTab('departments')} className={`py-4 px-2 border-b-2 ${activeTab === 'departments' ? 'border-[#1a5c5c] text-[#1a5c5c]' : 'border-transparent'}`}>ניהול מחלקות</button>
+        <button onClick={() => setActiveTab('users')} className={`py-4 px-2 border-b-2 ${activeTab === 'users' ? 'border-[#1a5c5c] text-[#1a5c5c]' : 'border-transparent'}`}>ניהול משתמשים</button>
       </nav>
 
-      {/* Main Content */}
       <main className="p-6 max-w-6xl mx-auto space-y-4">
         {activeTab === 'departments' ? (
           <>
-            <Button onClick={() => setIsAddDeptOpen(true)} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">+ הוסף מחלקה</Button>
+            <Button onClick={() => setIsAddDeptOpen(true)} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">+ הוסף מחלקה חדשה</Button>
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
               <table className="w-full text-right">
-                <thead className="bg-gray-50"><tr><th className="p-4">שם מחלקה</th><th className="p-4">פעולות</th></tr></thead>
+                <thead className="bg-gray-50"><tr><th className="p-4 font-semibold text-[#6b6890]">שם מחלקה</th><th className="p-4 font-semibold text-[#6b6890]">פעולות</th></tr></thead>
                 <tbody>
                   {departments.map(d => (
                     <tr key={d.id} className="border-t">
-                      <td className="p-4">{d.name}</td>
+                      <td className="p-4 font-medium text-[#1e1c4a]">{d.name}</td>
                       <td className="p-4 flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setEditDept(d)}>ערוך</Button>
                         <Button variant="destructive" size="sm" onClick={() => deleteDepartment(d.id).then(loadData)}>מחק</Button>
@@ -135,15 +141,15 @@ export default function SuperAdminPage() {
           </>
         ) : (
           <>
-            <Button onClick={() => setIsAddUserOpen(true)} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">+ הוסף משתמש</Button>
+            <Button onClick={() => setIsAddUserOpen(true)} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">+ הוסף משתמש חדש</Button>
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
               <table className="w-full text-right">
-                <thead className="bg-gray-50"><tr><th className="p-4">שם מלא</th><th className="p-4">אימייל</th><th className="p-4">פעולות</th></tr></thead>
+                <thead className="bg-gray-50"><tr><th className="p-4 font-semibold text-[#6b6890]">שם מלא</th><th className="p-4 font-semibold text-[#6b6890]">אימייל</th><th className="p-4 font-semibold text-[#6b6890]">פעולות</th></tr></thead>
                 <tbody>
                   {adminUsers.map(u => (
                     <tr key={u.id} className="border-t">
-                      <td className="p-4">{u.fullName}</td>
-                      <td className="p-4" dir="ltr">{u.email}</td>
+                      <td className="p-4 font-medium text-[#1e1c4a]">{u.fullName}</td>
+                      <td className="p-4 text-[#6b6890]" dir="ltr">{u.email}</td>
                       <td className="p-4 flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setEditUser(u)}>ערוך</Button>
                         <Button variant="destructive" size="sm" onClick={() => deleteAdminUser(u.id).then(loadData)}>מחק</Button>
@@ -157,7 +163,7 @@ export default function SuperAdminPage() {
         )}
       </main>
 
-      {/* Edit Department Dialog */}
+      {/* Dialogs */}
       <Dialog open={!!editDept} onOpenChange={() => setEditDept(null)}>
         <DialogContent dir="rtl">
           <DialogHeader><DialogTitle>עריכת מחלקה</DialogTitle></DialogHeader>
@@ -168,7 +174,6 @@ export default function SuperAdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit User Dialog */}
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
         <DialogContent dir="rtl">
           <DialogHeader><DialogTitle>עריכת משתמש</DialogTitle></DialogHeader>
@@ -179,7 +184,6 @@ export default function SuperAdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add Department Dialog */}
       <Dialog open={isAddDeptOpen} onOpenChange={setIsAddDeptOpen}>
         <DialogContent dir="rtl">
           <DialogHeader><DialogTitle>הוספת מחלקה</DialogTitle></DialogHeader>
@@ -190,7 +194,6 @@ export default function SuperAdminPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Add User Dialog */}
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
         <DialogContent dir="rtl">
           <DialogHeader><DialogTitle>הוספת משתמש</DialogTitle></DialogHeader>
