@@ -17,20 +17,17 @@ const defaultOptions: QuestionOption[] = [
 ]
 
 export function EmojiQuestion({ question, value, onChange }: EmojiQuestionProps) {
-  const options = question.options || defaultOptions
+  // אנחנו לוקחים את האופציות וממיינים אותן מהגבוה (5) לנמוך (1)
+  const options = [...(question.options || defaultOptions)].sort((a, b) => Number(b.value) - Number(a.value))
 
   return (
     <div>
-      {/* Question Tag */}
       <div className="text-xs font-bold text-[#2ecfaa] tracking-wide mb-1 uppercase">שאלה</div>
-      
-      {/* Question Text */}
       <h2 className="text-lg font-bold text-[#1e1c4a] leading-relaxed mb-4">
         {question.questionText}
       </h2>
       
-      {/* Emoji Grid */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2" dir="rtl"> {/* הוספת dir="rtl" מבטיח שהסדר נכון */}
         {options.map((option) => (
           <button
             key={option.value}
