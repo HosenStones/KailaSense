@@ -11,15 +11,18 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
   const [name, setName] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     async function loadDept() {
+      setIsLoading(true)
       const all = await getAllDepartments()
       const current = all.find(d => d.id === departmentId)
       if (current) {
         setDepartment(current)
         setName(current.name)
       }
+      setIsLoading(false)
     }
     if (departmentId) loadDept()
   }, [departmentId])
@@ -37,6 +40,8 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
       setIsSaving(false)
     }
   }
+
+  if (isLoading) return <div className="p-4 text-center text-[#6b6890]">טוען הגדרות מחלקה...</div>
 
   return (
     <div className="max-w-2xl bg-white rounded-2xl border border-[#e8e7f5] p-6 space-y-6" dir="rtl">
