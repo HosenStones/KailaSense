@@ -16,6 +16,9 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
   const labels = ['גרוע', 'לא טוב', 'בסדר', 'טוב', 'מעולה']
   const displayValue = hovered ?? value ?? 0
 
+  // Reverse order: 5 stars on right (first), 1 star on left (last) - RTL friendly
+  const starsReversed = Array.from({ length: maxStars }, (_, i) => maxStars - i)
+
   return (
     <div>
       {/* Question Tag */}
@@ -32,7 +35,7 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
           className="flex items-center justify-center gap-2"
           onMouseLeave={() => setHovered(null)}
         >
-          {Array.from({ length: maxStars }, (_, i) => i + 1).map((star) => (
+          {starsReversed.map((star) => (
             <button
               key={star}
               onClick={() => onChange(star)}
@@ -55,7 +58,7 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
         {/* Label */}
         <div className="h-5 mt-2">
           {displayValue > 0 && (
-            <span className="text-sm font-semibold text-[#3d3a9e]">
+            <span className="text-sm font-semibold text-[#2a7c7c]">
               {labels[displayValue - 1]}
             </span>
           )}

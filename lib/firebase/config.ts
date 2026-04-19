@@ -12,15 +12,14 @@ const firebaseConfig = {
   measurementId: "G-4ELNCVQ8ZX"
 }
 
-// Initialize Firebase
-let app: FirebaseApp
-let auth: Auth
-let db: Firestore
+// Initialize Firebase - works both on client and server
+const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+const db: Firestore = getFirestore(app)
 
+// Auth only available on client side
+let auth: Auth | null = null
 if (typeof window !== 'undefined') {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
   auth = getAuth(app)
-  db = getFirestore(app)
 }
 
 export { app, auth, db }
