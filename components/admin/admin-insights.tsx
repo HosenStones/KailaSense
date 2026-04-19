@@ -18,7 +18,15 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
     fetchRealStats()
   }, [departmentId]) // קריטי: המעקב אחרי ה-ID
 
-  if (loading) return <div>טוען נתונים אמיתיים...</div>
+// Inside app/admin/page.tsx - update the loading state
+if (status === 'loading') {
+  return (
+    <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
+      <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
+      <div className="text-[#6b6890] font-bold">טוען תובנות...</div>
+    </div>
+  )
+}
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
