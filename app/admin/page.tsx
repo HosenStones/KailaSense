@@ -78,7 +78,11 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-[#f7f7fc]" dir="rtl">
       {/* Shared Header Component */}
-      <AdminHeader user={currentUser} title="ממשק מנהלים" />
+     <AdminHeader 
+    user={currentUser} 
+    title="ממשק מנהלים" 
+    onProfileClick={() => setActiveTab('settings')} 
+    />  
 
       {/* Department Selection Area */}
       <div className="bg-white px-6 py-3 border-b border-[#e8e7f5] flex items-center gap-4">
