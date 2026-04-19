@@ -28,13 +28,13 @@ export function SurveyNavigation({
 
   return (
     <div className="flex items-center gap-3">
-      {/* Back button */}
+      {/* Back button - always visible but disabled on first question */}
       <button
         onClick={onBack}
         disabled={!canGoBack}
-        className={`px-4 py-3 bg-[#f7f7fc] border border-[#e8e7f5] rounded-xl text-sm font-medium text-[#6b6890] whitespace-nowrap transition-colors hover:bg-[#e8e7f5] disabled:opacity-0 disabled:pointer-events-none`}
+        className={`px-4 py-3 bg-[#f7f7fc] border border-[#e8e7f5] rounded-xl text-sm font-medium text-[#6b6890] whitespace-nowrap transition-colors hover:bg-[#e8e7f5] disabled:opacity-40 disabled:cursor-not-allowed`}
       >
-        {'→ חזרה'}
+        {'חזרה →'}
       </button>
 
       {/* Next/Submit button */}
@@ -42,7 +42,7 @@ export function SurveyNavigation({
         <Button
           onClick={onSubmit}
           disabled={!canProceed || isSubmitting}
-          className="flex-1 bg-[#3d3a9e] hover:bg-[#302d8a] text-white font-bold py-3 rounded-xl text-base disabled:bg-[#c8c7e8] disabled:text-[#9896cc]"
+          className="flex-1 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold py-3 rounded-xl text-base disabled:bg-[#b8e0e0] disabled:text-[#7cb8b8]"
         >
           {isSubmitting ? (
             <span className="flex items-center gap-2">
@@ -57,9 +57,9 @@ export function SurveyNavigation({
         <Button
           onClick={onNext}
           disabled={!canProceed}
-          className="flex-1 bg-[#3d3a9e] hover:bg-[#302d8a] text-white font-bold py-3 rounded-xl text-base disabled:bg-[#c8c7e8] disabled:text-[#9896cc]"
+          className="flex-1 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold py-3 rounded-xl text-base disabled:bg-[#b8e0e0] disabled:text-[#7cb8b8]"
         >
-          {'המשך ←'}
+          {'← המשך'}
         </Button>
       )}
     </div>
