@@ -41,7 +41,15 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
     }
   }
 
-  if (isLoading) return <div className="p-4 text-center text-[#6b6890] font-medium">טוען הגדרות מחלקה...</div>
+// Inside app/admin/page.tsx - update the loading state
+if (status === 'loading') {
+  return (
+    <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center" dir="rtl">
+      <div className="w-8 h-8 border-4 border-[#2ecfaa] border-t-transparent rounded-full animate-spin mb-4"></div>
+      <div className="text-[#6b6890] font-bold">טוען הגדרות...</div>
+    </div>
+  )
+}
 
   return (
     <div className="max-w-2xl bg-white rounded-2xl border border-[#e8e7f5] p-6 space-y-6" dir="rtl">
