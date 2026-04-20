@@ -8,7 +8,6 @@ import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '@/lib/firebase/config'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Lock } from 'lucide-react'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
@@ -38,7 +37,6 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-[#e8e7f5] p-8">
         
         <div className="flex flex-col items-center mb-8">
-          {/* Logo is now a link back to the homepage */}
           <Link href="/" className="hover:opacity-80 transition-opacity">
             <Image 
               src="/images/kaila-logo-vertical.png" 
@@ -48,11 +46,7 @@ export default function AdminLoginPage() {
               className="h-16 w-auto mb-6" 
             />
           </Link>
-          <div className="w-12 h-12 bg-[#f0f9f9] rounded-full flex items-center justify-center text-[#2a7c7c] mb-4">
-            <Lock className="w-6 h-6" />
-          </div>
           <h1 className="text-2xl font-bold text-[#1e1c4a]">כניסת מנהלים</h1>
-          <p className="text-[#6b6890] text-sm mt-2">הזן את פרטי הגישה שלך למערכת Kaila</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
@@ -95,7 +89,6 @@ export default function AdminLoginPage() {
           </Button>
         </form>
         
-        {/* Added a secondary link to return to the homepage */}
         <div className="mt-8 text-center border-t border-[#e8e7f5] pt-6">
            <Link href="/" className="text-sm text-[#a8a6c4] hover:text-[#2a7c7c] transition-colors font-medium">
              חזרה לעמוד הראשי של הסקר
