@@ -17,7 +17,7 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
   const [stats, setStats] = useState({ totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 })
   const [showAnswers, setShowAnswers] = useState(false)
 
-  // Fetch real statistics on load (same engine as admin insights)
+  // Fetch real statistics
   useEffect(() => {
     async function loadStats() {
       if (departmentId) {
@@ -28,43 +28,60 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
     loadStats()
   }, [departmentId])
 
+  // Helpers to render visual answers
+  const getEmoji = (val: string) => {
+    const map: Record<string, string> = { '1': '😡', '2': '😟', '3': '😐', '4': '😊', '5': '😍' };
+    return map[val] || val;
+  }
+
+  const getStars = (val: string) => {
+    const num = Number(val);
+    if (isNaN(num)) return val;
+    return (
+      <span className="text-yellow-400 text-xl tracking-widest drop-shadow-sm">
+        {'★'.repeat(num)}{'☆'.repeat(5 - num)}
+      </span>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
       <div className="bg-white max-w-md w-full rounded-3xl p-8 border border-[#e8e7f5] shadow-xl animate-in fade-in zoom-in duration-500">
         
-        {/* Restored Vertical Logo */}
         <Image src="/images/kaila-logo-vertical.png" alt="Kaila" width={120} height={80} className="mx-auto mb-6 h-14 w-auto" priority />
         
-        <h2 className="text-3xl font-bold text-[#1e1c4a] mb-3">תודה רבה!</h2>
-        <p className="text-[#6b6890] mb-3 leading-relaxed text-lg">
+        <h2 className="text-3xl font-bold text-[#1e1c4a] mb-2 flex items-center justify-center gap-2">
+          תודה רבה! <span>🙏</span>
+        </h2>
+        <p className="text-[#6b6890] mb-8 leading-relaxed text-lg">
           המשוב שלך התקבל בהצלחה ויעזור לצוות <b>{departmentName}</b> להמשיך להשתפר.
         </p>
-        
-        {/* Restored reassuring text */}
-        <p className="text-[#2a7c7c] mb-8 font-medium">
-          אנו קוראים כל תגובה ומתייחסים אליה ברצינות.
-        </p>
 
-        {/* Real Stats Display with 3 columns */}
-        <div className="bg-[#f7f7fc] rounded-2xl p-6 mb-8 border border-[#e8e7f5]">
+        {/* Real Stats Display */}
+        <div className="bg-[#f7f7fc] rounded-2xl p-6 mb-4 border border-[#e8e7f5]">
           <h3 className="text-sm font-bold text-[#1a5c5c] mb-4 uppercase tracking-wide">ההשפעה של המשוב שלך</h3>
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-white p-3 rounded-xl border border-[#e8e7f5] flex flex-col items-center justify-center">
+            <div className="bg-white p-3 rounded-xl border border-[#e8e7f5] flex flex-col items-center justify-center shadow-sm">
               <div className="text-xl font-bold text-[#2a7c7c]">{stats.satisfactionPercentage}%</div>
               <div className="text-[10px] text-[#6b6890] mt-1 font-bold text-center">שביעות רצון</div>
             </div>
-            <div className="bg-white p-3 rounded-xl border border-[#e8e7f5] flex flex-col items-center justify-center">
+            <div className="bg-white p-3 rounded-xl border border-[#e8e7f5] flex flex-col items-center justify-center shadow-sm">
               <div className="text-xl font-bold text-[#2a7c7c]">{stats.totalResponses}</div>
               <div className="text-[10px] text-[#6b6890] mt-1 font-bold text-center">משיבים</div>
             </div>
-            <div className="bg-white p-3 rounded-xl border border-[#e8e7f5] flex flex-col items-center justify-center">
+            <div className="bg-white p-3 rounded-xl border border-[#e8e7f5] flex flex-col items-center justify-center shadow-sm">
               <div className="text-xl font-bold text-[#2a7c7c]">{stats.totalComments}+</div>
               <div className="text-[10px] text-[#6b6890] mt-1 font-bold text-center">תגובות</div>
             </div>
           </div>
         </div>
 
-        {/* Restored Show/Hide Answers Toggle */}
+        {/* Reassuring Text */}
+        <p className="text-[#2a7c7c] mb-8 font-medium text-sm px-4">
+          אנחנו קוראים כל תגובה ומתייחסים. תודה שעזרת לנו להשתפר 🌟
+        </p>
+
+        {/* Show/Hide Answers Toggle */}
         <div className="mb-8 text-right">
           <button 
             onClick={() => setShowAnswers(!showAnswers)} 
@@ -80,13 +97,14 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
                 const r = responses[q.id];
                 if (!r || (!r.answerValue && !r.answerText && (!r.answerValues || r.answerValues.length === 0))) return null;
                 return (
-                  <div key={q.id} className="bg-[#f7f7fc] p-4 rounded-xl border border-[#e8e7f5]">
-                    <p className="font-bold text-[#1e1c4a] mb-2 leading-snug">{q.questionText}</p>
-                    <p className="text-[#2a7c7c] font-medium">
-                      {q.questionType === 'emoji' || q.questionType === 'stars' ? `${r.answerValue} מתוך 5` :
-                       q.questionType === 'multi_choice' ? r.answerValues?.join(', ') :
-                       r.answerText || r.answerValue}
-                    </p>
+                  <div key={q.id} className="bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm">
+                    <p className="font-bold text-[#1e1c4a] mb-3 leading-snug">{q.questionText}</p>
+                    <div className="text-[#2a7c7c] font-medium flex items-center">
+                      {q.questionType === 'emoji' ? <span className="text-2xl">{getEmoji(r.answerValue)}</span> :
+                       q.questionType === 'stars' ? getStars(r.answerValue) :
+                       q.questionType === 'multi_choice' ? <span className="text-sm bg-[#f0f9f9] px-3 py-1.5 rounded-lg">{r.answerValues?.join(', ')}</span> :
+                       <span className="text-sm bg-[#f0f9f9] px-3 py-1.5 rounded-lg block w-full">{r.answerText || r.answerValue}</span>}
+                    </div>
                   </div>
                 )
               })}
@@ -94,7 +112,6 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
           )}
         </div>
 
-        {/* Restored new survey button */}
         <button 
           onClick={onRestart}
           className="bg-[#2a7c7c] hover:bg-[#236969] text-white px-6 py-4 rounded-xl font-bold w-full transition-all shadow-md"
