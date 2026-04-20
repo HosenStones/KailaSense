@@ -12,16 +12,11 @@ const firebaseConfig = {
   measurementId: "G-4ELNCVQ8ZX"
 };
 
-console.log("DEBUG: Starting Firebase initialization with Project:", firebaseConfig.projectId);
+// Debug log for initialization
+console.log("DEBUG: Initializing Firebase with ID:", firebaseConfig.projectId);
 
-let app: FirebaseApp;
-try {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  console.log("DEBUG: Firebase App initialized successfully");
-} catch (error) {
-  console.error("DEBUG: Firebase App initialization FAILED:", error);
-  throw error;
-}
+// Initialize Firebase once for both server and client
+const app: FirebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
