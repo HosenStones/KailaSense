@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { getQuestionsByDepartment, addQuestion, deleteQuestion } from '@/lib/firebase/firestore'
-import type { Question } from '@/lib/types'
+import type { Question, QuestionType } from '@/lib/types'
 import { Plus, Trash2 } from 'lucide-react'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [newQuestionText, setNewQuestionText] = useState('')
+  const [newQuestionType, setNewQuestionType] = useState<QuestionType>('emoji')
 
   const loadQuestions = async () => {
     if (!departmentId) return;
@@ -25,24 +27,33 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     await addQuestion({
       departmentId,
       questionText: newQuestionText,
-      questionType: 'emoji',
+      questionType: newQuestionType,
       isActive: true,
       displayOrder: questions.length + 1
     })
     setNewQuestionText('')
+    setNewQuestionType('emoji')
     await loadQuestions()
   }
 
   return (
     <div className="space-y-6" dir="rtl">
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-col md:flex-row gap-2 mb-6 bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm">
         <input 
           type="text" 
           value={newQuestionText}
           onChange={(e) => setNewQuestionText(e.target.value)}
-          placeholder="הזן שאלה חדשה"
+          placeholder="הזן שאלה חדשה..."
           className="flex-1 border rounded-lg px-4 py-2 outline-none focus:border-[#2a7c7c]"
         />
+        <Select value={newQuestionType} onValueChange={(v: QuestionType) => setNewQuestionType(v)}>
+          <SelectTrigger className="w-full md:w-40 border-[#e8e7f5]"><SelectValue /></SelectTrigger>
+          <SelectContent dir="rtl">
+            <SelectItem value="emoji">אימוג'י (1-5)</SelectItem>
+            <SelectItem value="stars">כוכבים (1-5)</SelectItem>
+            <SelectItem value="open_text">טקסט חופשי</SelectItem>
+          </SelectContent>
+        </Select>
         <Button onClick={handleAdd} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">
           <Plus className="w-4 h-4 ml-2" /> הוסף שאלה
         </Button>
@@ -61,6 +72,9 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                   {index + 1}
                 </div>
                 <span className="font-medium text-[#1e1c4a]">{q.questionText}</span>
+                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded">
+                  {q.questionType === 'emoji' ? 'אימוג\'י' : q.questionType === 'stars' ? 'כוכבים' : 'טקסט'}
+                </span>
               </div>
               <button onClick={() => deleteQuestion(q.id).then(loadQuestions)} className="text-[#a8a6c4] hover:text-red-500 transition-colors">
                 <Trash2 className="w-5 h-5" />
