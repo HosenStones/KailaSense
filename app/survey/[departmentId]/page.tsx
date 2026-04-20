@@ -37,13 +37,8 @@ export default function SurveyPage() {
   }, [departmentId])
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f7f7fc] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#2a7c7c] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    )
+    return <div className="min-h-screen bg-[#f7f7fc] flex items-center justify-center">טוען סקר...</div>
   }
-
 
   if (!department) {
     return (
@@ -54,5 +49,6 @@ export default function SurveyPage() {
     )
   }
 
-  return <SurveyContainer department={department} questions={questions} />
+  // זה הקומפוננטה שכבר בנינו והיא תציג "הסקר בבנייה" אם אין שאלות
+  return <SurveyContainer department={department} questions={questions} source="link" />
 }
