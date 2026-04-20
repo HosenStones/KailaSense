@@ -39,7 +39,7 @@ export default function HomePage() {
 
             <Select onValueChange={setSelectedDept}>
               <SelectTrigger className="w-full h-14 bg-[#f7f7fc] border-[#e8e7f5] text-right rounded-xl text-lg font-medium" dir="rtl">
-                <SelectValue placeholder="בחרי מחלקה מהרשימה" />
+                <SelectValue placeholder="בחר מחלקה מהרשימה" />
               </SelectTrigger>
               <SelectContent dir="rtl">
                 {departments.map(dept => <SelectItem key={dept.id} value={dept.id} className="text-right">{dept.name}</SelectItem>)}
