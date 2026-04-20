@@ -21,22 +21,22 @@ export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
   }
 
   return (
-    <header className="bg-white border-b border-[#e8e7f5] px-6 h-16 flex items-center justify-between sticky top-0 z-50 shadow-sm" dir="rtl">
+    <header className="bg-[#2a7c7c] px-6 h-16 flex items-center justify-between sticky top-0 z-50 shadow-md" dir="rtl">
       
       {/* Logo & Title Area */}
       <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity bg-white p-1.5 rounded-lg shadow-sm">
           <Image 
             src="/images/kaila-logo-horizontal.png" 
             alt="KailaSense" 
-            width={110} 
-            height={36} 
-            className="h-8 w-auto object-contain" 
+            width={100} 
+            height={32} 
+            className="h-7 w-auto object-contain" 
             priority
           />
         </Link>
-        <div className="h-6 w-[2px] bg-[#e8e7f5] mx-1 rounded-full"></div>
-        <h1 className="text-lg font-bold text-[#1e1c4a] tracking-tight">{title}</h1>
+        <div className="h-6 w-[2px] bg-white/20 mx-1 rounded-full"></div>
+        <h1 className="text-lg font-bold text-white tracking-tight">{title}</h1>
       </div>
 
       {/* User Actions */}
@@ -44,13 +44,13 @@ export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
         {user && (
           <button 
             onClick={onProfileClick}
-            className="flex items-center gap-3 hover:bg-[#f7f7fc] p-1.5 pr-3 rounded-xl transition-all border border-transparent hover:border-[#e8e7f5]"
+            className="flex items-center gap-3 hover:bg-white/10 p-1.5 pr-3 rounded-xl transition-all"
           >
-            <div className="text-right hidden md:block leading-tight">
-              <div className="text-sm font-bold text-[#1e1c4a]">{user.fullName}</div>
-              <div className="text-xs text-[#2a7c7c] font-medium mt-0.5">{user.role === 'super_admin' ? 'סופר אדמין' : 'מנהל'}</div>
+            <div className="text-right hidden md:block">
+              <div className="text-sm font-bold text-white">{user.fullName}</div>
+              {/* השורה של התפקיד הוסרה כבקשתך */}
             </div>
-            <div className="w-9 h-9 bg-[#f0f9f9] border border-[#2a7c7c]/20 rounded-full flex items-center justify-center text-[#2a7c7c] shadow-sm">
+            <div className="w-9 h-9 bg-white border border-white/20 rounded-full flex items-center justify-center text-[#2a7c7c] shadow-sm">
               <User className="w-4 h-4" />
             </div>
           </button>
@@ -59,7 +59,7 @@ export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
           variant="ghost" 
           size="icon" 
           onClick={handleLogout} 
-          className="text-[#a8a6c4] hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" 
+          className="text-white hover:bg-red-500/20 hover:text-white rounded-xl transition-colors" 
           title="התנתק"
         >
           <LogOut className="w-5 h-5" />
