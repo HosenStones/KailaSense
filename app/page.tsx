@@ -27,7 +27,7 @@ export default function HomePage() {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto mb-6 h-16 w-auto" priority />
             <h1 className="text-3xl font-bold text-[#1e1c4a] mb-2">ברוכים הבאים!</h1>
-            <div className="text-6xl mb-4 mt-2">❤️</div>
+            <div className="text-4xl mb-4 mt-2">❤️</div>
             <p className="text-[#6b6890] mb-10 text-lg">המשוב שלך מסייע לנו להשתפר.</p>
             <Button onClick={() => setStep(2)} className="w-full h-14 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold text-lg rounded-xl transition-all shadow-md">
               התחל סקר
