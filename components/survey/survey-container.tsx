@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { Department, Question, Response } from '@/lib/types'
@@ -19,28 +19,11 @@ interface SurveyContainerProps {
 export function SurveyContainer({ department, questions, source }: SurveyContainerProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [responses, setResponses] = useState<Record<string, Partial<Response>>>({})
-  const [sessionId, setSessionId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(true)
 
-  // Auto-init survey session 
-  useEffect(() => {
-    async function initSession() {
-      try {
-        const id = await createSurveySession(department.id, source || 'link')
-        setSessionId(id)
-      } catch (error) {
-        console.error('Session init failed:', error)
-      } finally {
-        setIsInitializing(false)
-      }
-    }
-    initSession()
-  }, [department.id, source])
-
-  // Under construction state for empty surveys
-  if (!isInitializing && (!questions || questions.length === 0)) {
+  // Block if no questions exist
+  if (!questions || questions.length === 0) {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
         <div className="bg-white max-w-md w-full rounded-3xl p-10 border border-[#e8e7f5] shadow-xl">
@@ -55,22 +38,21 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
     )
   }
 
-  // Loading state
-  if (isInitializing) {
-    return <div className="min-h-screen flex items-center justify-center text-[#2a7c7c] font-bold">טוען נתונים...</div>
-  }
-
   const currentQuestion = questions[currentIndex]
 
-  // Submit handler
+  // Submit survey responses to Firestore
   const handleSubmit = async () => {
-    if (!sessionId) return
     setIsSubmitting(true)
+    
     try {
+      // 1. Create session AT THE TIME of submission to avoid silent background failures
+      const newSessionId = await createSurveySession(department.id, source || 'link')
+      
+      // 2. Save all responses
       for (const response of Object.values(responses)) {
         if (response.questionId) {
           await saveResponse({
-            sessionId,
+            sessionId: newSessionId,
             departmentId: department.id,
             questionId: response.questionId,
             answerValue: response.answerValue,
@@ -79,25 +61,27 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
           })
         }
       }
-      await completeSurveySession(sessionId)
+      
+      // 3. Complete session
+      await completeSurveySession(newSessionId)
       setIsComplete(true)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error)
-      alert('שגיאה בשמירה. ודא שיש חיבור אינטרנט.')
+      alert('שגיאה בשמירה: פיירבייס חוסם שמירת נתונים. יש לעדכן את ה-Rules (חוקי האבטחה) כדי לאפשר לאורחים לשמור תשובות.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  // Thank you state
+  // Final thank you screen
   if (isComplete) {
     return <SurveyThankYou departmentName={department.name} departmentId={department.id} onRestart={() => window.location.href = '/'} responses={responses} questions={questions} />
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f7fc] flex flex-col" dir="rtl">
-      {/* Header with Logo as Home Link */}
-      <header className="bg-white border-b border-[#e8e7f5] px-4 py-3 text-center">
+      {/* Header containing Logo which routes back to Home */}
+      <header className="bg-white border-b border-[#e8e7f5] px-4 py-3 flex items-center justify-center">
         <Link href="/" className="flex items-center justify-center gap-3 hover:opacity-80 transition-opacity w-fit mx-auto">
           <Image src="/images/kaila-logo-horizontal.png" alt="Kaila Home" width={80} height={24} className="h-6 w-auto" />
           <span className="text-sm font-bold text-[#2a7c7c]">| {department.name}</span>
