@@ -22,16 +22,16 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     if (departmentId) loadQuestions()
   }, [departmentId])
 
-  const handleAdd = async () => {
+ const handleAdd = async () => {
     if (!newQuestionText.trim()) return
     await addQuestion({
       departmentId,
-      text: newQuestionText,
-      type: 'emoji', // Default type
+      questionText: newQuestionText, 
+      questionType: 'emoji',        
+      isActive: true,              
       displayOrder: questions.length + 1
     })
     setNewQuestionText('')
-    // Refresh list to prevent questions from "disappearing"
     await loadQuestions()
   }
 
