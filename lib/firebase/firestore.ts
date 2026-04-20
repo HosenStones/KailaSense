@@ -5,72 +5,72 @@ import {
 import { db } from './config';
 import { AdminUser, Department, Question, Response } from '../types';
 
-// Fetch user by email to support manual creation in 'users' collection
+// Fetch user by email
 export async function getAdminUserByEmail(email: string): Promise<AdminUser | null> {
   try {
-    // Querying the 'users' collection for the specific email
     const q = query(collection(db, 'users'), where('email', '==', email), limit(1));
     const querySnapshot = await getDocs(q);
-    
-    if (querySnapshot.empty) {
-      console.warn(`Firestore: No document found in 'users' collection with email: ${email}`);
-      return null;
-    }
-    
+    if (querySnapshot.empty) return null;
     const userDoc = querySnapshot.docs[0];
-    const data = userDoc.data();
-    console.log("Firestore: User document found:", data);
-    
-    return { id: userDoc.id, ...data } as AdminUser;
+    return { id: userDoc.id, ...userDoc.data() } as AdminUser;
   } catch (error) {
-    console.error("Firestore: Error fetching admin user by email:", error);
+    console.error("Firestore Error:", error);
     return null;
   }
 }
 
-// Admin users management
-export async function getAllAdminUsers(): Promise<AdminUser[]> {
+// Fetch all users sorted by department then by name
+export async function getAllAdminUsersSorted(departments: Department[]): Promise<AdminUser[]> {
   const querySnapshot = await getDocs(collection(db, 'users'));
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
-}
-
-export async function createAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
-  const userRef = doc(db, 'users', uid);
-  await setDoc(userRef, {
-    ...data,
-    createdAt: new Date().toISOString()
+  const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
+  
+  return users.sort((a, b) => {
+    const deptA = departments.find(d => d.id === a.departmentId)?.name || 'zzz';
+    const deptB = departments.find(d => d.id === b.departmentId)?.name || 'zzz';
+    return deptA.localeCompare(deptB, 'he') || a.fullName.localeCompare(b.fullName, 'he');
   });
 }
 
-export async function updateAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
-  const userRef = doc(db, 'users', uid);
-  await updateDoc(userRef, data);
-}
-
-export async function deleteAdminUser(uid: string): Promise<void> {
-  await deleteDoc(doc(db, 'users', uid));
-}
-
-// Department Management
+// Fetch all departments sorted alphabetically
 export async function getAllDepartments(): Promise<Department[]> {
   const querySnapshot = await getDocs(collection(db, 'departments'));
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Department));
+  const depts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Department));
+  return depts.sort((a, b) => a.name.localeCompare(b.name, 'he'));
 }
 
 export async function createDepartment(data: Partial<Department>): Promise<string> {
   const docRef = await addDoc(collection(db, 'departments'), {
     ...data,
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   });
   return docRef.id;
 }
 
 export async function updateDepartment(id: string, data: Partial<Department>): Promise<void> {
-  await updateDoc(doc(db, 'departments', id), data);
+  await updateDoc(doc(db, 'departments', id), { ...data, updatedAt: new Date().toISOString() });
 }
 
 export async function deleteDepartment(id: string): Promise<void> {
   await deleteDoc(doc(db, 'departments', id));
+}
+
+// Admin users management
+export async function createAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
+  const userRef = doc(db, 'users', uid);
+  await setDoc(userRef, {
+    ...data,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+}
+
+export async function updateAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), { ...data, updatedAt: new Date().toISOString() });
+}
+
+export async function deleteAdminUser(uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'users', uid));
 }
 
 // Questions Management
@@ -81,7 +81,12 @@ export async function getQuestionsByDepartment(departmentId: string): Promise<Qu
 }
 
 export async function addQuestion(data: Partial<Question>): Promise<void> {
-  await addDoc(collection(db, 'questions'), { ...data, createdAt: new Date().toISOString() });
+  await addDoc(collection(db, 'questions'), { 
+    ...data, 
+    isActive: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
@@ -91,37 +96,10 @@ export async function deleteQuestion(id: string): Promise<void> {
 export async function copyDefaultQuestionsToDepartment(departmentId: string): Promise<void> {
   const defaultQuestionsQuery = query(collection(db, 'questions'), where('isDefault', '==', true));
   const defaultSnap = await getDocs(defaultQuestionsQuery);
-  
   const batch = writeBatch(db);
   defaultSnap.docs.forEach((d) => {
     const newQuestionRef = doc(collection(db, 'questions'));
-    batch.set(newQuestionRef, {
-      ...d.data(),
-      departmentId,
-      isDefault: false,
-      createdAt: new Date().toISOString()
-    });
+    batch.set(newQuestionRef, { ...d.data(), departmentId, isDefault: false, createdAt: new Date().toISOString() });
   });
   await batch.commit();
-}
-
-// Stats and Responses
-export async function getDepartmentStats(departmentId: string) {
-  try {
-    const sessionsQuery = query(collection(db, 'survey_sessions'), where('departmentId', '==', departmentId), where('isCompleted', '==', true));
-    const sessionsSnap = await getDocs(sessionsQuery);
-    return {
-      totalResponses: sessionsSnap.size,
-      satisfactionPercentage: sessionsSnap.size > 0 ? 92 : 0,
-      totalComments: 0
-    };
-  } catch (error) {
-    return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 };
-  }
-}
-
-export async function getResponsesByDepartment(departmentId: string): Promise<Response[]> {
-  const q = query(collection(db, 'responses'), where('departmentId', '==', departmentId));
-  const snap = await getDocs(q);
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Response));
 }
