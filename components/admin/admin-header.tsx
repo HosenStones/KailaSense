@@ -3,43 +3,66 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { signOut } from '@/lib/firebase/auth-context'
-import { useRouter } from 'next/navigation'
+import { auth } from '@/lib/firebase/config'
+import { signOut } from 'firebase/auth'
+import { LogOut, User } from 'lucide-react'
 import type { AdminUser } from '@/lib/types'
 
 interface AdminHeaderProps {
-  user: AdminUser | null
-  title: string
-  onProfileClick?: () => void 
+  user: AdminUser | null;
+  title: string;
+  onProfileClick: () => void;
 }
 
 export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
-  const router = useRouter()
-
-  const handleSignOut = async () => {
-    await signOut()
-    router.push('/') // Return to Home page
+  const handleLogout = async () => {
+    await signOut(auth);
+    window.location.href = '/admin/login';
   }
 
   return (
-    <header className="bg-gradient-to-r from-[#2a7c7c] to-[#3d9e9e] h-14 flex items-center justify-between px-6 sticky top-0 z-50 shadow-sm" dir="rtl">
+    <header className="bg-white border-b border-[#e8e7f5] px-6 h-16 flex items-center justify-between sticky top-0 z-50 shadow-sm" dir="rtl">
+      
+      {/* Logo & Title Area */}
       <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-2 bg-white rounded-lg px-3 py-1 transition-colors">
-          <Image src="/images/kaila-logo-vertical.png" alt="Kaila" width={40} height={40} className="h-9 w-auto" />
+        <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+          <Image 
+            src="/images/kaila-logo-horizontal.png" 
+            alt="KailaSense" 
+            width={110} 
+            height={36} 
+            className="h-8 w-auto object-contain" 
+            priority
+          />
         </Link>
-        <span className="text-white text-sm font-bold border-r border-white/20 pr-4">{title}</span>
+        <div className="h-6 w-[2px] bg-[#e8e7f5] mx-1 rounded-full"></div>
+        <h1 className="text-lg font-bold text-[#1e1c4a] tracking-tight">{title}</h1>
       </div>
 
+      {/* User Actions */}
       <div className="flex items-center gap-3">
-        <button onClick={onProfileClick} className="flex items-center gap-2 bg-white/15 rounded-lg px-3 py-1.5 hover:bg-white/25 transition-all text-right">
-          <div className="w-7 h-7 rounded-full bg-[#7dd3d3] flex items-center justify-center text-xs font-bold text-[#1e4a40]">
-            {user?.fullName?.charAt(0).toUpperCase() || '?'}
-          </div>
-          <span className="text-white text-sm font-bold">{user?.fullName || 'משתמש'}</span>
-        </button>
-
-        <Button variant="ghost" onClick={handleSignOut} className="text-white/80 hover:text-white hover:bg-white/15 text-sm border border-white/25 rounded-lg px-3 py-1.5 h-auto">
-          יציאה
+        {user && (
+          <button 
+            onClick={onProfileClick}
+            className="flex items-center gap-3 hover:bg-[#f7f7fc] p-1.5 pr-3 rounded-xl transition-all border border-transparent hover:border-[#e8e7f5]"
+          >
+            <div className="text-right hidden md:block leading-tight">
+              <div className="text-sm font-bold text-[#1e1c4a]">{user.fullName}</div>
+              <div className="text-xs text-[#2a7c7c] font-medium mt-0.5">{user.role === 'super_admin' ? 'סופר אדמין' : 'מנהל'}</div>
+            </div>
+            <div className="w-9 h-9 bg-[#f0f9f9] border border-[#2a7c7c]/20 rounded-full flex items-center justify-center text-[#2a7c7c] shadow-sm">
+              <User className="w-4 h-4" />
+            </div>
+          </button>
+        )}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleLogout} 
+          className="text-[#a8a6c4] hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors" 
+          title="התנתק"
+        >
+          <LogOut className="w-5 h-5" />
         </Button>
       </div>
     </header>
