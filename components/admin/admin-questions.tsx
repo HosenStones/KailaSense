@@ -40,7 +40,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           type="text" 
           value={newQuestionText}
           onChange={(e) => setNewQuestionText(e.target.value)}
-          placeholder="הזיני שאלה חדשה..."
+          placeholder="הזן שאלה חדשה"
           className="flex-1 border rounded-lg px-4 py-2 outline-none focus:border-[#2a7c7c]"
         />
         <Button onClick={handleAdd} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">
@@ -51,7 +51,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       <div className="space-y-3">
         {questions.length === 0 ? (
           <div className="text-center p-8 bg-white rounded-xl border border-dashed border-[#a8a6c4] text-[#6b6890]">
-            אין שאלות פעילות במחלקה זו. הוסיפי שאלה למעלה כדי להתחיל.
+            אין שאלות פעילות במחלקה זו. הוסף שאלה על מנת להתחיל.
           </div>
         ) : (
           questions.map((q, index) => (
