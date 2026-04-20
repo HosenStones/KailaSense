@@ -43,7 +43,6 @@ export default function LoginPage() {
             />
           </div>
           <CardTitle className="text-2xl font-bold text-[#1e1c4a]">כניסה למערכת</CardTitle>
-          <CardDescription className="text-[#6b6890]">הזיני אימייל וסיסמה כדי לנהל את הסקרים</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
