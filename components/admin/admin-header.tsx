@@ -17,7 +17,8 @@ interface AdminHeaderProps {
 export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
   const handleLogout = async () => {
     await signOut(auth);
-    window.location.href = '/admin/login';
+    // Updated: Redirect to home page instead of login page
+    window.location.href = '/';
   }
 
   return (
@@ -48,7 +49,6 @@ export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
           >
             <div className="text-right hidden md:block">
               <div className="text-sm font-bold text-white">{user.fullName}</div>
-              {/* השורה של התפקיד הוסרה כבקשתך */}
             </div>
             <div className="w-9 h-9 bg-white border border-white/20 rounded-full flex items-center justify-center text-[#2a7c7c] shadow-sm">
               <User className="w-4 h-4" />
