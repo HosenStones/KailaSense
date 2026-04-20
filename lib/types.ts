@@ -13,7 +13,7 @@ export interface AdminUser {
   id: string
   email: string
   fullName: string
-  role: 'admin' | 'super_admin' | 'staff'
+  role: 'admin' | 'super_admin' | 'staff' // Added 'staff' role
   departmentId: string | null
   createdAt: string
   updatedAt: string
@@ -30,8 +30,8 @@ export interface QuestionOption {
 export interface Question {
   id: string
   departmentId: string
-  questionText: string
-  questionType: QuestionType
+  questionText: string // Standardized field name
+  questionType: QuestionType // Standardized field name
   options?: QuestionOption[]
   isRequired: boolean
   isDefault: boolean
@@ -59,31 +59,4 @@ export interface Response {
   answerValues?: string[]
   answerText?: string
   createdAt: string
-}
-
-// Survey state for the patient flow
-export interface SurveyState {
-  session: SurveySession | null
-  questions: Question[]
-  responses: Record<string, Response>
-  currentQuestionIndex: number
-  isComplete: boolean
-}
-
-// Statistics types
-export interface DepartmentStats {
-  totalResponses: number
-  completionRate: number
-  averageRating: number
-  responsesByDay: { date: string; count: number }[]
-  questionStats: QuestionStats[]
-}
-
-export interface QuestionStats {
-  questionId: string
-  questionText: string
-  questionType: QuestionType
-  totalResponses: number
-  distribution: { value: string; count: number; percentage: number }[]
-  averageScore?: number
 }
