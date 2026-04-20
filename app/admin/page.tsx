@@ -132,24 +132,25 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1 overflow-x-auto">
-        {[
-          { id: 'insights', label: 'תובנות', icon: '📊' },
-          { id: 'questions', label: 'שאלות', icon: '📋' },
-          { id: 'comments', label: 'תגובות', icon: '💬' },
-          { id: 'settings', label: 'הגדרות', icon: '⚙️' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as TabId)}
-            className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
-              activeTab === tab.id ? 'text-[#2a7c7c] border-[#3d9e9e]' : 'text-[#a8a6c4] border-transparent hover:text-[#6b6890]'
-            }`}
-          >
-            {tab.icon} {tab.label}
-          </button>
-        ))}
-      </nav>
+    <nav className="bg-white border-b border-[#e8e7f5] px-6 flex gap-1 overflow-x-auto">
+  {[
+    { id: 'insights', label: 'תובנות', icon: '📊' },
+    { id: 'questions', label: 'שאלות', icon: '📋' },
+    { id: 'comments', label: 'תגובות', icon: '💬' },
+    { id: 'settings', label: 'הגדרות', icon: '⚙️' },
+    ...(currentUser?.role === 'super_admin' ? [{ id: 'system', label: 'ניהול מערכת', icon: '🛡️' }] : [])
+  ].map((tab) => (
+    <button
+      key={tab.id}
+      onClick={() => tab.id === 'system' ? router.push('/super-admin') : setActiveTab(tab.id as TabId)}
+      className={`px-5 py-3 text-sm font-semibold border-b-[3px] transition-colors whitespace-nowrap ${
+        activeTab === tab.id ? 'text-[#2a7c7c] border-[#3d9e9e]' : 'text-[#a8a6c4] border-transparent hover:text-[#6b6890]'
+      }`}
+    >
+      {tab.icon} {tab.label}
+    </button>
+  ))}
+</nav>
 
       <main className="p-6 max-w-6xl mx-auto">
         {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
