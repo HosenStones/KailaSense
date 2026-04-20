@@ -5,6 +5,15 @@ import {
 import { db } from './config';
 import { AdminUser, Department, Question, Response } from '../types';
 
+// Utility function to remove undefined fields from objects before Firestore operations.
+// Firestore crashes if a field value is undefined.
+const sanitizeData = (data: any) => {
+  return Object.fromEntries(
+    Object.entries(data).filter(([_, v]) => v !== undefined)
+  );
+};
+
+// Admin Auth and User Management
 export async function getAdminUserByEmail(email: string): Promise<AdminUser | null> {
   try {
     const q = query(collection(db, 'users'), where('email', '==', email), limit(1));
@@ -13,7 +22,7 @@ export async function getAdminUserByEmail(email: string): Promise<AdminUser | nu
     const userDoc = querySnapshot.docs[0];
     return { id: userDoc.id, ...userDoc.data() } as AdminUser;
   } catch (error) {
-    console.error("Firestore Error:", error);
+    console.error("Firestore Auth Error:", error);
     return null;
   }
 }
@@ -30,6 +39,7 @@ export async function getUsersByDepartment(departmentId: string): Promise<AdminU
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
 }
 
+// Department Management
 export async function getAllDepartments(): Promise<Department[]> {
   const querySnapshot = await getDocs(collection(db, 'departments'));
   const depts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Department));
@@ -37,31 +47,38 @@ export async function getAllDepartments(): Promise<Department[]> {
 }
 
 export async function createDepartment(data: Partial<Department>): Promise<string> {
-  const docRef = await addDoc(collection(db, 'departments'), { ...data, createdAt: new Date().toISOString() });
+  const docRef = await addDoc(collection(db, 'departments'), { 
+    ...sanitizeData(data), 
+    createdAt: new Date().toISOString() 
+  });
   return docRef.id;
 }
 
 export async function updateDepartment(id: string, data: Partial<Department>): Promise<void> {
-  await updateDoc(doc(db, 'departments', id), data);
+  await updateDoc(doc(db, 'departments', id), sanitizeData(data));
 }
 
 export async function deleteDepartment(id: string): Promise<void> {
   await deleteDoc(doc(db, 'departments', id));
 }
 
+// Admin Management
 export async function createAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
-  await setDoc(doc(db, 'users', uid), { ...data, createdAt: new Date().toISOString() });
+  await setDoc(doc(db, 'users', uid), { 
+    ...sanitizeData(data), 
+    createdAt: new Date().toISOString() 
+  });
 }
 
 export async function updateAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
-  await updateDoc(doc(db, 'users', uid), data);
+  await updateDoc(doc(db, 'users', uid), sanitizeData(data));
 }
 
 export async function deleteAdminUser(uid: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid));
 }
 
-// ---- תיקון מניעת קריסת Firebase: מיון מתבצע כאן ולא דרך השאילתה ----
+// Question Management
 export async function getQuestionsByDepartment(departmentId: string): Promise<Question[]> {
   const q = query(collection(db, 'questions'), where('departmentId', '==', departmentId));
   const snap = await getDocs(q);
@@ -70,7 +87,11 @@ export async function getQuestionsByDepartment(departmentId: string): Promise<Qu
 }
 
 export async function addQuestion(data: Partial<Question>): Promise<void> {
-  await addDoc(collection(db, 'questions'), { ...data, isActive: true, createdAt: new Date().toISOString() });
+  await addDoc(collection(db, 'questions'), { 
+    ...sanitizeData(data), 
+    isActive: true, 
+    createdAt: new Date().toISOString() 
+  });
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
@@ -87,6 +108,7 @@ export async function copyDefaultQuestionsToDepartment(departmentId: string): Pr
   await batch.commit();
 }
 
+// Analytics and Responses
 export async function getDepartmentStats(departmentId: string) {
   try {
     const sessionsQuery = query(collection(db, 'survey_sessions'), where('departmentId', '==', departmentId), where('isCompleted', '==', true));
@@ -103,6 +125,7 @@ export async function getResponsesByDepartment(departmentId: string): Promise<Re
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Response));
 }
 
+// Survey Session Logic for Patients
 export async function createSurveySession(departmentId: string, source?: string): Promise<string> {
   const docRef = await addDoc(collection(db, 'survey_sessions'), {
     departmentId,
@@ -115,14 +138,21 @@ export async function createSurveySession(departmentId: string, source?: string)
 
 export async function saveResponse(data: {
   sessionId: string;
+  departmentId: string;
   questionId: string;
   answerValue?: string;
   answerValues?: string[];
   answerText?: string;
 }): Promise<void> {
-  await addDoc(collection(db, 'responses'), { ...data, createdAt: new Date().toISOString() });
+  await addDoc(collection(db, 'responses'), { 
+    ...sanitizeData(data), 
+    createdAt: new Date().toISOString() 
+  });
 }
 
 export async function completeSurveySession(sessionId: string): Promise<void> {
-  await updateDoc(doc(db, 'survey_sessions', sessionId), { isCompleted: true, completedAt: new Date().toISOString() });
+  await updateDoc(doc(db, 'survey_sessions', sessionId), { 
+    isCompleted: true, 
+    completedAt: new Date().toISOString() 
+  });
 }
