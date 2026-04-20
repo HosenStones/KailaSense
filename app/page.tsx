@@ -28,18 +28,19 @@ export default function HomePage() {
             <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto mb-6 h-14 w-auto" priority />
             <h1 className="text-3xl font-bold text-[#1e1c4a] mb-2">ברוכים הבאים!</h1>
             
-            {/* Informational Badges for Patients */}
-            <div className="flex flex-wrap justify-center gap-2 mt-4 mb-4">
-              <span className="bg-[#f0f9f9] text-[#1a5c5c] text-xs font-bold px-3 py-1.5 rounded-full border border-[#2a7c7c]/20">⏱️ מתחת ל-2 דק'</span>
-              <span className="bg-[#f0f9f9] text-[#1a5c5c] text-xs font-bold px-3 py-1.5 rounded-full border border-[#2a7c7c]/20">🕵️‍♀️ אנונימי לחלוטין</span>
-              <span className="bg-[#f0f9f9] text-[#1a5c5c] text-xs font-bold px-3 py-1.5 rounded-full border border-[#2a7c7c]/20">🔓 ללא צורך בהרשמה</span>
-            </div>
-
             <div className="text-4xl mb-4 mt-6">❤️</div>
             <p className="text-[#6b6890] mb-8 text-lg px-2">המשוב שלך חשוב ומסייע לנו להשתפר.</p>
+            
             <Button onClick={() => setStep(2)} className="w-full h-14 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold text-lg rounded-xl transition-all shadow-md">
               התחל סקר
             </Button>
+
+            {/* Informational Badges for Patients (Moved below the button) */}
+            <div className="flex flex-wrap justify-center gap-2 mt-6">
+              <span className="bg-[#f0f9f9] text-[#1a5c5c] text-[11px] font-bold px-3 py-1.5 rounded-full border border-[#2a7c7c]/20">⏱️ מתחת ל-2 דק'</span>
+              <span className="bg-[#f0f9f9] text-[#1a5c5c] text-[11px] font-bold px-3 py-1.5 rounded-full border border-[#2a7c7c]/20">🕵️‍♀️ אנונימי לחלוטין</span>
+              <span className="bg-[#f0f9f9] text-[#1a5c5c] text-[11px] font-bold px-3 py-1.5 rounded-full border border-[#2a7c7c]/20">🔓 ללא צורך בהרשמה</span>
+            </div>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-right-8 duration-300">
@@ -70,7 +71,7 @@ export default function HomePage() {
         )}
 
         <div className="mt-10 pt-5 border-t border-[#e8e7f5]">
-          <Link href="/admin/login" className="text-sm text-[#a8a6c4] hover:text-[#2a7c7c] transition-colors font-medium">כניסת צוות מנהל</Link>
+          <Link href="/admin/login" className="text-sm text-[#a8a6c4] hover:text-[#2a7c7c] transition-colors font-medium">כניסה לממשק הניהול</Link>
         </div>
       </div>
     </div>
