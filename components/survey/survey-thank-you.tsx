@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { getDepartmentStats } from '@/lib/firebase/firestore'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Star } from 'lucide-react'
 
 interface SurveyThankYouProps {
   departmentName: string
@@ -17,7 +17,6 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
   const [stats, setStats] = useState({ totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 })
   const [showAnswers, setShowAnswers] = useState(false)
 
-  // Fetch real statistics
   useEffect(() => {
     async function loadStats() {
       if (departmentId) {
@@ -28,19 +27,23 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
     loadStats()
   }, [departmentId])
 
-  // Helpers to render visual answers
   const getEmoji = (val: string) => {
     const map: Record<string, string> = { '1': '😡', '2': '😟', '3': '😐', '4': '😊', '5': '😍' };
     return map[val] || val;
   }
 
-  const getStars = (val: string) => {
+  const renderStars = (val: string) => {
     const num = Number(val);
     if (isNaN(num)) return val;
     return (
-      <span className="text-yellow-400 text-xl tracking-widest drop-shadow-sm">
-        {'★'.repeat(num)}{'☆'.repeat(5 - num)}
-      </span>
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star 
+            key={star} 
+            className={`w-5 h-5 ${star <= num ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'}`} 
+          />
+        ))}
+      </div>
     );
   }
 
@@ -50,11 +53,15 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
         
         <Image src="/images/kaila-logo-vertical.png" alt="Kaila" width={120} height={80} className="mx-auto mb-6 h-14 w-auto" priority />
         
-        <h2 className="text-3xl font-bold text-[#1e1c4a] mb-2 flex items-center justify-center gap-2">
-          תודה רבה! <span>🙏</span>
+        <h2 className="text-3xl font-bold text-[#1e1c4a] mb-2">
+          תודה רבה! 🙏
         </h2>
-        <p className="text-[#6b6890] mb-8 leading-relaxed text-lg">
+        <p className="text-[#6b6890] mb-2 leading-relaxed text-lg">
           המשוב שלך התקבל בהצלחה ויעזור לצוות <b>{departmentName}</b> להמשיך להשתפר.
+        </p>
+
+        <p className="text-[#6b6890] mb-8 font-medium text-sm">
+          אנחנו קוראים כל תגובה ומתייחסים.
         </p>
 
         {/* Real Stats Display */}
@@ -76,9 +83,8 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
           </div>
         </div>
 
-        {/* Reassuring Text */}
-        <p className="text-[#2a7c7c] mb-8 font-medium text-sm px-4">
-          אנחנו קוראים כל תגובה ומתייחסים. תודה שעזרת לנו להשתפר 🌟
+        <p className="text-[#2a7c7c] mb-8 font-medium text-[13px]">
+          תודה שעזרת לנו להשתפר 🌟
         </p>
 
         {/* Show/Hide Answers Toggle */}
@@ -97,11 +103,11 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
                 const r = responses[q.id];
                 if (!r || (!r.answerValue && !r.answerText && (!r.answerValues || r.answerValues.length === 0))) return null;
                 return (
-                  <div key={q.id} className="bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm">
+                  <div key={q.id} className="bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm text-right">
                     <p className="font-bold text-[#1e1c4a] mb-3 leading-snug">{q.questionText}</p>
-                    <div className="text-[#2a7c7c] font-medium flex items-center">
+                    <div className="text-[#2a7c7c] font-medium">
                       {q.questionType === 'emoji' ? <span className="text-2xl">{getEmoji(r.answerValue)}</span> :
-                       q.questionType === 'stars' ? getStars(r.answerValue) :
+                       q.questionType === 'stars' ? renderStars(r.answerValue) :
                        q.questionType === 'multi_choice' ? <span className="text-sm bg-[#f0f9f9] px-3 py-1.5 rounded-lg">{r.answerValues?.join(', ')}</span> :
                        <span className="text-sm bg-[#f0f9f9] px-3 py-1.5 rounded-lg block w-full">{r.answerText || r.answerValue}</span>}
                     </div>
