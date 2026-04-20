@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link' // השורה הזו הייתה חסרה וגרמה לקריסה
+import Link from 'next/link' 
 import { getAllDepartments } from '@/lib/firebase/firestore'
 import type { Department } from '@/lib/types'
 import { Button } from '@/components/ui/button'
