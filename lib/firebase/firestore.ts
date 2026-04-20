@@ -1,12 +1,11 @@
 import { 
   collection, doc, getDocs, addDoc, updateDoc, deleteDoc, 
-  query, where, setDoc, writeBatch, limit
+  query, where, setDoc, writeBatch, limit, orderBy
 } from 'firebase/firestore';
 import { db } from './config';
 import { AdminUser, Department, Question, Response } from '../types';
 
-// Utility function to remove undefined fields from objects before Firestore operations.
-// Firestore crashes if a field value is undefined.
+// Utility function to remove undefined fields from objects before Firestore operations
 const sanitizeData = (data: any) => {
   return Object.fromEntries(
     Object.entries(data).filter(([_, v]) => v !== undefined)
@@ -108,21 +107,65 @@ export async function copyDefaultQuestionsToDepartment(departmentId: string): Pr
   await batch.commit();
 }
 
-// Analytics and Responses
+// Analytics and Real Statistics Calculation
 export async function getDepartmentStats(departmentId: string) {
   try {
+    // Get completed sessions
     const sessionsQuery = query(collection(db, 'survey_sessions'), where('departmentId', '==', departmentId), where('isCompleted', '==', true));
     const sessionsSnap = await getDocs(sessionsQuery);
-    return { totalResponses: sessionsSnap.size, satisfactionPercentage: sessionsSnap.size > 0 ? 92 : 0, totalComments: 0 };
+    const totalSessions = sessionsSnap.size;
+
+    // Get all responses for this department
+    const responsesQuery = query(collection(db, 'responses'), where('departmentId', '==', departmentId));
+    const responsesSnap = await getDocs(responsesQuery);
+    const responses = responsesSnap.docs.map(doc => doc.data() as Response);
+
+    // Calculate total text comments
+    const textResponses = responses.filter(r => r.answerText && r.answerText.trim().length > 0);
+    const totalComments = textResponses.length;
+
+    // Calculate real satisfaction percentage based on numeric ratings (1-5)
+    const ratingResponses = responses.filter(r => r.answerValue && !isNaN(Number(r.answerValue)));
+    let satisfactionPercentage = 0;
+    if (ratingResponses.length > 0) {
+      const sum = ratingResponses.reduce((acc, r) => acc + Number(r.answerValue), 0);
+      const avg = sum / ratingResponses.length;
+      satisfactionPercentage = Math.round((avg / 5) * 100);
+    }
+
+    // Calculate average completion time in seconds
+    let avgTimeSeconds = 0;
+    if (totalSessions > 0) {
+      const times = sessionsSnap.docs.map(doc => {
+        const data = doc.data();
+        if (data.startedAt && data.completedAt) {
+          return new Date(data.completedAt).getTime() - new Date(data.startedAt).getTime();
+        }
+        return 0;
+      }).filter(t => t > 0);
+      
+      if (times.length > 0) {
+        avgTimeSeconds = Math.round((times.reduce((a,b) => a+b, 0) / times.length) / 1000);
+      }
+    }
+
+    return { 
+      totalResponses: totalSessions, 
+      satisfactionPercentage, 
+      totalComments,
+      avgTimeSeconds
+    };
   } catch (error) {
-    return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 };
+    console.error("Failed to calculate stats:", error);
+    return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0, avgTimeSeconds: 0 };
   }
 }
 
 export async function getResponsesByDepartment(departmentId: string): Promise<Response[]> {
   const q = query(collection(db, 'responses'), where('departmentId', '==', departmentId));
   const snap = await getDocs(q);
-  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Response));
+  // Sort descending by creation date
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Response)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 // Survey Session Logic for Patients
