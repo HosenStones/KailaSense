@@ -15,6 +15,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [newOptionsText, setNewOptionsText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Load questions from Firestore
   const loadQuestions = async () => {
     if (!departmentId) return;
     try {
@@ -29,37 +30,39 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     loadQuestions()
   }, [departmentId])
 
+  // Handle adding a new question safely
   const handleAdd = async () => {
     if (!newQuestionText.trim() || !departmentId) return
     
-    // Validation for choice questions
+    // Validate choice options
     if ((newQuestionType === 'choice' || newQuestionType === 'multi_choice') && !newOptionsText.trim()) {
       alert('חובה להזין אפשרויות תשובה (מופרדות בפסיק) עבור סוג שאלה זה.')
       return
     }
 
     setIsSubmitting(true)
-    console.log("Saving question for department:", departmentId);
-
-    let options: QuestionOption[] | undefined = undefined;
-    if (newQuestionType === 'choice' || newQuestionType === 'multi_choice') {
-      options = newOptionsText.split(',').map(opt => ({
-        label: opt.trim(),
-        value: opt.trim()
-      })).filter(opt => opt.label !== '');
-    }
 
     try {
-      await addQuestion({
+      // Build base question data without options field to prevent Firebase undefined errors
+      const newQuestionData: any = {
         departmentId,
         questionText: newQuestionText,
         questionType: newQuestionType,
-        options,
         isActive: true,
         displayOrder: questions.length + 1
-      })
+      }
+
+      // Add options field only if it is a choice type question
+      if (newQuestionType === 'choice' || newQuestionType === 'multi_choice') {
+        newQuestionData.options = newOptionsText.split(',').map(opt => ({
+          label: opt.trim(),
+          value: opt.trim()
+        })).filter(opt => opt.label !== '')
+      }
+
+      await addQuestion(newQuestionData)
       
-      // Reset form
+      // Reset form upon success
       setNewQuestionText('')
       setNewQuestionType('emoji')
       setNewOptionsText('')
@@ -75,6 +78,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
   return (
     <div className="space-y-6" dir="rtl">
+      {/* Add New Question Form */}
       <div className="bg-white p-5 rounded-2xl border border-[#e8e7f5] shadow-sm space-y-4">
         <div className="flex flex-col md:flex-row gap-4">
           <Input 
