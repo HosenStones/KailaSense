@@ -5,6 +5,7 @@ import {
 import { db } from './config';
 import { AdminUser, Department, Question, Response } from '../types';
 
+// Fetch user by email
 export async function getAdminUserByEmail(email: string): Promise<AdminUser | null> {
   try {
     const q = query(collection(db, 'users'), where('email', '==', email), limit(1));
@@ -18,18 +19,21 @@ export async function getAdminUserByEmail(email: string): Promise<AdminUser | nu
   }
 }
 
+// Fetch all users sorted by department then by name
 export async function getAllAdminUsersSorted(departments: Department[]): Promise<AdminUser[]> {
   const querySnapshot = await getDocs(collection(db, 'users'));
   const users = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
   return users;
 }
 
+// Fetch users by specific department
 export async function getUsersByDepartment(departmentId: string): Promise<AdminUser[]> {
   const q = query(collection(db, 'users'), where('departmentId', '==', departmentId));
   const snap = await getDocs(q);
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
 }
 
+// Fetch all departments sorted alphabetically
 export async function getAllDepartments(): Promise<Department[]> {
   const querySnapshot = await getDocs(collection(db, 'departments'));
   const depts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Department));
@@ -49,6 +53,7 @@ export async function deleteDepartment(id: string): Promise<void> {
   await deleteDoc(doc(db, 'departments', id));
 }
 
+// Admin users management
 export async function createAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
   await setDoc(doc(db, 'users', uid), { ...data, createdAt: new Date().toISOString() });
 }
@@ -61,6 +66,7 @@ export async function deleteAdminUser(uid: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid));
 }
 
+// Questions Management
 export async function getQuestionsByDepartment(departmentId: string): Promise<Question[]> {
   const q = query(collection(db, 'questions'), where('departmentId', '==', departmentId), orderBy('displayOrder', 'asc'));
   const snap = await getDocs(q);
@@ -85,6 +91,7 @@ export async function copyDefaultQuestionsToDepartment(departmentId: string): Pr
   await batch.commit();
 }
 
+// Stats and Responses
 export async function getDepartmentStats(departmentId: string) {
   try {
     const sessionsQuery = query(collection(db, 'survey_sessions'), where('departmentId', '==', departmentId), where('isCompleted', '==', true));
@@ -99,4 +106,35 @@ export async function getResponsesByDepartment(departmentId: string): Promise<Re
   const q = query(collection(db, 'responses'), where('departmentId', '==', departmentId));
   const snap = await getDocs(q);
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Response));
+}
+
+// Survey Session & Answers Saving (הפונקציות שהיו חסרות וגרמו לשגיאה)
+export async function createSurveySession(departmentId: string, source?: string): Promise<string> {
+  const docRef = await addDoc(collection(db, 'survey_sessions'), {
+    departmentId,
+    source: source || 'link',
+    startedAt: new Date().toISOString(),
+    isCompleted: false
+  });
+  return docRef.id;
+}
+
+export async function saveResponse(data: {
+  sessionId: string;
+  questionId: string;
+  answerValue?: string;
+  answerValues?: string[];
+  answerText?: string;
+}): Promise<void> {
+  await addDoc(collection(db, 'responses'), {
+    ...data,
+    createdAt: new Date().toISOString()
+  });
+}
+
+export async function completeSurveySession(sessionId: string): Promise<void> {
+  await updateDoc(doc(db, 'survey_sessions', sessionId), {
+    isCompleted: true,
+    completedAt: new Date().toISOString()
+  });
 }
