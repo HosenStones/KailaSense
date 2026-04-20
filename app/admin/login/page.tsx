@@ -23,7 +23,7 @@ export default function LoginPage() {
       await signIn(email, password)
       router.push('/admin')
     } catch (err: any) {
-      setError('פרטי התחברות שגויים. אנא נסי שוב.')
+      setError('פרטי התחברות שגויים. אנא נסה שנית.')
     } finally {
       setIsLoading(false)
     }
