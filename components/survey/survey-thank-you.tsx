@@ -56,16 +56,12 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
         <h2 className="text-3xl font-bold text-[#1e1c4a] mb-2">
           תודה רבה! 🙏
         </h2>
-        <p className="text-[#6b6890] mb-2 leading-relaxed text-lg">
+        <p className="text-[#6b6890] mb-8 leading-relaxed text-lg">
           המשוב שלך התקבל בהצלחה ויעזור לצוות <b>{departmentName}</b> להמשיך להשתפר.
         </p>
 
-        <p className="text-[#6b6890] mb-8 font-medium text-sm">
-          אנחנו קוראים כל תגובה ומתייחסים.
-        </p>
-
         {/* Real Stats Display */}
-        <div className="bg-[#f7f7fc] rounded-2xl p-6 mb-4 border border-[#e8e7f5]">
+        <div className="bg-[#f7f7fc] rounded-2xl p-6 mb-6 border border-[#e8e7f5]">
           <h3 className="text-sm font-bold text-[#1a5c5c] mb-4 uppercase tracking-wide">ההשפעה של המשוב שלך</h3>
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-white p-3 rounded-xl border border-[#e8e7f5] flex flex-col items-center justify-center shadow-sm">
@@ -83,9 +79,11 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
           </div>
         </div>
 
-        <p className="text-[#2a7c7c] mb-8 font-medium text-[13px]">
-          תודה שעזרת לנו להשתפר 🌟
-        </p>
+        {/* Reassuring Text (Moved below stats, colored gray) */}
+        <div className="text-[#6b6890] mb-8 font-medium text-[13px] space-y-1">
+          <p>אנחנו קוראים כל תגובה ומתייחסים.</p>
+          <p>תודה שעזרת לנו להשתפר 🌟</p>
+        </div>
 
         {/* Show/Hide Answers Toggle */}
         <div className="mb-8 text-right">
@@ -93,7 +91,7 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
             onClick={() => setShowAnswers(!showAnswers)} 
             className="flex items-center justify-between w-full bg-[#f0f9f9] p-4 rounded-xl text-[#1a5c5c] font-bold text-sm border border-[#2a7c7c]/20 hover:bg-[#e6f4f4] transition-colors"
           >
-            <span>{showAnswers ? 'הסתר את התשובות שלי' : 'צפה בתשובות שמסרת'}</span>
+            <span>{showAnswers ? 'הסתר את התשובות שלי' : 'צפה בתשובות'}</span>
             {showAnswers ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
 
@@ -105,7 +103,7 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
                 return (
                   <div key={q.id} className="bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm text-right">
                     <p className="font-bold text-[#1e1c4a] mb-3 leading-snug">{q.questionText}</p>
-                    <div className="text-[#2a7c7c] font-medium">
+                    <div className="text-[#2a7c7c] font-medium flex items-center">
                       {q.questionType === 'emoji' ? <span className="text-2xl">{getEmoji(r.answerValue)}</span> :
                        q.questionType === 'stars' ? renderStars(r.answerValue) :
                        q.questionType === 'multi_choice' ? <span className="text-sm bg-[#f0f9f9] px-3 py-1.5 rounded-lg">{r.answerValues?.join(', ')}</span> :
