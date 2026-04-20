@@ -52,7 +52,7 @@ if (status === 'loading') {
   return (
     <div className="space-y-4" dir="rtl">
       {comments.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center text-[#a8a6c4]">טרם התקבלו תגובות טקסטואליות</div>
+        <div className="rounded-xl border border-dashed p-8 text-center text-[#a8a6c4]">טרם התקבלו תגובות</div>
       ) : (
         comments.map((c) => (
           <div key={c.id} className="rounded-xl border border-[#e8e7f5] bg-white p-4 shadow-sm">
