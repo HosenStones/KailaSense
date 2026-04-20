@@ -239,9 +239,9 @@ export default function AdminDashboardPage() {
                       <td className="py-3 font-medium text-[#1e1c4a]">{u.fullName}</td>
                       <td className="py-3 text-[#6b6890]">{u.role === 'super_admin' ? 'כל המערכת' : departments.find(d => d.id === u.departmentId)?.name || 'ללא שיוך'}</td>
                       <td className="py-3">
-                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${u.role === 'super_admin' ? 'bg-purple-100 text-purple-700' : u.role === 'admin' ? 'bg-[#7dd3d3] text-[#1a5c5c]' : 'bg-gray-100 text-gray-600'}`}>
-                          {u.role === 'super_admin' ? 'סופר אדמין' : u.role === 'admin' ? 'מנהל' : 'צוות'}
-                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${u.role === 'super_admin' ? 'bg-[#1a5c5c] text-white' : u.role === 'admin' ? 'bg-[#7dd3d3] text-[#1a5c5c]' : 'bg-gray-100 text-gray-600'}`}>
+                        {u.role === 'super_admin' ? 'סופר אדמין' : u.role === 'admin' ? 'מנהל' : 'צוות'}
+                      </span>
                       </td>
                       <td className="py-3 flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setEditUser(u)}>ערוך</Button>
