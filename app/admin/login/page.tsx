@@ -3,12 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { signIn } from '@/lib/firebase/auth-context'
+import Link from 'next/link'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth } from '@/lib/firebase/config'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Lock } from 'lucide-react'
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -17,42 +19,89 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError('')
+    setIsLoading(true)
+
     try {
-      await signIn(email, password)
+      await signInWithEmailAndPassword(auth, email, password)
       router.push('/admin')
     } catch (err: any) {
-      setError('פרטי התחברות שגויים. אנא נסה שנית.')
+      console.error(err)
+      setError('פרטי התחברות שגויים. אנא נסה שוב.')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7fc] flex items-center justify-center p-4" dir="rtl">
-      <Card className="max-w-md w-full border-[#e8e7f5] shadow-sm">
-        <CardHeader className="space-y-4 text-center pb-8">
-          <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto h-16 w-auto" />
-          <CardTitle className="text-2xl font-bold text-[#1e1c4a]">כניסה למערכת</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">אימייל</label>
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} required dir="ltr" />
+    <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6" dir="rtl">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-[#e8e7f5] p-8">
+        
+        <div className="flex flex-col items-center mb-8">
+          {/* Logo is now a link back to the homepage */}
+          <Link href="/" className="hover:opacity-80 transition-opacity">
+            <Image 
+              src="/images/kaila-logo-vertical.png" 
+              alt="KailaSense Admin" 
+              width={100} 
+              height={80} 
+              className="h-16 w-auto mb-6" 
+            />
+          </Link>
+          <div className="w-12 h-12 bg-[#f0f9f9] rounded-full flex items-center justify-center text-[#2a7c7c] mb-4">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl font-bold text-[#1e1c4a]">כניסת מנהלים</h1>
+          <p className="text-[#6b6890] text-sm mt-2">הזן את פרטי הגישה שלך למערכת Kaila</p>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-1">
+            <label className="text-sm font-bold text-[#1e1c4a] px-1">אימייל</label>
+            <Input 
+              type="email" 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)} 
+              className="h-12 border-[#e8e7f5] focus:ring-[#2a7c7c]"
+              dir="ltr"
+              required
+            />
+          </div>
+          
+          <div className="space-y-1">
+            <label className="text-sm font-bold text-[#1e1c4a] px-1">סיסמה</label>
+            <Input 
+              type="password" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              className="h-12 border-[#e8e7f5] focus:ring-[#2a7c7c]"
+              dir="ltr"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="bg-red-50 text-red-500 text-sm font-bold p-3 rounded-xl border border-red-100 text-center">
+              {error}
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">סיסמה</label>
-              <Input type="password" value={password} onChange={e => setPassword(e.target.value)} required dir="ltr" />
-            </div>
-            {error && <div className="text-sm text-red-500 bg-red-50 p-3 rounded-lg border">{error}</div>}
-            <Button type="submit" disabled={isLoading} className="w-full bg-[#2a7c7c] py-6 text-lg font-bold">
-              {isLoading ? 'מתחבר...' : 'כניסה'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          )}
+
+          <Button 
+            type="submit" 
+            disabled={isLoading} 
+            className="w-full h-14 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold text-lg rounded-xl mt-6 transition-all"
+          >
+            {isLoading ? 'מתחבר...' : 'התחבר למערכת'}
+          </Button>
+        </form>
+        
+        {/* Added a secondary link to return to the homepage */}
+        <div className="mt-8 text-center border-t border-[#e8e7f5] pt-6">
+           <Link href="/" className="text-sm text-[#a8a6c4] hover:text-[#2a7c7c] transition-colors font-medium">
+             חזרה לעמוד הראשי של הסקר
+           </Link>
+        </div>
+      </div>
     </div>
   )
 }
