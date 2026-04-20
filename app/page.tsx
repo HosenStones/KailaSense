@@ -21,13 +21,14 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6" dir="rtl">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border p-8 text-center">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-sm border border-[#e8e7f5] p-8 text-center">
         
         {step === 1 ? (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="text-6xl mb-6 mt-4">❤️</div>
-            <h1 className="text-3xl font-bold text-[#1e1c4a] mb-4">ברוכים הבאים!</h1>
-            <p className="text-[#6b6890] mb-10 text-lg">המשוב שלך חשוב לנו ומסייע לנו להשתפר.</p>
+            <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto mb-6 h-16 w-auto" priority />
+            <h1 className="text-3xl font-bold text-[#1e1c4a] mb-2">ברוכים הבאים!</h1>
+            <div className="text-6xl mb-4 mt-2">❤️</div>
+            <p className="text-[#6b6890] mb-10 text-lg">המשוב שלך מסייע לנו להשתפר.</p>
             <Button onClick={() => setStep(2)} className="w-full h-14 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold text-lg rounded-xl transition-all shadow-md">
               התחל סקר
             </Button>
@@ -49,7 +50,7 @@ export default function HomePage() {
             <Button 
               onClick={() => router.push(`/survey/${selectedDept}`)}
               disabled={!selectedDept}
-              className="w-full h-14 mt-6 bg-[#2a7c7c] text-white font-bold text-lg rounded-xl"
+              className="w-full h-14 mt-6 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold text-lg rounded-xl"
             >
               המשך
             </Button>
