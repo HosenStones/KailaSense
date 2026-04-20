@@ -25,7 +25,6 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // בדיקה קריטית: אם אין שאלות בכלל, מציגים את מסך "הסקר בבנייה" ועוצרים כאן
   if (questions.length === 0) {
     return (
       <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6" dir="rtl">
@@ -57,7 +56,7 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
       setStep('questions')
     } catch (error) {
       console.error('Error starting survey:', error)
-      alert('שגיאה בחיבור למסד הנתונים. אנא בדקי את חוקי האבטחה ב-Firebase.')
+      alert('שגיאה בחיבור למסד הנתונים. אנא בדוק את חוקי האבטחה ב-Firebase.')
     }
   }, [department.id, source])
 
