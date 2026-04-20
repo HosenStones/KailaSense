@@ -25,6 +25,22 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // בדיקה קריטית: אם אין שאלות בכלל, מציגים את מסך "הסקר בבנייה" ועוצרים כאן
+  if (questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6" dir="rtl">
+        <div className="bg-white max-w-md w-full rounded-2xl p-8 text-center border border-[#e8e7f5] shadow-sm">
+          <div className="text-5xl mb-6">🚧</div>
+          <h2 className="text-2xl font-bold text-[#1e1c4a] mb-2">הסקר בבנייה</h2>
+          <p className="text-[#6b6890] mb-8">כרגע אין שאלות פעילות במחלקה זו. נשמח לשמוע ממך בפעם הבאה!</p>
+          <button onClick={() => window.location.href = '/'} className="bg-[#2a7c7c] text-white px-6 py-3 rounded-xl font-bold w-full hover:bg-[#236969]">
+            חזרה למסך הראשי
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   const currentQuestion = questions[currentIndex]
 
   const handleRestart = useCallback(() => {
@@ -34,42 +50,42 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
     setSessionId(null)
   }, [])
 
-const handleStart = useCallback(async () => {
-  try {
-    const id = await createSurveySession(department.id, source)
-    setSessionId(id)
-    setStep('questions')
-  } catch (error) {
-    console.error('Error starting survey:', error)
-    alert('שגיאה בחיבור למסד הנתונים. אנא בדקי את חוקי האבטחה ב-Firebase.')
-  }
-}, [department.id, source])
-
-const handleSubmit = useCallback(async () => {
-  if (!sessionId) return
-  setIsSubmitting(true)
-
-  try {
-    for (const response of Object.values(responses)) {
-      if (response.questionId) {
-        await saveResponse({
-          sessionId,
-          questionId: response.questionId,
-          answerValue: response.answerValue,
-          answerValues: response.answerValues,
-          answerText: response.answerText,
-        })
-      }
+  const handleStart = useCallback(async () => {
+    try {
+      const id = await createSurveySession(department.id, source)
+      setSessionId(id)
+      setStep('questions')
+    } catch (error) {
+      console.error('Error starting survey:', error)
+      alert('שגיאה בחיבור למסד הנתונים. אנא בדקי את חוקי האבטחה ב-Firebase.')
     }
-    await completeSurveySession(sessionId)
-    setStep('thankyou')
-  } catch (error) {
-    console.error('Error submitting survey:', error)
-    alert('שגיאה בשמירת התשובות. הנתונים לא נשמרו.')
-  } finally {
-    setIsSubmitting(false)
-  }
-}, [sessionId, responses])
+  }, [department.id, source])
+
+  const handleSubmit = useCallback(async () => {
+    if (!sessionId) return
+    setIsSubmitting(true)
+
+    try {
+      for (const response of Object.values(responses)) {
+        if (response.questionId) {
+          await saveResponse({
+            sessionId,
+            questionId: response.questionId,
+            answerValue: response.answerValue,
+            answerValues: response.answerValues,
+            answerText: response.answerText,
+          })
+        }
+      }
+      await completeSurveySession(sessionId)
+      setStep('thankyou')
+    } catch (error) {
+      console.error('Error submitting survey:', error)
+      alert('שגיאה בשמירת התשובות. הנתונים לא נשמרו.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }, [sessionId, responses])
 
   const handleResponse = useCallback((response: Partial<Response>) => {
     setResponses((prev) => ({
@@ -126,7 +142,6 @@ const handleSubmit = useCallback(async () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f7fc] flex flex-col">
-      {/* Header */}
       <header className="bg-white border-b border-[#e8e7f5] px-4 py-3 text-center">
         <button 
           onClick={handleRestart}
@@ -135,19 +150,17 @@ const handleSubmit = useCallback(async () => {
         >
           <Image
             src="/images/kaila-logo-horizontal.png"
-            alt="Kaila - לחץ לחזרה להתחלה"
+            alt="Kaila - חזרה להתחלה"
             width={80}
             height={24}
             className="h-6 w-auto"
           />
-          <span className="text-sm font-bold text-[#2a7c7c]">- {department.name}</span>
+          <span className="text-sm font-bold text-[#2a7c7c]">| {department.name}</span>
         </button>
       </header>
 
-      {/* Progress */}
       <SurveyProgress current={currentIndex + 1} total={questions.length} />
 
-      {/* Question */}
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <SurveyQuestion
@@ -158,7 +171,6 @@ const handleSubmit = useCallback(async () => {
         </div>
       </div>
 
-      {/* Navigation */}
       <div className="p-4 pb-6">
         <div className="max-w-md mx-auto">
           <SurveyNavigation
