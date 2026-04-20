@@ -4,43 +4,34 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { getQuestionsByDepartment, addQuestion, deleteQuestion } from '@/lib/firebase/firestore'
 import type { Question } from '@/lib/types'
-import { Plus, Trash2, Sparkles } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [newQuestionText, setNewQuestionText] = useState('')
 
   const loadQuestions = async () => {
-    setIsLoading(true)
+    if (!departmentId) return;
     const data = await getQuestionsByDepartment(departmentId)
     setQuestions(data)
-    setIsLoading(false)
   }
 
   useEffect(() => {
-    if (departmentId) loadQuestions()
+    loadQuestions()
   }, [departmentId])
 
- const handleAdd = async () => {
+  const handleAdd = async () => {
     if (!newQuestionText.trim()) return
     await addQuestion({
       departmentId,
-      questionText: newQuestionText, 
-      questionType: 'emoji',        
-      isActive: true,              
+      questionText: newQuestionText,
+      questionType: 'emoji',
+      isActive: true,
       displayOrder: questions.length + 1
     })
     setNewQuestionText('')
     await loadQuestions()
   }
-
-  const handleDelete = async (id: string) => {
-    await deleteQuestion(id)
-    await loadQuestions()
-  }
-
-  if (isLoading) return <div className="p-4 text-center text-[#6b6890]">טוען שאלות...</div>
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -55,21 +46,28 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         <Button onClick={handleAdd} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">
           <Plus className="w-4 h-4 ml-2" /> הוסף שאלה
         </Button>
-        {/* Unclickable AI Button as requested */}
-        <Button disabled className="bg-[#6b6890] opacity-50 cursor-not-allowed text-white">
-          <Sparkles className="w-4 h-4 ml-2" /> הוספת שאלה באמצעות AI
-        </Button>
       </div>
 
-      <div className="bg-white rounded-xl border border-[#e8e7f5] overflow-hidden">
-        {questions.map((q) => (
-          <div key={q.id} className="flex items-center justify-between p-4 border-b last:border-0 hover:bg-[#f7f7fc]">
-            <span className="text-[#1e1c4a] font-medium">{q.text}</span>
-            <Button variant="ghost" onClick={() => q.id && handleDelete(q.id)} className="text-red-400 hover:text-red-600">
-              <Trash2 className="w-4 h-4" />
-            </Button>
+      <div className="space-y-3">
+        {questions.length === 0 ? (
+          <div className="text-center p-8 bg-white rounded-xl border border-dashed border-[#a8a6c4] text-[#6b6890]">
+            אין שאלות פעילות במחלקה זו. הוסיפי שאלה למעלה כדי להתחיל.
           </div>
-        ))}
+        ) : (
+          questions.map((q, index) => (
+            <div key={q.id} className="flex items-center justify-between bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm">
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 rounded-full bg-[#f7f7fc] flex items-center justify-center text-sm font-bold text-[#6b6890]">
+                  {index + 1}
+                </div>
+                <span className="font-medium text-[#1e1c4a]">{q.questionText}</span>
+              </div>
+              <button onClick={() => deleteQuestion(q.id).then(loadQuestions)} className="text-[#a8a6c4] hover:text-red-500 transition-colors">
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
