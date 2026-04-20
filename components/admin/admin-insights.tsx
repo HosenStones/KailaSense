@@ -70,7 +70,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
             <Users className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs text-[#6b6890] font-bold mb-1">סך הכל משובים</p>
+            <p className="text-xs text-[#6b6890] font-bold mb-1">משיבים</p>
             <h3 className="text-2xl font-bold text-[#1e1c4a]">{stats.totalResponses}</h3>
           </div>
         </div>
@@ -90,7 +90,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
             <MessageSquare className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-xs text-[#6b6890] font-bold mb-1">תגובות טקסטואליות</p>
+            <p className="text-xs text-[#6b6890] font-bold mb-1">תגובות</p>
             <h3 className="text-2xl font-bold text-[#1e1c4a]">{stats.totalComments}</h3>
           </div>
         </div>
@@ -109,10 +109,10 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
       {/* Middle Section: Charts & Data */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Emoji Distribution Chart (Takes 1 column) */}
+        {/* Emoji Distribution Chart */}
         <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
           <h3 className="text-[#1e1c4a] font-bold mb-6 flex items-center gap-2">
-            <Smile className="w-5 h-5 text-[#2a7c7c]" /> פילוג שביעות רצון (אימוג'י)
+            <Smile className="w-5 h-5 text-[#2a7c7c]" /> פילוג שביעות רצון
           </h3>
           <div className="space-y-4">
             {[
@@ -138,7 +138,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
           {totalRatings === 0 && <p className="text-sm text-gray-400 mt-4 text-center">אין עדיין דירוגים להצגה.</p>}
         </div>
 
-        {/* Empty placeholder for future charts (Takes 2 columns) */}
+        {/* Placeholder for future charts */}
         <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm lg:col-span-2 flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 bg-[#f0f9f9] rounded-full flex items-center justify-center text-[#2a7c7c] mb-4">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
@@ -151,7 +151,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
       {/* Recent Comments Section */}
       <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
         <h3 className="text-[#1e1c4a] font-bold mb-6 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-[#2a7c7c]" /> תגובות אחרונות (טקסט חופשי)
+          <MessageSquare className="w-5 h-5 text-[#2a7c7c]" /> תגובות אחרונות
         </h3>
         {textComments.length === 0 ? (
           <p className="text-[#6b6890] text-center p-6">אין עדיין תגובות טקסטואליות מהמטופלים.</p>
