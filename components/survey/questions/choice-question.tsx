@@ -14,10 +14,10 @@ export function ChoiceQuestion({ question, value, onChange }: ChoiceQuestionProp
   return (
     <div>
       {/* Question Tag */}
-      <div className="text-xs font-bold text-[#2ecfaa] tracking-wide mb-1 uppercase">שאלה</div>
+      <div className="text-xs font-bold text-primary tracking-wide mb-1 uppercase">שאלה</div>
       
       {/* Question Text */}
-      <h2 className="text-lg font-bold text-[#1e1c4a] leading-relaxed mb-4">
+      <h2 className="text-lg font-bold text-card-foreground leading-relaxed mb-4">
         {question.questionText}
       </h2>
       
@@ -27,26 +27,26 @@ export function ChoiceQuestion({ question, value, onChange }: ChoiceQuestionProp
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            className={`flex items-center gap-3 bg-white border rounded-xl p-3 text-right transition-all ${
+            className={`flex items-center gap-3 bg-background border rounded-xl p-3 text-right transition-all ${
               value === option.value
-                ? 'border-[#2ecfaa] bg-[#e4faf5]'
-                : 'border-[#e8e7f5] hover:border-[#2ecfaa] hover:bg-[#e4faf5]'
+                ? 'border-primary bg-primary/20'
+                : 'border-border hover:border-primary hover:bg-primary/10'
             }`}
           >
             {/* Radio indicator */}
             <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
               value === option.value
-                ? 'border-[#2ecfaa] bg-[#2ecfaa]'
-                : 'border-[#e8e7f5]'
+                ? 'border-primary bg-primary'
+                : 'border-border'
             }`}>
               {value === option.value && (
-                <span className="text-white text-xs">✓</span>
+                <span className="text-primary-foreground text-xs">✓</span>
               )}
             </div>
             
             {/* Option content */}
             <span className={`flex-1 text-sm ${
-              value === option.value ? 'text-[#1e1c4a] font-semibold' : 'text-[#6b6890]'
+              value === option.value ? 'text-primary-foreground font-semibold' : 'text-muted-foreground'
             }`}>
               {option.label}
             </span>
