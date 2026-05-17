@@ -21,59 +21,56 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-4 md:p-6" dir="rtl">
-      {/* Container adopts the clean white card layout with custom border */}
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl border border-[#e8e7f5] p-6 md:p-8 text-center">
+      <div className="max-w-md w-full bg-card rounded-3xl shadow-xl border border-border p-6 md:p-8 text-center">
         
         {step === 1 ? (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Logo changed back to vertical colored version to fit the bright background */}
             <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto mb-6 h-14 w-auto" priority />
-            <h1 className="text-3xl font-bold text-[#1e1c4a] mb-2">ברוכים הבאים!</h1>
+            <h1 className="text-3xl font-bold text-card-foreground mb-2">ברוכים הבאים!</h1>
             
             <div className="text-4xl mb-4 mt-6">❤️</div>
-            <p className="text-[#6b6890] mb-8 text-lg px-2">המשוב שלך חשוב ומסייע לנו להשתפר.</p>
+            <p className="text-muted-foreground mb-8 text-lg px-2">המשוב שלך חשוב ומסייע לנו להשתפר.</p>
             
-            <Button onClick={() => setStep(2)} className="w-full h-14 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold text-lg rounded-xl transition-all shadow-md cursor-pointer">
+            <Button onClick={() => setStep(2)} className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl transition-all shadow-md cursor-pointer">
               התחל סקר
             </Button>
 
-            {/* Informational Badges using the soft clean design from Insights */}
             <div className="flex flex-wrap justify-center gap-2 mt-6">
-              <span className="bg-[#f0f9f9] text-[#2a7c7c] text-[11px] font-bold px-3 py-1.5 rounded-full border border-[#e8e7f5]">⏱️ מתחת ל-2 דק'</span>
-              <span className="bg-[#f0f9f9] text-[#2a7c7c] text-[11px] font-bold px-3 py-1.5 rounded-full border border-[#e8e7f5]">🕵️‍♀️ אנונימי לחלוטין</span>
-              <span className="bg-[#f0f9f9] text-[#2a7c7c] text-[11px] font-bold px-3 py-1.5 rounded-full border border-[#e8e7f5]">🔓 ללא צורך בהרשמה</span>
+              <span className="bg-secondary text-primary text-[11px] font-bold px-3 py-1.5 rounded-full border border-border">⏱️ מתחת ל-2 דק'</span>
+              <span className="bg-secondary text-primary text-[11px] font-bold px-3 py-1.5 rounded-full border border-border">🕵️‍♀️ אנונימי לחלוטין</span>
+              <span className="bg-secondary text-primary text-[11px] font-bold px-3 py-1.5 rounded-full border border-border">🔓 ללא צורך בהרשמה</span>
             </div>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-right-8 duration-300">
             <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto mb-8 h-14 w-auto" priority />
-            <h1 className="text-2xl font-bold mb-8 text-[#1e1c4a]">באיזו מחלקה ביקרת?</h1>
+            <h1 className="text-2xl font-bold mb-8 text-card-foreground">באיזו מחלקה ביקרת?</h1>
 
             <Select onValueChange={setSelectedDept}>
-              <SelectTrigger className="w-full h-14 bg-[#f7f7fc] border-[#e8e7f5] text-[#1e1c4a] text-right rounded-xl text-lg font-medium focus:ring-[#2a7c7c] hover:bg-[#f0f0f7] transition-colors cursor-pointer" dir="rtl">
+              <SelectTrigger className="w-full h-14 bg-input border-border text-card-foreground text-right rounded-xl text-lg font-medium focus:ring-primary hover:bg-[#f0f0f7] transition-colors cursor-pointer" dir="rtl">
                 <SelectValue placeholder="בחר מחלקה מהרשימה" />
               </SelectTrigger>
-              <SelectContent dir="rtl" className="max-h-60 bg-white border-[#e8e7f5] text-[#1e1c4a]">
-                {departments.map(dept => <SelectItem key={dept.id} value={dept.id} className="text-right text-base py-3 focus:bg-[#f0f9f9] focus:text-[#2a7c7c] cursor-pointer">{dept.name}</SelectItem>)}
+              <SelectContent dir="rtl" className="max-h-60 bg-popover border-border text-popover-foreground">
+                {departments.map(dept => <SelectItem key={dept.id} value={dept.id} className="text-right text-base py-3 focus:bg-accent focus:text-accent-foreground cursor-pointer">{dept.name}</SelectItem>)}
               </SelectContent>
             </Select>
 
             <Button 
               onClick={() => router.push(`/survey/${selectedDept}`)}
               disabled={!selectedDept}
-              className="w-full h-14 mt-6 bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold text-lg rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              className="w-full h-14 mt-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl transition-all cursor-pointer disabled:opacity-50"
             >
               המשך
             </Button>
             
-            <button onClick={() => setStep(1)} className="mt-4 text-[#a8a6c4] text-sm hover:text-[#1e1c4a] transition-colors cursor-pointer">
+            <button onClick={() => setStep(1)} className="mt-4 text-muted-foreground text-sm hover:text-card-foreground transition-colors cursor-pointer">
               חזרה
             </button>
           </div>
         )}
 
-        <div className="mt-10 pt-5 border-t border-[#e8e7f5]">
-          <Link href="/admin/login" className="text-sm text-[#a8a6c4] hover:text-[#2a7c7c] transition-colors font-medium">כניסה לממשק הניהול</Link>
+        <div className="mt-10 pt-5 border-t border-border">
+          <Link href="/admin/login" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">כניסה לממשק הניהול</Link>
         </div>
       </div>
     </div>
