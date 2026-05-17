@@ -3,13 +3,13 @@ import { getAuth, Auth } from 'firebase/auth'
 import { getFirestore, Firestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDbcso_YRXnD7r3hZB9XZgapRualmMyPDw",
-  authDomain: "kaila-7fe41.firebaseapp.com",
-  projectId: "kaila-7fe41",
-  storageBucket: "kaila-7fe41.firebasestorage.app",
-  messagingSenderId: "936710809739",
-  appId: "1:936710809739:web:81c97608c50f79d70bcc8e",
-  measurementId: "G-4ELNCVQ8ZX"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Debug log for initialization
