@@ -22,10 +22,10 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
   return (
     <div>
       {/* Question Tag */}
-      <div className="text-xs font-bold text-[#2ecfaa] tracking-wide mb-1 uppercase">שאלה</div>
+      <div className="text-xs font-bold text-primary tracking-wide mb-1 uppercase">שאלה</div>
       
       {/* Question Text */}
-      <h2 className="text-lg font-bold text-[#1e1c4a] leading-relaxed mb-6">
+      <h2 className="text-lg font-bold text-card-foreground leading-relaxed mb-6">
         {question.questionText}
       </h2>
       
@@ -58,7 +58,7 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
         {/* Label */}
         <div className="h-5 mt-2">
           {displayValue > 0 && (
-            <span className="text-sm font-semibold text-[#2a7c7c]">
+            <span className="text-sm font-semibold text-primary">
               {labels[displayValue - 1]}
             </span>
           )}
