@@ -22,27 +22,28 @@ export function EmojiQuestion({ question, value, onChange }: EmojiQuestionProps)
 
   return (
     <div>
-      <div className="text-xs font-bold text-primary tracking-wide mb-1 uppercase">שאלה</div>
-      <h2 className="text-lg font-bold text-card-foreground leading-relaxed mb-4">
+      <div className="text-xs font-bold text-[#2a7c7c] tracking-wide mb-1 uppercase">שאלה</div>
+      {/* Main question changed to full white text to contrast nicely with the deep navy background */}
+      <h2 className="text-xl font-bold text-white leading-relaxed mb-6">
         {question.questionText}
       </h2>
       
-      <div className="grid grid-cols-2 gap-2" dir="rtl">
+      <div className="grid grid-cols-2 gap-3" dir="rtl">
         {options.map((option) => (
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            className={`bg-background border rounded-xl p-4 text-center transition-all ${
+            className={`bg-white border rounded-2xl p-4 text-center transition-all shadow-sm cursor-pointer ${
               value === option.value
-                ? 'border-primary bg-primary/20 shadow-md'
-                : 'border-border hover:border-primary hover:bg-primary/10'
+                ? 'border-[#2a7c7c] bg-[#f0f9f9] scale-[1.02] shadow-md'
+                : 'border-[#e8e7f5] text-[#1e1c4a] hover:bg-[#f7f7fc] hover:border-[#a8a6c4]'
             }`}
           >
-            <span className="text-2xl block mb-1" role="img" aria-label={option.label}>
+            <span className="text-3xl block mb-2" role="img" aria-label={option.label}>
               {option.emoji}
             </span>
-            <span className={`text-sm font-medium ${
-              value === option.value ? 'text-primary-foreground font-bold' : 'text-muted-foreground'
+            <span className={`text-base ${
+              value === option.value ? 'text-[#2a7c7c] font-bold' : 'text-[#6b6890] font-semibold'
             }`}>
               {option.label}
             </span>
