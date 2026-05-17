@@ -42,12 +42,12 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   // Handle departments with no questions defined
   if (!isInitializing && (!questions || questions.length === 0)) {
     return (
-      <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6 text-center" dir="rtl">
-        <div className="bg-white max-w-md w-full rounded-3xl p-10 border border-[#e8e7f5] shadow-xl">
+      <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <div className="bg-card/95 backdrop-blur-md max-w-md w-full rounded-3xl p-10 border border-border shadow-xl">
           <div className="text-6xl mb-6">🚧</div>
-          <h2 className="text-2xl font-bold text-[#1e1c4a] mb-3">הסקר בבנייה</h2>
-          <p className="text-[#6b6890] mb-8 leading-relaxed">אנחנו עדיין מעדכנים את השאלות עבור מחלקת <b>{department.name}</b>. נשמח לשמוע ממך בקרוב!</p>
-          <Link href="/" className="block bg-[#2a7c7c] text-white px-6 py-4 rounded-2xl font-bold w-full hover:bg-[#236969] transition-all shadow-md">
+          <h2 className="text-2xl font-bold text-card-foreground mb-3">הסקר בבנייה</h2>
+          <p className="text-muted-foreground mb-8 leading-relaxed">אנחנו עדיין מעדכנים את השאלות עבור מחלקת <b>{department.name}</b>. נשמח לשמוע ממך בקרוב!</p>
+          <Link href="/" className="block bg-primary text-primary-foreground px-6 py-4 rounded-2xl font-bold w-full hover:bg-primary/90 transition-all shadow-md text-center">
             חזרה למסך הראשי
           </Link>
         </div>
@@ -57,7 +57,7 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
 
   // Show loading indicator during initialization
   if (isInitializing) {
-    return <div className="min-h-screen flex items-center justify-center text-[#2a7c7c] font-bold">מכין את הסקר...</div>
+    return <div className="min-h-screen flex items-center justify-center text-primary font-bold">מכין את הסקר...</div>
   }
 
   const currentQuestion = questions[currentIndex]
@@ -101,12 +101,12 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[#f7f7fc] flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-transparent flex flex-col" dir="rtl">
       {/* Header with Logo linking to Home */}
-      <header className="bg-white border-b border-[#e8e7f5] px-4 py-3 flex items-center justify-center">
+      <header className="bg-card/80 backdrop-blur-md border-b border-border px-4 py-3 flex items-center justify-center">
         <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <Image src="/images/kaila-logo-horizontal.png" alt="Kaila" width={80} height={24} className="h-6 w-auto" />
-          <span className="text-sm font-bold text-[#2a7c7c] border-r border-gray-200 pr-3">| {department.name}</span>
+          <Image src="/images/kaila-logo-horizontal-white.png" alt="Kaila" width={80} height={24} className="h-6 w-auto drop-shadow-md" />
+          <span className="text-sm font-bold text-primary border-r border-border pr-3">| {department.name}</span>
         </Link>
       </header>
 
