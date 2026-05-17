@@ -40,7 +40,7 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
         {[1, 2, 3, 4, 5].map((star) => (
           <Star 
             key={star} 
-            className={`w-5 h-5 ${star <= num ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'}`} 
+            className={`w-5 h-5 ${star <= num ? 'fill-yellow-400 text-yellow-400' : 'text-border'}`} 
           />
         ))}
       </div>
@@ -49,19 +49,16 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
 
   return (
     <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-6 text-center" dir="rtl">
-      <div className="bg-card/95 backdrop-blur-md max-w-md w-full rounded-3xl p-8 border border-border shadow-2xl animate-in fade-in zoom-in duration-500">
+      <div className="bg-card max-w-md w-full rounded-3xl p-8 border border-border shadow-xl animate-in fade-in zoom-in duration-500">
         
-        <Image src="/images/kaila-logo-vertical-white.png" alt="Kaila" width={120} height={80} className="mx-auto mb-6 h-14 w-auto drop-shadow-md" priority />
+        <Image src="/images/kaila-logo-vertical.png" alt="Kaila" width={120} height={80} className="mx-auto mb-6 h-14 w-auto" priority />
         
-        <h2 className="text-3xl font-bold text-card-foreground mb-2">
-          תודה רבה! 🙏
-        </h2>
+        <h2 className="text-3xl font-bold text-card-foreground mb-2">תודה רבה! 🙏</h2>
         <p className="text-muted-foreground mb-8 leading-relaxed text-lg">
           המשוב שלך התקבל בהצלחה ויעזור לצוות <b>{departmentName}</b> להמשיך להשתפר.
         </p>
 
-        {/* Real Stats Display */}
-        <div className="bg-background/50 rounded-2xl p-6 mb-6 border border-border">
+        <div className="bg-muted rounded-2xl p-6 mb-6 border border-border">
           <h3 className="text-sm font-bold text-primary mb-4 uppercase tracking-wide">ההשפעה של המשוב שלך</h3>
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-card p-3 rounded-xl border border-border flex flex-col items-center justify-center shadow-sm">
@@ -79,17 +76,15 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
           </div>
         </div>
 
-        {/* Reassuring Text */}
         <div className="text-muted-foreground mb-8 font-medium text-[13px] space-y-1">
           <p>אנחנו קוראים כל תגובה ומתייחסים.</p>
           <p>תודה שעזרת לנו להשתפר 🌟</p>
         </div>
 
-        {/* Show/Hide Answers Toggle */}
         <div className="mb-8 text-right">
           <button 
             onClick={() => setShowAnswers(!showAnswers)} 
-            className="flex items-center justify-between w-full bg-primary/10 p-4 rounded-xl text-primary font-bold text-sm border border-primary/20 hover:bg-primary/20 transition-colors"
+            className="flex items-center justify-between w-full bg-accent p-4 rounded-xl text-accent-foreground font-bold text-sm border border-primary/10 hover:opacity-90 transition-all cursor-pointer"
           >
             <span>{showAnswers ? 'הסתר את התשובות שלי' : 'צפה בתשובות'}</span>
             {showAnswers ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -106,8 +101,8 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
                     <div className="text-primary font-medium flex items-center">
                       {q.questionType === 'emoji' ? <span className="text-2xl">{getEmoji(r.answerValue)}</span> :
                        q.questionType === 'stars' ? renderStars(r.answerValue) :
-                       q.questionType === 'multi_choice' ? <span className="text-sm bg-background px-3 py-1.5 rounded-lg">{r.answerValues?.join(', ')}</span> :
-                       <span className="text-sm bg-background px-3 py-1.5 rounded-lg block w-full">{r.answerText || r.answerValue}</span>}
+                       q.questionType === 'multi_choice' ? <span className="text-sm bg-muted px-3 py-1.5 rounded-lg font-semibold">{r.answerValues?.join(', ')}</span> :
+                       <span className="text-sm bg-muted px-3 py-1.5 rounded-lg block w-full font-semibold">{r.answerText || r.answerValue}</span>}
                     </div>
                   </div>
                 )
@@ -118,7 +113,7 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
 
         <button 
           onClick={onRestart}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-4 rounded-xl font-bold w-full transition-all shadow-md"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-4 rounded-xl font-bold w-full transition-all shadow-md cursor-pointer"
         >
           מילוי סקר חדש
         </button>
