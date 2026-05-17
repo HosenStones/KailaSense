@@ -21,16 +21,16 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
 
   return (
     <div>
-      {/* Question Tag */}
+      {/* Question Tag using global primary color */}
       <div className="text-xs font-bold text-primary tracking-wide mb-1 uppercase">שאלה</div>
       
-      {/* Question Text */}
-      <h2 className="text-lg font-bold text-card-foreground leading-relaxed mb-6">
+      {/* Question Text in clear white to contrast with deep navy background */}
+      <h2 className="text-xl font-bold text-white leading-relaxed mb-6">
         {question.questionText}
       </h2>
       
-      {/* Stars */}
-      <div className="flex flex-col items-center gap-2">
+      {/* Stars container card adopting clean white theme tokens */}
+      <div className="flex flex-col items-center gap-2 bg-card border border-border rounded-2xl p-6 shadow-sm">
         <div 
           className="flex items-center justify-center gap-2"
           onMouseLeave={() => setHovered(null)}
@@ -40,7 +40,7 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
               key={star}
               onClick={() => onChange(star)}
               onMouseEnter={() => setHovered(star)}
-              className="p-1 transition-transform hover:scale-110 active:scale-95"
+              className="p-1 transition-transform hover:scale-110 active:scale-95 cursor-pointer"
             >
               <span 
                 className={`text-4xl transition-all ${
@@ -55,10 +55,10 @@ export function StarsQuestion({ question, value, onChange }: StarsQuestionProps)
           ))}
         </div>
         
-        {/* Label */}
+        {/* Active Star Label using system primary token */}
         <div className="h-5 mt-2">
           {displayValue > 0 && (
-            <span className="text-sm font-semibold text-primary">
+            <span className="text-base font-bold text-primary animate-in fade-in duration-200">
               {labels[displayValue - 1]}
             </span>
           )}
