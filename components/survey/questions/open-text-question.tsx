@@ -14,10 +14,10 @@ export function OpenTextQuestion({ question, value, onChange }: OpenTextQuestion
   return (
     <div>
       {/* Question Tag */}
-      <div className="text-xs font-bold text-[#2ecfaa] tracking-wide mb-1 uppercase">שאלה</div>
+      <div className="text-xs font-bold text-primary tracking-wide mb-1 uppercase">שאלה</div>
       
       {/* Question Text */}
-      <h2 className="text-lg font-bold text-[#1e1c4a] leading-relaxed mb-4">
+      <h2 className="text-lg font-bold text-card-foreground leading-relaxed mb-4">
         {question.questionText}
       </h2>
       
@@ -26,12 +26,12 @@ export function OpenTextQuestion({ question, value, onChange }: OpenTextQuestion
         value={value}
         onChange={(e) => onChange(e.target.value.slice(0, maxLength))}
         placeholder="כתוב כאן את המשוב שלך..."
-        className="w-full min-h-[100px] p-3 border border-[#e8e7f5] rounded-xl text-sm text-[#1e1c4a] leading-relaxed resize-none bg-white outline-none focus:border-[#2ecfaa]"
+        className="w-full min-h-[100px] p-3 border border-border rounded-xl text-sm text-foreground leading-relaxed resize-none bg-background outline-none focus:border-primary"
         dir="rtl"
       />
       
       {/* Character count */}
-      <div className="text-xs text-[#a8a6c4] mt-1 text-left" dir="ltr">
+      <div className="text-xs text-muted-foreground mt-1 text-left" dir="ltr">
         {value.length} / {maxLength}
       </div>
     </div>
