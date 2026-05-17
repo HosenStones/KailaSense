@@ -13,24 +13,17 @@ export function OpenTextQuestion({ question, value, onChange }: OpenTextQuestion
   
   return (
     <div>
-      {/* Question Tag */}
       <div className="text-xs font-bold text-primary tracking-wide mb-1 uppercase">שאלה</div>
+      <h2 className="text-xl font-bold text-white leading-relaxed mb-4">{question.questionText}</h2>
       
-      {/* Question Text */}
-      <h2 className="text-lg font-bold text-card-foreground leading-relaxed mb-4">
-        {question.questionText}
-      </h2>
-      
-      {/* Textarea */}
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value.slice(0, maxLength))}
         placeholder="כתוב כאן את המשוב שלך..."
-        className="w-full min-h-[100px] p-3 border border-border rounded-xl text-sm text-foreground leading-relaxed resize-none bg-background outline-none focus:border-primary"
+        className="w-full min-h-[120px] p-4 border border-border rounded-2xl text-base text-card-foreground leading-relaxed resize-none bg-card outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder-muted-foreground/50 shadow-sm"
         dir="rtl"
       />
       
-      {/* Character count */}
       <div className="text-xs text-muted-foreground mt-1 text-left" dir="ltr">
         {value.length} / {maxLength}
       </div>
