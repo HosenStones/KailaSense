@@ -37,18 +37,21 @@ export default function SurveyPage() {
   }, [departmentId])
 
   if (loading) {
-    return <div className="min-h-screen bg-[#f7f7fc] flex items-center justify-center">טוען סקר...</div>
+    return <div className="min-h-screen bg-transparent flex items-center justify-center text-primary font-bold">טוען סקר...</div>
   }
 
   if (!department) {
     return (
-      <div className="min-h-screen bg-[#f7f7fc] flex flex-col items-center justify-center p-6" dir="rtl">
-        <h1 className="text-2xl font-bold text-[#1e1c4a] mb-4">המחלקה לא נמצאה</h1>
-        <button onClick={() => window.location.href = '/'} className="bg-[#2a7c7c] text-white px-6 py-3 rounded-xl">חזרה למסך הראשי</button>
+      <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-6" dir="rtl">
+        <div className="bg-card/95 backdrop-blur-md max-w-md w-full rounded-3xl p-8 border border-border shadow-xl text-center">
+          <h1 className="text-2xl font-bold text-card-foreground mb-4">המחלקה לא נמצאה</h1>
+          <button onClick={() => window.location.href = '/'} className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl transition-all shadow-md">
+            חזרה למסך הראשי
+          </button>
+        </div>
       </div>
     )
   }
 
-  // זה הקומפוננטה שכבר בנינו והיא תציג "הסקר בבנייה" אם אין שאלות
   return <SurveyContainer department={department} questions={questions} source="link" />
 }
