@@ -22,13 +22,13 @@ export function MultiChoiceQuestion({ question, values, onChange }: MultiChoiceQ
   return (
     <div>
       {/* Question Tag */}
-      <div className="text-xs font-bold text-[#2ecfaa] tracking-wide mb-1 uppercase">שאלה</div>
+      <div className="text-xs font-bold text-primary tracking-wide mb-1 uppercase">שאלה</div>
       
       {/* Question Text */}
-      <h2 className="text-lg font-bold text-[#1e1c4a] leading-relaxed mb-1">
+      <h2 className="text-lg font-bold text-card-foreground leading-relaxed mb-1">
         {question.questionText}
       </h2>
-      <p className="text-xs text-[#a8a6c4] mb-4">
+      <p className="text-xs text-muted-foreground mb-4">
         ניתן לבחור יותר מאפשרות אחת
       </p>
       
@@ -40,24 +40,24 @@ export function MultiChoiceQuestion({ question, values, onChange }: MultiChoiceQ
             <button
               key={option.value}
               onClick={() => toggleValue(option.value)}
-              className={`bg-white border rounded-xl p-3 text-center transition-all ${
+              className={`bg-background border rounded-xl p-3 text-center transition-all ${
                 isSelected
-                  ? 'border-[#2ecfaa] bg-[#e4faf5] shadow-sm'
-                  : 'border-[#e8e7f5] hover:border-[#2ecfaa] hover:bg-[#e4faf5]'
+                  ? 'border-primary bg-primary/20 shadow-sm'
+                  : 'border-border hover:border-primary hover:bg-primary/10'
               }`}
             >
               {option.emoji && (
                 <span className="text-xl block mb-1">{option.emoji}</span>
               )}
               <span className={`text-sm font-medium block ${
-                isSelected ? 'text-[#3d3a9e] font-semibold' : 'text-[#6b6890]'
+                isSelected ? 'text-primary-foreground font-semibold' : 'text-muted-foreground'
               }`}>
                 {option.label}
               </span>
               
               {/* Check indicator */}
               {isSelected && (
-                <span className="text-xs text-[#2ecfaa] mt-1 block">✓</span>
+                <span className="text-xs text-primary mt-1 block">✓</span>
               )}
             </button>
           )
