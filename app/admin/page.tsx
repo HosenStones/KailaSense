@@ -180,8 +180,8 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      <main className="p-6 max-w-6xl mx-auto">
-        <div className="bg-transparent rounded-2xl shadow-xl border border-border p-6 min-h-[500px]">
+     <main className="p-6 max-w-6xl mx-auto">
+        <div className="bg-transparent p-6 min-h-[500px]">
           {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
           {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
           {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
@@ -194,7 +194,7 @@ export default function AdminDashboardPage() {
                 <Button onClick={() => setIsAddUserOpen(true)} variant="outline" className="border-border bg-card text-foreground hover:bg-secondary font-bold cursor-pointer"> + איש צוות חדש</Button>
               </div>
 
-              <div className="bg-transparent rounded-xl border border-border shadow-sm p-5 text-card-foreground">
+              <div className="bg-card rounded-xl p-5 text-card-foreground shadow-sm">
                 <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">מחלקות המרכז הרפואי</h2>
                 <table className="w-full text-right border-collapse">
                   <thead>
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
                 </table>
               </div>
 
-              <div className="bg-transparent rounded-xl border border-border shadow-sm p-5 text-card-foreground">
+              <div className="bg-card rounded-xl p-5 text-card-foreground shadow-sm">
                 <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">אנשי צוות וניהול מערכת</h2>
                 <table className="w-full text-right border-collapse">
                   <thead>
@@ -250,7 +250,7 @@ export default function AdminDashboardPage() {
           )}
         </div>
       </main>
-
+      
       <Dialog open={!!editDept} onOpenChange={(open) => !open && setEditDept(null)}>
         <DialogContent dir="rtl" className="bg-card border-border text-card-foreground">
           <DialogHeader><DialogTitle className="text-card-foreground">עריכת מחלקה</DialogTitle></DialogHeader>
