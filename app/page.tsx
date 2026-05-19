@@ -32,7 +32,7 @@ export default function HomePage() {
             <p className="text-muted-foreground mb-8 text-lg px-2">המשוב שלך חשוב ומסייע לנו להשתפר.</p>
             
             <Button onClick={() => setStep(2)} className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl transition-all shadow-md cursor-pointer">
-              התחל סקר
+              התחל משוב
             </Button>
 
             <div className="flex flex-wrap justify-center gap-2 mt-6">
