@@ -22,7 +22,7 @@ export function AdminHeader({ user, title, onProfileClick }: AdminHeaderProps) {
   }
 
   return (
-    <header className="bg-card px-6 h-16 flex items-center justify-between sticky top-0 z-50 shadow-md" dir="rtl">
+    <header className="bg-[#2a7c7c] px-6 h-16 flex items-center justify-between sticky top-0 z-50 shadow-md" dir="rtl">
       
       {/* Logo & Title Area */}
       <div className="flex items-center gap-4">
