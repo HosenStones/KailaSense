@@ -1,32 +1,97 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  /* Main background: premium warm cream-beige */
-  --background: 37 30% 96%;
-  --foreground: 24 10% 10%;
+  /* Main Canvas & Layout Colors */
+  --background: transparent;
+  --foreground: #1e1c4a;
+  
+  /* The Clean White Cards Design (Adopted from Insights) */
+  --card: #ffffff;
+  --card-foreground: #1e1c4a;
+  --popover: #ffffff;
+  --popover-foreground: #1e1c4a;
+  
+  /* Buttons & Active Elements (Teal / Primary) */
+  --primary: #2a7c7c;
+  --primary-foreground: #ffffff;
+  
+  /* Hover & Inactive Component States */
+  --secondary: #f7f7fc;
+  --secondary-foreground: #1e1c4a;
+  --muted: #f7f7fc;
+  --muted-foreground: #6b6890;
+  --accent: #f0f9f9;
+  --accent-foreground: #2a7c7c;
+  
+  /* Structural Borders & Inputs */
+  --border: #e8e7f5;
+  --input: #f7f7fc;
+  --ring: #2a7c7c;
+  
+  /* System Feedback & Charts */
+  --destructive: #ff6b6b;
+  --destructive-foreground: #ffffff;
+  --chart-1: #2a7c7c;
+  --chart-2: #7dd3d3;
+  --chart-3: #ffd166;
+  --chart-4: #ff9f43;
+  --chart-5: #ff6b6b;
+  
+  --radius: 1rem;
+}
 
-  /* Cards and containers: crisp pure white */
-  --card: 0 0% 100%;
-  --card-foreground: 24 10% 10%;
+@theme inline {
+  --font-sans: 'Assistant', 'Geist', 'Geist Fallback', sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 24 10% 10%;
+@layer base {
+  * {
+    @apply border-border outline-ring/50 transition-colors duration-200;
+  }
+  body {
+    @apply text-foreground font-sans selection:bg-primary/20;
+    background: linear-gradient(170deg, #071828 0%, #0d2d50 40%, #0a3d38 80%, #0D9488 100%) !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+  }
+}
 
-  --primary: 24 10% 10%;
-  --primary-foreground: 60 9% 98%;
-
-  /* Soft layout details and muted elements */
-  --muted: 37 20% 91%;
-  --muted-foreground: 25 5% 45%;
-
-  --accent: 37 20% 91%;
-  --accent-foreground: 24 10% 10%;
-
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 60 9% 98%;
-
-  /* Elegant beige-tinted borders instead of cold gray */
-  --border: 37 15% 86%;
-  --input: 37 15% 86%;
-  --ring: 24 10% 10%;
-
-  --radius: 0.5rem;
+/* Centralized re-usable style classes for unified app layout */
+@layer components {
+  /* Survey Option Buttons (Emoji, Choices, Multi-choice) */
+  .survey-option-btn {
+    @apply bg-card border border-border rounded-2xl p-4 text-center cursor-pointer 
+           hover:bg-accent/40 hover:border-primary/40 shadow-sm transition-all duration-200;
+  }
+  
+  .survey-option-btn-active {
+    @apply border-primary bg-accent text-accent-foreground font-bold shadow-md scale-[1.02];
+  }
 }
