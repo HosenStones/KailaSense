@@ -115,7 +115,7 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
           className="h-7 w-auto object-contain"
         />
       </div>
-      <div className="h-6 w-[2px] bg-white/20 mx-1 rounded-full"" />
+      <div className="h-6 w-[2px] bg-white/20 mx-1 rounded-full" />
       <span className="text-lg font-semibold text-white tracking-tight">
         {department.name}
       </span>
