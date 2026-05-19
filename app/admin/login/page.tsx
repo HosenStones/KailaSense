@@ -85,7 +85,7 @@ export default function AdminLoginPage() {
         
         <div className="mt-8 text-center border-t border-border pt-6">
            <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">
-             חזרה לעמוד הראשי של הסקר
+             חזרה לעמוד הראשי של המשוב
            </Link>
         </div>
       </div>
