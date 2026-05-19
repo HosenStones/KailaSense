@@ -115,7 +115,7 @@ export function SurveyThankYou({ departmentName, departmentId, onRestart, respon
           onClick={onRestart}
           className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-4 rounded-xl font-bold w-full transition-all shadow-md cursor-pointer"
         >
-          מילוי סקר חדש
+          מילוי משוב חדש
         </button>
       </div>
     </div>
