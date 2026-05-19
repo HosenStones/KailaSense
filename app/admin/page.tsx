@@ -144,7 +144,7 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-transparent" dir="rtl">
       <AdminHeader user={currentUser} title="ממשק ניהול" onProfileClick={() => setActiveTab(currentUser?.role === 'super_admin' ? 'system' : 'settings')} />
 
-      <div className="bg-card/90 backdrop-blur-md border-b border-border px-6 flex justify-between items-center h-14">
+      <div className="bg-white border-b border-border px-6 flex justify-between items-center h-14">
         <nav className="flex gap-1 h-full">
           {[
             { id: 'insights', label: 'תובנות', icon: '📊' },
@@ -181,7 +181,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <main className="p-6 max-w-6xl mx-auto">
-        <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-xl border border-border p-6 min-h-[500px]">
+        <div className="bg-transparent rounded-2xl shadow-xl border border-border p-6 min-h-[500px]">
           {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
           {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
           {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
