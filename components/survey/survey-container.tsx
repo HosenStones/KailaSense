@@ -108,13 +108,14 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
     <Link href="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
       <div className="relative h-8 w-8 overflow-hidden rounded-full border border-white/20 shadow-sm">
         <Image 
-          src="/images/kaila-logo-vertical-white.png" 
+          src="/images/kaila-logo-horizontal-white.png" 
           alt="Kaila" 
-          fill
-          className="object-cover"
+          width={80} 
+          height={24}
+          className="h-6 w-auto drop-shadow-md"
         />
       </div>
-      <div className="h-6 w-[1px] bg-white/20" />
+      <div className="h-6 w-[1px] bg-white/30" />
       <span className="text-white font-semibold text-lg tracking-wide">
         {department.name}
       </span>
