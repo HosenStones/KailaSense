@@ -105,15 +105,15 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
       {/* Header with Logo linking to Home */}
 <header className="bg-[#2a7c7c] w-full h-16 px-6 flex items-center justify-center sticky top-0 z-50 shadow-md">
   <div className="flex items-center gap-4">
-    {/* Homepage link with logo and department name */}
+    {/* Homepage link with larger logo and department name */}
     <Link href="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
-      {/* Horizontal logo image with rounded corners */}
+      {/* Horizontal logo image with rounded corners and increased size */}
       <Image 
         src="/images/kaila-logo-horizontal-white.png" 
         alt="Kaila" 
-        width={80} 
-        height={24}
-        className="h-6 w-auto rounded-xl drop-shadow-md"
+        width={110} 
+        height={32}
+        className="h-8 w-auto rounded-xl drop-shadow-md"
       />
       
       {/* Thin vertical separator */}
