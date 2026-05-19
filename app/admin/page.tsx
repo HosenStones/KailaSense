@@ -194,7 +194,7 @@ export default function AdminDashboardPage() {
                 <Button onClick={() => setIsAddUserOpen(true)} variant="outline" className="border-border bg-card text-foreground hover:bg-secondary font-bold cursor-pointer"> + איש צוות חדש</Button>
               </div>
 
-              <div className="bg-transparent rounded-xl border border-border shadow-sm p-5 text-card-foreground">
+              <div className="bg-transparent rounded-xl shadow-sm p-5 text-card-foreground">
                 <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">מחלקות המרכז הרפואי</h2>
                 <table className="w-full text-right border-collapse">
                   <thead>
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
                 </table>
               </div>
 
-              <div className="bg-transparent rounded-xl border border-border shadow-sm p-5 text-card-foreground">
+              <div className="bg-transparent rounded-xl shadow-sm p-5 text-card-foreground">
                 <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">אנשי צוות וניהול מערכת</h2>
                 <table className="w-full text-right border-collapse">
                   <thead>
