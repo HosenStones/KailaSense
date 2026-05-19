@@ -1,6 +1,13 @@
 name = "kailasense"
+pages_build_output_dir = ".vercel/output/static"
 compatibility_date = "2026-05-18"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output/static"
 
-
+[vars]
+NEXT_PUBLIC_FIREBASE_API_KEY = "AIzaSyDbcso_YRXnD7r3hZB9XZgapRualmMyPDw"
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "kaila-7fe41.firebaseapp.com"
+NEXT_PUBLIC_FIREBASE_PROJECT_ID = "kaila-7fe41"
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "kaila-7fe41.firebasestorage.app"
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "936710809739"
+NEXT_PUBLIC_FIREBASE_APP_ID = "1:936710809739:web:81c97608c50f79d70bcc8e"
+NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID = "G-4ELNCVQ8ZX"
