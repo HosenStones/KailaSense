@@ -45,7 +45,7 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
       <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-6 text-center" dir="rtl">
         <div className="bg-card/95 backdrop-blur-md max-w-md w-full rounded-3xl p-10 border border-border shadow-xl">
           <div className="text-6xl mb-6">🚧</div>
-          <h2 className="text-2xl font-bold text-card-foreground mb-3">הסקר בבנייה</h2>
+          <h2 className="text-2xl font-bold text-card-foreground mb-3">המשוב בבנייה</h2>
           <p className="text-muted-foreground mb-8 leading-relaxed">אנחנו עדיין מעדכנים את השאלות עבור מחלקת <b>{department.name}</b>. נשמח לשמוע ממך בקרוב!</p>
           <Link href="/" className="block bg-primary text-primary-foreground px-6 py-4 rounded-2xl font-bold w-full hover:bg-primary/90 transition-all shadow-md text-center">
             חזרה למסך הראשי
@@ -57,7 +57,7 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
 
   // Show loading indicator during initialization
   if (isInitializing) {
-    return <div className="min-h-screen flex items-center justify-center text-primary font-bold">מכין את הסקר...</div>
+    return <div className="min-h-screen flex items-center justify-center text-primary font-bold">מכין את המשוב...</div>
   }
 
   const currentQuestion = questions[currentIndex]
@@ -65,7 +65,7 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   // Final submission of all gathered responses
   const handleSubmit = async () => {
     if (!sessionId) {
-      alert('שגיאה: לא נוצר סשן לסקר. אנא נסה לרענן את העמוד.');
+      alert('שגיאה: לא נוצר סשן למשוב. אנא נסה לרענן את העמוד.');
       return;
     }
     setIsSubmitting(true)
