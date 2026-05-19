@@ -103,12 +103,24 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   return (
     <div className="min-h-screen bg-transparent flex flex-col" dir="rtl">
       {/* Header with Logo linking to Home */}
-      <header className="bg-[#2a7c7c] border-b border-border px-4 py-3 flex items-center justify-center">
-        <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <Image src="/images/kaila-logo-horizontal-white.png" alt="Kaila" width={80} height={24} className="h-6 w-auto drop-shadow-md" />
-          <span className="text-sm font-bold text-primary border-r border-border pr-3">| {department.name}</span>
-        </Link>
-      </header>
+  <header className="bg-[#2a7c7c] w-full h-16 px-6 flex items-center justify-center sticky top-0 z-50 shadow-md">
+  <div className="flex items-center gap-4">
+    <Link href="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
+      <div className="relative h-8 w-8 overflow-hidden rounded-full border border-white/20 shadow-sm">
+        <Image 
+          src="/images/kaila-logo-vertical-white.png" 
+          alt="Kaila" 
+          fill
+          className="object-cover"
+        />
+      </div>
+      <div className="h-6 w-[1px] bg-white/20" />
+      <span className="text-white font-semibold text-lg tracking-wide">
+        {department.name}
+      </span>
+    </Link>
+  </div>
+</header>
 
       <SurveyProgress current={currentIndex + 1} total={questions.length} />
 
