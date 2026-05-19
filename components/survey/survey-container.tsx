@@ -103,16 +103,17 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   return (
     <div className="min-h-screen bg-transparent flex flex-col" dir="rtl">
       {/* Header with Logo linking to Home */}
-  <header className="bg-[#2a7c7c] w-full h-16 px-6 flex items-center justify-center sticky top-0 z-50 shadow-md">
+<header className="bg-[#2a7c7c] w-full h-16 px-6 flex items-center justify-center sticky top-0 z-50 shadow-md">
   <div className="flex items-center gap-4">
+    {/* Homepage link with logo and department name */}
     <Link href="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
-      {/* Horizontal logo image without circular wrappers */}
+      {/* Horizontal logo image with rounded corners */}
       <Image 
         src="/images/kaila-logo-horizontal-white.png" 
         alt="Kaila" 
         width={80} 
         height={24}
-        className="h-6 w-auto drop-shadow-md"
+        className="h-6 w-auto rounded-xl drop-shadow-md"
       />
       
       {/* Thin vertical separator */}
