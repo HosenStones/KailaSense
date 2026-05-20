@@ -32,7 +32,7 @@ export interface AdminUser {
 // --- Question & Content Types ---
 export type ContentType = 'image' | 'video' | 'info_text'
 export type QuestionType = 'emoji' | 'choice' | 'multi_choice' | 'stars' | 'open_text' | 'content'
-export type QuestionCategory = 'admission' | 'during' | 'discharge' | 'general'
+export type QuestionCategory = 'admission' | 'during' | 'discharge' | 'after_discharge' | 'general'
 
 export interface QuestionOption {
   value: string
@@ -55,12 +55,12 @@ export interface Question {
   category?: QuestionCategory
 
   options?: QuestionOption[]
-  isRequired: boolean
-  isDefault: boolean
-  displayOrder: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
+  isRequired: boolean;
+  isDefault: boolean;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // --- Session & Response Types ---
@@ -69,7 +69,7 @@ export interface SurveySession {
   departmentId: string
   startedAt: string
   completedAt?: string
-  isCompleted: boolean
+  isCompleted: boolean;
   deviceInfo?: Record<string, unknown>
   source?: 'whatsapp' | 'sms' | 'qr' | 'link'
 }
