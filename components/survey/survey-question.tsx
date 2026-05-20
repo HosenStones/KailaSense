@@ -2,10 +2,11 @@
 
 import type { Question, Response } from '@/lib/types'
 import { EmojiQuestion } from './questions/emoji-question'
+import { StarsQuestion } from './questions/stars-question'
 import { ChoiceQuestion } from './questions/choice-question'
 import { MultiChoiceQuestion } from './questions/multi-choice-question'
-import { StarsQuestion } from './questions/stars-question'
 import { OpenTextQuestion } from './questions/open-text-question'
+import { ContentBlock } from './questions/content-block'
 
 interface SurveyQuestionProps {
   question: Question
@@ -14,28 +15,9 @@ interface SurveyQuestionProps {
 }
 
 export function SurveyQuestion({ question, response, onResponse }: SurveyQuestionProps) {
-  const handleChange = (value: string | string[] | number) => {
-    if (question.questionType === 'multi_choice') {
-      onResponse({
-        questionId: question.id,
-        answerValues: value as string[],
-      })
-    } else if (question.questionType === 'open_text') {
-      onResponse({
-        questionId: question.id,
-        answerText: value as string,
-      })
-    } else if (question.questionType === 'stars') {
-      onResponse({
-        questionId: question.id,
-        answerValue: String(value),
-      })
-    } else {
-      onResponse({
-        questionId: question.id,
-        answerValue: value as string,
-      })
-    }
+  // Intercept and display information block if the item is a content slide
+  if (question.questionType === 'content') {
+    return <ContentBlock question={question} />
   }
 
   switch (question.questionType) {
@@ -44,7 +26,15 @@ export function SurveyQuestion({ question, response, onResponse }: SurveyQuestio
         <EmojiQuestion
           question={question}
           value={response?.answerValue || null}
-          onChange={(v) => handleChange(v)}
+          onChange={(val) => onResponse({ questionId: question.id, answerValue: val })}
+        />
+      )
+    case 'stars':
+      return (
+        <StarsQuestion
+          question={question}
+          value={response?.answerValue ? Number(response.answerValue) : null}
+          onChange={(val) => onResponse({ questionId: question.id, answerValue: String(val) })}
         />
       )
     case 'choice':
@@ -52,7 +42,7 @@ export function SurveyQuestion({ question, response, onResponse }: SurveyQuestio
         <ChoiceQuestion
           question={question}
           value={response?.answerValue || null}
-          onChange={(v) => handleChange(v)}
+          onChange={(val) => onResponse({ questionId: question.id, answerValue: val })}
         />
       )
     case 'multi_choice':
@@ -60,15 +50,7 @@ export function SurveyQuestion({ question, response, onResponse }: SurveyQuestio
         <MultiChoiceQuestion
           question={question}
           values={response?.answerValues || []}
-          onChange={(v) => handleChange(v)}
-        />
-      )
-    case 'stars':
-      return (
-        <StarsQuestion
-          question={question}
-          value={response?.answerValue ? parseInt(response.answerValue) : null}
-          onChange={(v) => handleChange(v)}
+          onChange={(vals) => onResponse({ questionId: question.id, answerValues: vals })}
         />
       )
     case 'open_text':
@@ -76,10 +58,14 @@ export function SurveyQuestion({ question, response, onResponse }: SurveyQuestio
         <OpenTextQuestion
           question={question}
           value={response?.answerText || ''}
-          onChange={(v) => handleChange(v)}
+          onChange={(val) => onResponse({ questionId: question.id, answerText: val })}
         />
       )
     default:
-      return null
+      return (
+        <div className="text-white text-center p-4">
+          Unknown item type: {question.questionType}
+        </div>
+      )
   }
 }
