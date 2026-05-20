@@ -103,29 +103,23 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
   return (
     <div className="min-h-screen bg-transparent flex flex-col" dir="rtl">
       {/* Header with Logo linking to Home */}
-<header className="bg-[#2a7c7c] w-full h-16 px-6 flex items-center justify-center sticky top-0 z-50 shadow-md">
-  <div className="flex items-center gap-4">
-    {/* Homepage link with larger logo and department name */}
-    <Link href="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
-      {/* Horizontal logo image with rounded corners and increased size */}
-      <Image 
-        src="/images/kaila-logo-horizontal-white.png" 
-        alt="Kaila" 
-        width={110} 
-        height={32}
-        className="h-8 w-auto rounded-xl drop-shadow-md"
-      />
-      
-      {/* Thin vertical separator */}
-      <div className="h-6 w-[1px] bg-white/30" />
-      
-      {/* Department name display */}
-      <span className="text-white font-semibold text-lg tracking-wide">
-        {department.name}
-      </span>
-    </Link>
-  </div>
-</header>
+      <header className="bg-[#2a7c7c] w-full h-16 px-6 flex items-center justify-center sticky top-0 z-50 shadow-md">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-4 hover:opacity-90 transition-opacity">
+            <Image 
+              src="/images/kaila-logo-horizontal-white.png" 
+              alt="Kaila" 
+              width={110} 
+              height={33}
+              className="h-8 w-auto rounded-xl drop-shadow-md"
+            />
+            <div className="h-6 w-[1px] bg-white/30" />
+            <span className="text-white font-semibold text-lg tracking-wide">
+              {department.name}
+            </span>
+          </Link>
+        </div>
+      </header>
 
       <SurveyProgress current={currentIndex + 1} total={questions.length} />
 
@@ -144,8 +138,8 @@ export function SurveyContainer({ department, questions, source }: SurveyContain
           canGoBack={currentIndex > 0} 
           canGoForward={currentIndex < questions.length - 1} 
           isLastQuestion={currentIndex === questions.length - 1}
-          isAnswered={!!(responses[currentQuestion.id]?.answerValue || responses[currentQuestion.id]?.answerText || (responses[currentQuestion.id]?.answerValues?.length ?? 0) > 0)} 
-          isRequired={currentQuestion.isRequired}
+          isAnswered={currentQuestion.questionType === 'content' ? true : !!(responses[currentQuestion.id]?.answerValue || responses[currentQuestion.id]?.answerText || (responses[currentQuestion.id]?.answerValues?.length ?? 0) > 0)} 
+          isRequired={currentQuestion.questionType === 'content' ? false : currentQuestion.isRequired}
           onBack={() => setCurrentIndex(prev => prev - 1)} 
           onNext={() => setCurrentIndex(prev => prev + 1)} 
           onSubmit={handleSubmit} 
