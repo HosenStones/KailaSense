@@ -26,14 +26,18 @@ export function EmojiQuestion({ question, value, onChange }: EmojiQuestionProps)
       
       <div className="grid grid-cols-2 gap-3" dir="rtl">
         {options.map((option) => (
-          <button
-            key={option.value}
-            onClick={() => onChange(option.value)}
-            className={`survey-option-btn ${value === option.value ? 'survey-option-btn-active' : ''}`}
-          >
-            <span className="text-3xl block mb-2" role="img" aria-label={option.label}>{option.emoji}</span>
-            <span className={`text-base font-semibold ${value === option.value ? 'text-primary' : 'text-muted-foreground'}`}>{option.label}</span>
-          </button>
+    <button
+  key={option.value}
+  onClick={() => onChange(option.value)}
+  className={`w-full rounded-2xl p-4 cursor-pointer transition-all duration-200 active:scale-95 shadow-sm border-2 flex flex-col items-center text-center ${
+    value === option.value 
+      ? 'border-[#2a7c7c] bg-[#e6f2f2] text-[#2a7c7c] scale-[1.02]' 
+      : 'border-transparent bg-white text-[#1e1c4a] hover:bg-[#f7f7fc]'
+  }`}
+>
+  <span className="text-4xl block mb-2" role="img" aria-label={option.label}>{option.emoji}</span>
+  <span className={`text-base font-semibold ${value === option.value ? 'text-[#2a7c7c]' : 'text-muted-foreground'}`}>{option.label}</span>
+</button>
         ))}
       </div>
     </div>
