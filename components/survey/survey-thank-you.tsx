@@ -1,122 +1,77 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import Image from 'next/image'
-import { getDepartmentStats } from '@/lib/firebase/firestore'
-import { ChevronDown, ChevronUp, Star } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import type { Question, Response } from '@/lib/types'
+import { CheckCircle2, Home } from 'lucide-react'
 
 interface SurveyThankYouProps {
   departmentName: string
   departmentId: string
   onRestart: () => void
-  responses: any
-  questions: any
+  responses: Record<string, Partial<Response>>
+  questions: Question[]
 }
 
-export function SurveyThankYou({ departmentName, departmentId, onRestart, responses, questions }: SurveyThankYouProps) {
-  const [stats, setStats] = useState({ totalResponses: 0, satisfactionPercentage: 0, totalComments: 0 })
-  const [showAnswers, setShowAnswers] = useState(false)
-
-  useEffect(() => {
-    async function loadStats() {
-      if (departmentId) {
-        const realStats = await getDepartmentStats(departmentId)
-        setStats(realStats)
-      }
-    }
-    loadStats()
-  }, [departmentId])
-
-  const getEmoji = (val: string) => {
-    const map: Record<string, string> = { '1': '😡', '2': '😟', '3': '😐', '4': '😊', '5': '😍' };
-    return map[val] || val;
-  }
-
-  const renderStars = (val: string) => {
-    const num = Number(val);
-    if (isNaN(num)) return val;
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <Star 
-            key={star} 
-            className={`w-5 h-5 ${star <= num ? 'fill-yellow-400 text-yellow-400' : 'text-border'}`} 
-          />
-        ))}
-      </div>
-    );
-  }
+export function SurveyThankYou({ departmentName, onRestart, responses, questions }: SurveyThankYouProps) {
+  // Filter out informational content slides from the summary display
+  const activeQuestionsOnly = questions.filter(q => q.questionType !== 'content')
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-6 text-center" dir="rtl">
-      <div className="bg-card max-w-md w-full rounded-3xl p-8 border border-border shadow-xl animate-in fade-in zoom-in duration-500">
+    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-4 md:p-6 text-center" dir="rtl">
+      <div className="bg-white max-w-xl w-full rounded-3xl p-6 md:p-10 border border-[#e8e7f5] shadow-xl space-y-6 animate-in fade-in zoom-in duration-500">
         
-        <Image src="/images/kaila-logo-vertical.png" alt="Kaila" width={120} height={80} className="mx-auto mb-6 h-14 w-auto" priority />
-        
-        <h2 className="text-3xl font-bold text-card-foreground mb-2">תודה רבה! 🙏</h2>
-        <p className="text-muted-foreground mb-8 leading-relaxed text-lg">
-          המשוב שלך התקבל בהצלחה ויעזור לצוות <b>{departmentName}</b> להמשיך להשתפר.
-        </p>
-
-        <div className="bg-muted rounded-2xl p-6 mb-6 border border-border">
-          <h3 className="text-sm font-bold text-primary mb-4 uppercase tracking-wide">ההשפעה של המשוב שלך</h3>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card p-3 rounded-xl border border-border flex flex-col items-center justify-center shadow-sm">
-              <div className="text-xl font-bold text-primary">{stats.satisfactionPercentage}%</div>
-              <div className="text-[10px] text-muted-foreground mt-1 font-bold text-center">שביעות רצון</div>
-            </div>
-            <div className="bg-card p-3 rounded-xl border border-border flex flex-col items-center justify-center shadow-sm">
-              <div className="text-xl font-bold text-primary">{stats.totalResponses}</div>
-              <div className="text-[10px] text-muted-foreground mt-1 font-bold text-center">משיבים</div>
-            </div>
-            <div className="bg-card p-3 rounded-xl border border-border flex flex-col items-center justify-center shadow-sm">
-              <div className="text-xl font-bold text-primary">{stats.totalComments}+</div>
-              <div className="text-[10px] text-muted-foreground mt-1 font-bold text-center">תגובות</div>
-            </div>
-          </div>
+        {/* Success Icon */}
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#e6f4f4] text-[#2a7c7c]">
+          <CheckCircle2 className="h-10 w-10" />
         </div>
 
-        <div className="text-muted-foreground mb-8 font-medium text-[13px] space-y-1">
-          <p>אנחנו קוראים כל תגובה ומתייחסים.</p>
-          <p>תודה שעזרת לנו להשתפר 🌟</p>
+        {/* Headings */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold text-[#1e1c4a]">תודה רבה!</h1>
+          <p className="text-muted-foreground text-base md:text-lg max-w-md mx-auto leading-relaxed">
+            תודה רבה על השתתפותך במשוב! התשובות שלך יסייעו לנו לשפר את השירות במחלקת <span className="font-bold text-[#2a7c7c]">{departmentName}</span>.
+          </p>
         </div>
 
-        <div className="mb-8 text-right">
-          <button 
-            onClick={() => setShowAnswers(!showAnswers)} 
-            className="flex items-center justify-between w-full bg-accent p-4 rounded-xl text-accent-foreground font-bold text-sm border border-primary/10 hover:opacity-90 transition-all cursor-pointer"
-          >
-            <span>{showAnswers ? 'הסתר את התשובות שלי' : 'צפה בתשובות'}</span>
-            {showAnswers ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+        {/* Responses Summary Table */}
+        {activeQuestionsOnly.length > 0 && (
+          <div className="border border-[#e8e7f5] rounded-2xl overflow-hidden bg-[#f7f7fc] text-right">
+            <div className="bg-[#2a7c7c]/10 px-4 py-3 border-b border-[#e8e7f5]">
+              <h3 className="font-bold text-[#2a7c7c] text-sm">סיכום התשובות שנקלטו במערכת:</h3>
+            </div>
+            <div className="divide-y divide-[#e8e7f5] max-h-60 overflow-y-auto">
+              {activeQuestionsOnly.map((q, index) => {
+                const resp = responses[q.id]
+                let displayAnswer = 'לא נענה'
 
-          {showAnswers && (
-            <div className="mt-4 space-y-3 text-sm animate-in slide-in-from-top-2">
-              {questions.map((q: any) => {
-                const r = responses[q.id];
-                if (!r || (!r.answerValue && !r.answerText && (!r.answerValues || r.answerValues.length === 0))) return null;
+                if (resp) {
+                  if (q.questionType === 'multi_choice' && resp.answerValues) {
+                    displayAnswer = resp.answerValues.join(', ')
+                  } else if (resp.answerValue) {
+                    displayAnswer = resp.answerValue
+                  } else if (resp.answerText) {
+                    displayAnswer = resp.answerText
+                  }
+                }
+
                 return (
-                  <div key={q.id} className="bg-card p-4 rounded-xl border border-border shadow-sm text-right">
-                    <p className="font-bold text-card-foreground mb-3 leading-snug">{q.questionText}</p>
-                    <div className="text-primary font-medium flex items-center">
-                      {q.questionType === 'emoji' ? <span className="text-2xl">{getEmoji(r.answerValue)}</span> :
-                       q.questionType === 'stars' ? renderStars(r.answerValue) :
-                       q.questionType === 'multi_choice' ? <span className="text-sm bg-muted px-3 py-1.5 rounded-lg font-semibold">{r.answerValues?.join(', ')}</span> :
-                       <span className="text-sm bg-muted px-3 py-1.5 rounded-lg block w-full font-semibold">{r.answerText || r.answerValue}</span>}
-                    </div>
+                  <div key={q.id} className="p-4 flex flex-col gap-1 hover:bg-white transition-colors">
+                    <span className="text-xs text-muted-foreground font-semibold">שאלה {index + 1}: {q.questionText}</span>
+                    <span className="text-sm font-bold text-[#1e1c4a]">{displayAnswer}</span>
                   </div>
                 )
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        <button 
-          onClick={onRestart}
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-4 rounded-xl font-bold w-full transition-all shadow-md cursor-pointer"
+        {/* Navigation Action */}
+        <Button 
+          onClick={onRestart} 
+          className="bg-[#2a7c7c] hover:bg-[#236969] text-white font-bold h-14 rounded-2xl w-full text-base transition-all shadow-md cursor-pointer"
         >
-          מילוי משוב חדש
-        </button>
+          <Home className="ml-2 h-5 w-5" /> חזרה למסך הראשי
+        </Button>
       </div>
     </div>
   )
