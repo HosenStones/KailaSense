@@ -58,7 +58,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       // Build base question data
       const newQuestionData: any = {
         departmentId,
-        questionText: newQuestionText, // Acts as title for content blocks
+        questionText: newQuestionText,
         questionType: newQuestionType,
         category: newCategory,
         isActive: true,
@@ -218,8 +218,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         ) : (
           (() => {
             let questionCounter = 0;
-            
-            // Define strict chronological order weights for categories
             const categoryOrder: Record<string, number> = {
               admission: 1,
               during: 2,
@@ -252,7 +250,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                           <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold uppercase">
                             {q.category === 'admission' ? 'קבלה' : q.category === 'during' ? 'אשפוז' : q.category === 'discharge' ? 'שחרור' : 'כללי'}
                           </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold border uppercase ${isContent ? 'bg-[#f0f9f9] text-[#1a5c5c] border-[#1a5c5c]/10' : 'bg-green-50 text-green-700 border-green-200/60'}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold border uppercase ${isContent ? 'bg-[#f0f9f9] text-[#1a5c5c] border-[#1a5c5c]/10' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
                             {isContent ? 'שקף מידע' : 'שאלת משוב'}
                           </span>
                         </div>
