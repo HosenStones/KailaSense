@@ -216,34 +216,46 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
             <p className="text-lg">אין עדיין שאלות במחלקה זו.</p>
           </div>
         ) : (
-          questions.sort((a, b) => a.displayOrder - b.displayOrder).map((q, index) => (
-            <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm group hover:border-[#2a7c7c] transition-all">
-              <div className="flex items-start md:items-center gap-4">
-                <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${q.questionType === 'content' ? 'bg-[#e6f4f4] text-[#2a7c7c]' : 'bg-[#f7f7fc] text-[#6b6890]'}`}>
-                  {q.questionType === 'content' ? <Info className="w-4 h-4" /> : index + 1}
-                </div>
-                <div>
-                  <span className="font-bold text-[#1e1c4a] block">{q.questionText}</span>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold uppercase">
-                      {q.category === 'admission' ? 'קבלה' : q.category === 'during' ? 'אשפוז' : q.category === 'discharge' ? 'שחרור' : 'כללי'}
-                    </span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${q.questionType === 'content' ? 'bg-[#f0f9f9] text-[#1a5c5c]' : 'bg-[#f7f7fc] text-[#6b6890]'}`}>
-                      {q.questionType === 'content' ? 'שקף מידע' : 'שאלת משוב'}
-                    </span>
+          (() => {
+            let questionCounter = 0;
+            return questions
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((q) => {
+                const isContent = q.questionType === 'content';
+                if (!isContent) {
+                  questionCounter++;
+                }
+                const currentNumber = questionCounter;
+                return (
+                  <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm group hover:border-[#2a7c7c] transition-all">
+                    <div className="flex items-start md:items-center gap-4">
+                      <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${isContent ? 'bg-[#e6f4f4] text-[#2a7c7c]' : 'bg-[#f7f7fc] text-[#6b6890]'}`}>
+                        {isContent ? <Info className="w-4 h-4" /> : currentNumber}
+                      </div>
+                      <div>
+                        <span className="font-bold text-[#1e1c4a] block">{q.questionText}</span>
+                        <div className="flex flex-wrap items-center gap-2 mt-1">
+                          <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold uppercase">
+                            {q.category === 'admission' ? 'קבלה' : q.category === 'during' ? 'אשפוז' : q.category === 'discharge' ? 'שחרור' : 'כללי'}
+                          </span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${isContent ? 'bg-[#f0f9f9] text-[#1a5c5c]' : 'bg-[#f7f7fc] text-[#6b6890]'}`}>
+                            {isContent ? 'שקף מידע' : 'שאלת משוב'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => { if(confirm('למחוק פריט זה?')) deleteQuestion(q.id).then(loadQuestions) }}
+                      className="text-[#a8a6c4] hover:text-red-500 hover:bg-red-50 self-end md:self-auto mt-2 md:mt-0 cursor-pointer"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                </div>
-              </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => { if(confirm('למחוק פריט זה?')) deleteQuestion(q.id).then(loadQuestions) }}
-                className="text-[#a8a6c4] hover:text-red-500 hover:bg-red-50 self-end md:self-auto mt-2 md:mt-0 cursor-pointer"
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
-          ))
+                );
+              });
+          })()
         )}
       </div>
     </div>
