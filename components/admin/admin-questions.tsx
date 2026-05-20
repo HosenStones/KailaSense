@@ -5,14 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { getQuestionsByDepartment, addQuestion, deleteQuestion } from '@/lib/firebase/firestore'
-import type { Question, QuestionType, QuestionOption } from '@/lib/types'
-import { Plus, Trash2, ListPlus } from 'lucide-react'
+import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
+import { Plus, Trash2, ListPlus, Image as ImageIcon, Video, AlignLeft, Info } from 'lucide-react'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [newQuestionText, setNewQuestionText] = useState('')
   const [newQuestionType, setNewQuestionType] = useState<QuestionType>('emoji')
+  const [newCategory, setNewCategory] = useState<QuestionCategory>('general')
   const [newOptionsText, setNewOptionsText] = useState('')
+  
+  // Content block specific states
+  const [newContentType, setNewContentType] = useState<ContentType>('info_text')
+  const [newContentUrl, setNewContentUrl] = useState('')
+  const [newContentBody, setNewContentBody] = useState('')
+  
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Load questions from Firestore
@@ -30,7 +37,12 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     loadQuestions()
   }, [departmentId])
 
-  // Handle adding a new question safely
+  // Calculate totals for system recommendations
+  const openQuestionsCount = questions.filter(q => q.questionType === 'open_text').length;
+  const totalQuestionsCount = questions.filter(q => q.questionType !== 'content').length;
+  const showWarning = totalQuestionsCount > 3 || openQuestionsCount > 1;
+
+  // Handle adding a new question or content block safely
   const handleAdd = async () => {
     if (!newQuestionText.trim() || !departmentId) return
     
@@ -43,17 +55,22 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     setIsSubmitting(true)
 
     try {
-      // Build base question data without options field to prevent Firebase undefined errors
+      // Build base question data
       const newQuestionData: any = {
         departmentId,
-        questionText: newQuestionText,
+        questionText: newQuestionText, // Acts as title for content blocks
         questionType: newQuestionType,
+        category: newCategory,
         isActive: true,
         displayOrder: questions.length + 1
       }
 
-      // Add options field only if it is a choice type question
-      if (newQuestionType === 'choice' || newQuestionType === 'multi_choice') {
+      // Add specific fields based on the type
+      if (newQuestionType === 'content') {
+        newQuestionData.contentType = newContentType
+        if (newContentUrl.trim()) newQuestionData.contentUrl = newContentUrl.trim()
+        if (newContentBody.trim()) newQuestionData.contentBody = newContentBody.trim()
+      } else if (newQuestionType === 'choice' || newQuestionType === 'multi_choice') {
         newQuestionData.options = newOptionsText.split(',').map(opt => ({
           label: opt.trim(),
           value: opt.trim()
@@ -65,12 +82,17 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       // Reset form upon success
       setNewQuestionText('')
       setNewQuestionType('emoji')
+      setNewCategory('general')
       setNewOptionsText('')
+      setNewContentType('info_text')
+      setNewContentUrl('')
+      setNewContentBody('')
+      
       await loadQuestions()
-      alert('השאלה נשמרה בהצלחה!')
+      alert('הנתונים נשמרו בהצלחה!')
     } catch (error) {
       console.error("Error adding question:", error)
-      alert('שגיאה בשמירת השאלה. ודא שאתה מחובר ושיש הרשאות מתאימות.')
+      alert('שגיאה בשמירת הנתונים. ודא שאתה מחובר ושיש הרשאות מתאימות.')
     } finally {
       setIsSubmitting(false)
     }
@@ -78,29 +100,54 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Add New Question Form */}
+      
+      {/* System Recommendations Warning */}
+      {showWarning && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex gap-3 items-start animate-in fade-in">
+          <Info className="w-5 h-5 shrink-0 mt-0.5" />
+          <div>
+            <strong className="block mb-1">💡 המלצת המערכת למשוב אפקטיבי:</strong>
+            <ul className="list-disc list-inside text-sm space-y-1">
+              {totalQuestionsCount > 3 && <li>כדאי לשאול מקסימום 3 שאלות כדי לא לעייף את המטופל.</li>}
+              {openQuestionsCount > 1 && <li>מומלץ לכלול מקסימום שאלה פתוחה אחת (טקסט חופשי).</li>}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* Add New Question / Content Form */}
       <div className="bg-white p-5 rounded-2xl border border-[#e8e7f5] shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           <Input 
             type="text" 
             value={newQuestionText}
             onChange={(e) => setNewQuestionText(e.target.value)}
-            placeholder="הזן שאלה חדשה (למשל: איך היית מדרג את השירות?)"
-            className="flex-1 h-12"
+            placeholder={newQuestionType === 'content' ? "כותרת שקף המידע (למשל: ברוכים הבאים למחלקה)" : "הזן שאלה חדשה (למשל: איך היית מדרג את השירות?)"}
+            className="h-12 md:col-span-6"
           />
+          <Select value={newCategory} onValueChange={(v: QuestionCategory) => setNewCategory(v)}>
+            <SelectTrigger className="h-12 md:col-span-3 border-[#e8e7f5]"><SelectValue placeholder="בחר קטגוריה" /></SelectTrigger>
+            <SelectContent dir="rtl">
+              <SelectItem value="admission">👋 שלב קבלה</SelectItem>
+              <SelectItem value="during">🛏️ מהלך אשפוז</SelectItem>
+              <SelectItem value="discharge">🏠 לקראת שחרור</SelectItem>
+              <SelectItem value="general">⭐ כללי</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={newQuestionType} onValueChange={(v: QuestionType) => setNewQuestionType(v)}>
-            <SelectTrigger className="w-full md:w-52 h-12 border-[#e8e7f5]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-12 md:col-span-3 border-[#e8e7f5]"><SelectValue /></SelectTrigger>
             <SelectContent dir="rtl">
               <SelectItem value="emoji">😊 אימוג'י (1-5)</SelectItem>
               <SelectItem value="stars">⭐ כוכבים (1-5)</SelectItem>
               <SelectItem value="choice">🔘 בחירה יחידה</SelectItem>
               <SelectItem value="multi_choice">✅ בחירה מרובה</SelectItem>
               <SelectItem value="open_text">📝 טקסט חופשי</SelectItem>
+              <SelectItem value="content">📺 שקף מידע ותוכן</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Dynamic Options Input */}
+        {/* Dynamic Options Input for Choices */}
         {(newQuestionType === 'choice' || newQuestionType === 'multi_choice') && (
           <div className="p-4 bg-[#f7f7fc] rounded-xl border border-dashed border-[#2a7c7c]/30 animate-in fade-in slide-in-from-top-2">
             <div className="flex items-center gap-2 mb-2 text-[#2a7c7c]">
@@ -114,16 +161,51 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
               placeholder="הכנס אפשרויות מופרדות בפסיק (למשל: רופא, אחות, צוות ניקיון)"
               className="w-full bg-white"
             />
-            <p className="text-[11px] text-gray-500 mt-2">הפרד בין התשובות באמצעות פסיק (,). כל מילה תהפוך לכפתור לבחירה בסקר.</p>
+          </div>
+        )}
+
+        {/* Dynamic Inputs for Content Block */}
+        {newQuestionType === 'content' && (
+          <div className="p-4 bg-[#f0f9f9] rounded-xl border border-dashed border-[#2a7c7c]/40 animate-in fade-in slide-in-from-top-2 space-y-4">
+            <div className="flex items-center gap-2 mb-2 text-[#2a7c7c]">
+              <Info className="w-4 h-4" />
+              <span className="text-sm font-bold">הגדרות שקף מידע למטופל</span>
+            </div>
+            
+            <Select value={newContentType} onValueChange={(v: ContentType) => setNewContentType(v)}>
+              <SelectTrigger className="w-full md:w-64 bg-white"><SelectValue placeholder="סוג התוכן" /></SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="info_text"><div className="flex items-center gap-2"><AlignLeft className="w-4 h-4" /> טקסט בלבד</div></SelectItem>
+                <SelectItem value="image"><div className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> תמונה + טקסט</div></SelectItem>
+                <SelectItem value="video"><div className="flex items-center gap-2"><Video className="w-4 h-4" /> סרטון וידאו</div></SelectItem>
+              </SelectContent>
+            </Select>
+
+            {(newContentType === 'image' || newContentType === 'video') && (
+              <Input 
+                type="url" 
+                value={newContentUrl}
+                onChange={(e) => setNewContentUrl(e.target.value)}
+                placeholder={newContentType === 'image' ? "הדבק קישור לתמונה (URL)" : "הדבק קישור לסרטון (URL)"}
+                className="w-full bg-white"
+              />
+            )}
+
+            <textarea 
+              value={newContentBody}
+              onChange={(e) => setNewContentBody(e.target.value)}
+              placeholder="טקסט הנחיות מורחב למטופל (אופציונלי)"
+              className="w-full min-h-[100px] p-3 rounded-md border border-input bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#2a7c7c]"
+            />
           </div>
         )}
 
         <Button 
           onClick={handleAdd} 
           disabled={isSubmitting || !newQuestionText} 
-          className="bg-[#2a7c7c] hover:bg-[#236969] text-white w-full h-12 font-bold transition-all"
+          className="bg-[#2a7c7c] hover:bg-[#236969] text-white w-full h-12 font-bold transition-all cursor-pointer"
         >
-          <Plus className="w-5 h-5 ml-2" /> {isSubmitting ? 'שומר נתונים...' : 'הוסף שאלה למחלקה'}
+          <Plus className="w-5 h-5 ml-2" /> {isSubmitting ? 'שומר נתונים...' : 'הוסף למחלקה'}
         </Button>
       </div>
 
@@ -132,34 +214,31 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         {questions.length === 0 ? (
           <div className="text-center p-12 bg-white rounded-2xl border border-dashed border-[#a8a6c4] text-[#6b6890]">
             <p className="text-lg">אין עדיין שאלות במחלקה זו.</p>
-            <p className="text-sm opacity-70">השתמש בטופס למעלה כדי להוסיף את השאלה הראשונה.</p>
           </div>
         ) : (
-          questions.map((q, index) => (
+          questions.sort((a, b) => a.displayOrder - b.displayOrder).map((q, index) => (
             <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm group hover:border-[#2a7c7c] transition-all">
               <div className="flex items-start md:items-center gap-4">
-                <div className="w-8 h-8 shrink-0 rounded-full bg-[#f7f7fc] flex items-center justify-center text-sm font-bold text-[#2a7c7c]">
-                  {index + 1}
+                <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${q.questionType === 'content' ? 'bg-[#e6f4f4] text-[#2a7c7c]' : 'bg-[#f7f7fc] text-[#6b6890]'}`}>
+                  {q.questionType === 'content' ? <Info className="w-4 h-4" /> : index + 1}
                 </div>
                 <div>
                   <span className="font-bold text-[#1e1c4a] block">{q.questionText}</span>
                   <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <span className="text-[10px] bg-[#f0f9f9] text-[#1a5c5c] px-2 py-0.5 rounded font-bold uppercase">
-                      {q.questionType === 'emoji' ? 'דירוג אימוג\'י' : q.questionType === 'stars' ? 'דירוג כוכבים' : q.questionType === 'choice' ? 'בחירה יחידה' : q.questionType === 'multi_choice' ? 'בחירה מרובה' : 'תגובה חופשית'}
+                    <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold uppercase">
+                      {q.category === 'admission' ? 'קבלה' : q.category === 'during' ? 'אשפוז' : q.category === 'discharge' ? 'שחרור' : 'כללי'}
                     </span>
-                    {q.options && q.options.length > 0 && (
-                      <span className="text-[10px] text-[#2a7c7c] bg-[#e6f4f4] px-2 py-0.5 rounded">
-                        אפשרויות: {q.options.map(o => o.label).join(', ')}
-                      </span>
-                    )}
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${q.questionType === 'content' ? 'bg-[#f0f9f9] text-[#1a5c5c]' : 'bg-[#f7f7fc] text-[#6b6890]'}`}>
+                      {q.questionType === 'content' ? 'שקף מידע' : 'שאלת משוב'}
+                    </span>
                   </div>
                 </div>
               </div>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                onClick={() => { if(confirm('למחוק את השאלה?')) deleteQuestion(q.id).then(loadQuestions) }}
-                className="text-[#a8a6c4] hover:text-red-500 hover:bg-red-50 self-end md:self-auto mt-2 md:mt-0"
+                onClick={() => { if(confirm('למחוק פריט זה?')) deleteQuestion(q.id).then(loadQuestions) }}
+                className="text-[#a8a6c4] hover:text-red-500 hover:bg-red-50 self-end md:self-auto mt-2 md:mt-0 cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
