@@ -85,6 +85,16 @@
 
 /* Centralized re-usable style classes for unified app layout */
 @layer components {
+  /* Global floating card style */
+  .glass-card {
+    @apply bg-card rounded-2xl shadow-xl border border-border p-6;
+  }
+  
+  /* Global transparent layout component container */
+  .transparent-card {
+    @apply bg-transparent p-6 text-white;
+  }
+
   /* Survey Option Buttons (Emoji, Choices, Multi-choice) */
   .survey-option-btn {
     @apply bg-card border border-border rounded-2xl p-4 text-center cursor-pointer 
