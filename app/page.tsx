@@ -2,77 +2,351 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import Link from 'next/link'
-import { getAllDepartments } from '@/lib/firebase/firestore'
-import type { Department } from '@/lib/types'
+import { onAuthStateChanged } from 'firebase/auth'
+import { auth } from '@/lib/firebase/config'
+import { 
+  getAdminUserByEmail, 
+  getAllDepartments, 
+  getAllAdminUsersSorted,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+  createAdminUser,
+  updateAdminUser,
+  deleteAdminUser,
+  copyDefaultQuestionsToDepartment
+} from '@/lib/firebase/firestore'
+import type { AdminUser, Department } from '@/lib/types'
+import { AdminInsights } from '@/components/admin/admin-insights'
+import { AdminQuestions } from '@/components/admin/admin-questions'
+import { AdminComments } from '@/components/admin/admin-comments'
+import { AdminSettings } from '@/components/admin/admin-settings'
+import { AdminHeader } from '@/components/admin/admin-header'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-export default function HomePage() {
-  const [departments, setDepartments] = useState<Department[]>([])
-  const [selectedDept, setSelectedDept] = useState<string>('')
-  const [step, setStep] = useState<1 | 2>(1)
+type TabId = 'insights' | 'questions' | 'comments' | 'settings' | 'system'
+
+export default function AdminDashboardPage() {
   const router = useRouter()
+  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
+  const [currentUser, setCurrentUser] = useState<AdminUser | null>(null)
+  const [departments, setDepartments] = useState<Department[]>([])
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
+  const [activeTab, setActiveTab] = useState<TabId>('insights')
+  const [selectedDepartment, setSelectedDepartment] = useState('')
+
+  const [isAddDeptOpen, setIsAddDeptOpen] = useState(false)
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false)
+  const [editDept, setEditDept] = useState<Department | null>(null)
+  const [editUser, setEditUser] = useState<AdminUser | null>(null)
+  
+  const [newDeptName, setNewDeptName] = useState('')
+  const [newUser, setNewUser] = useState({ email: '', fullName: '', role: 'staff' as any, deptId: '' })
+
+  const loadData = async (email: string) => {
+    try {
+      const adminData = await getAdminUserByEmail(email);
+      if (!adminData) { setStatus('error'); return; }
+      setCurrentUser(adminData);
+
+      const allDepts = await getAllDepartments();
+      setDepartments(allDepts);
+
+      if (adminData.role === 'super_admin') {
+        const allUsers = await getAllAdminUsersSorted(allDepts);
+        setAdminUsers(allUsers);
+      }
+
+      if (adminData.departmentId) {
+        setSelectedDepartment(adminData.departmentId);
+      } else if (allDepts.length > 0) {
+        setSelectedDepartment(allDepts[0].id);
+      }
+      setStatus('ready');
+    } catch (err) {
+      console.error("Error loading dashboard data:", err);
+      setStatus('error');
+    }
+  }
 
   useEffect(() => {
-    getAllDepartments().then(setDepartments)
-  }, [])
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) { router.push('/admin/login'); return; }
+      if (user.email) loadData(user.email);
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleAddDept = async () => {
+    if (!newDeptName) return;
+    const id = await createDepartment({ name: newDeptName });
+    await copyDefaultQuestionsToDepartment(id);
+    setNewDeptName(''); setIsAddDeptOpen(false);
+    if (currentUser?.email) loadData(currentUser.email);
+  }
+
+  const handleUpdateDept = async () => {
+    if (!editDept) return;
+    await updateDepartment(editDept.id, { name: editDept.name });
+    setEditDept(null);
+    if (currentUser?.email) loadData(currentUser.email);
+  }
+
+  const handleAddUser = async () => {
+    if (!newUser.email || !newUser.fullName) return;
+    await createAdminUser(`user_${Date.now()}`, {
+      email: newUser.email,
+      fullName: newUser.fullName,
+      role: newUser.role,
+      departmentId: newUser.role === 'super_admin' ? null : newUser.deptId
+    });
+    setNewUser({ email: '', fullName: '', role: 'staff', deptId: '' });
+    setIsAddUserOpen(false);
+    if (currentUser?.email) loadData(currentUser.email);
+  }
+
+  const handleUpdateUser = async () => {
+    if (!editUser) return;
+    await updateAdminUser(editUser.id, {
+      fullName: editUser.fullName,
+      email: editUser.email,
+      role: editUser.role,
+      departmentId: editUser.role === 'super_admin' ? null : editUser.departmentId
+    });
+    setEditUser(null);
+    if (currentUser?.email) loadData(currentUser.email);
+  }
+
+  const getRoleWeight = (role: string) => {
+    if (role === 'super_admin') return 1;
+    if (role === 'admin') return 2;
+    return 3;
+  };
+
+  const sortedUsers = [...adminUsers].sort((a, b) => {
+    if (a.role === 'super_admin' && b.role !== 'super_admin') return -1;
+    if (a.role !== 'super_admin' && b.role === 'super_admin') return 1;
+    const deptA = departments.find(d => d.id === a.departmentId)?.name || '';
+    const deptB = departments.find(d => d.id === b.departmentId)?.name || '';
+    const deptComp = deptA.localeCompare(deptB, 'he');
+    if (deptComp !== 0) return deptComp;
+    const roleComp = getRoleWeight(a.role) - getRoleWeight(b.role);
+    if (roleComp !== 0) return roleComp;
+    return a.fullName.localeCompare(b.fullName, 'he');
+  });
+
+  if (status === 'loading') return <div className="min-h-screen flex items-center justify-center font-bold text-primary">טוען נתונים...</div>
 
   return (
-    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center p-4 md:p-6" dir="rtl">
-      <div className="max-w-md w-full bg-card rounded-3xl shadow-xl border border-border p-6 md:p-8 text-center">
-        
-        {step === 1 ? (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto mb-6 h-14 w-auto" priority />
-            <h1 className="text-3xl font-bold text-card-foreground mb-2">ברוכים הבאים!</h1>
-            
-            <div className="text-4xl mb-4 mt-6">❤️</div>
-            <p className="text-muted-foreground mb-8 text-lg px-2">המשוב שלך חשוב ומסייע לנו להשתפר.</p>
-            
-            <Button onClick={() => setStep(2)} className="w-full h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl transition-all shadow-md cursor-pointer">
-              התחל משוב
-            </Button>
+    <div className="min-h-screen bg-transparent" dir="rtl">
+      <AdminHeader user={currentUser} title="ממשק ניהול" onProfileClick={() => setActiveTab(currentUser?.role === 'super_admin' ? 'system' : 'settings')} />
 
-            <div className="flex flex-wrap justify-center gap-2 mt-6">
-              <span className="bg-secondary text-primary text-[11px] font-bold px-3 py-1.5 rounded-full border border-border">⏱️ מתחת ל-2 דק'</span>
-              <span className="bg-secondary text-primary text-[11px] font-bold px-3 py-1.5 rounded-full border border-border">🕵️‍♀️ אנונימי לחלוטין</span>
-              <span className="bg-secondary text-primary text-[11px] font-bold px-3 py-1.5 rounded-full border border-border">🔓 ללא צורך בהרשמה</span>
-            </div>
-          </div>
-        ) : (
-          <div className="animate-in fade-in slide-in-from-right-8 duration-300">
-            <Image src="/images/kaila-logo-vertical.png" alt="KailaSense" width={120} height={80} className="mx-auto mb-8 h-14 w-auto" priority />
-            <h1 className="text-2xl font-bold mb-8 text-card-foreground">באיזו מחלקה ביקרת?</h1>
+      {/* Responsive sub-header containing navigation tabs and department selectors */}
+      <div className="bg-white border-b border-border px-4 md:px-6 flex flex-col md:flex-row justify-between items-stretch md:items-center h-auto md:h-14 py-2 md:py-0 gap-3">
+        {/* Scrollable navigation tabs container for mobile devices */}
+        <nav className="flex gap-1 h-12 md:h-full overflow-x-auto whitespace-nowrap scrollbar-none">
+          {[
+            { id: 'insights', label: 'תובנות', icon: '📊' },
+            { id: 'comments', label: 'תגובות', icon: '💬' },
+            ...(currentUser?.role !== 'staff' ? [
+              { id: 'questions', label: 'שאלות', icon: '📋' },
+              { id: 'settings', label: 'הגדרות מחלקה', icon: '⚙️' }
+            ] : []),
+            ...(currentUser?.role === 'super_admin' ? [{ id: 'system', label: 'ניהול מערכת', icon: '🛡️' }] : [])
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as TabId)}
+              className={`px-4 md:px-5 h-full text-sm font-semibold border-b-[3px] transition-colors flex items-center gap-2 cursor-pointer shrink-0 ${
+                activeTab === tab.id ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-card-foreground'
+              }`}
+            >
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </nav>
 
-            <Select onValueChange={setSelectedDept}>
-              <SelectTrigger className="w-full h-14 bg-input border-border text-card-foreground text-right rounded-xl text-lg font-medium focus:ring-primary hover:bg-[#f0f0f7] transition-colors cursor-pointer" dir="rtl">
-                <SelectValue placeholder="בחר מחלקה מהרשימה" />
-              </SelectTrigger>
-              <SelectContent dir="rtl" className="max-h-60 bg-popover border-border text-popover-foreground">
-                {departments.map(dept => <SelectItem key={dept.id} value={dept.id} className="text-right text-base py-3 focus:bg-accent focus:text-accent-foreground cursor-pointer">{dept.name}</SelectItem>)}
+        {/* Responsive department filter box for Super Admins */}
+        {currentUser?.role === 'super_admin' && (
+          <div className={`flex items-center justify-between md:justify-end gap-3 transition-opacity py-1 md:py-0 ${activeTab === 'system' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <span className="text-sm font-bold text-card-foreground whitespace-nowrap">מחלקה:</span>
+            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+              <SelectTrigger className="w-full md:w-48 h-9 text-right bg-background border-border text-foreground cursor-pointer"><SelectValue /></SelectTrigger>
+              <SelectContent dir="rtl" className="bg-popover border-border">
+                {departments.map(d => <SelectItem key={d.id} value={d.id} className="text-popover-foreground cursor-pointer">{d.name}</SelectItem>)}
               </SelectContent>
             </Select>
-
-            <Button 
-              onClick={() => router.push(`/survey/${selectedDept}`)}
-              disabled={!selectedDept}
-              className="w-full h-14 mt-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl transition-all cursor-pointer disabled:opacity-50"
-            >
-              המשך
-            </Button>
-            
-            <button onClick={() => setStep(1)} className="mt-4 text-muted-foreground text-sm hover:text-card-foreground transition-colors cursor-pointer">
-              חזרה
-            </button>
           </div>
         )}
-
-        <div className="mt-10 pt-5 border-t border-border">
-          <Link href="/admin/login" className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium">כניסה לממשק הניהול</Link>
-        </div>
       </div>
+
+     <main className="p-3 md:p-6 max-w-6xl mx-auto">
+        <div className="bg-transparent py-2 md:p-6 min-h-[500px]">
+          {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
+          {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
+          {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
+          {activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
+          
+          {activeTab === 'system' && (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              {/* Wrapped action buttons for system management */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button onClick={() => setIsAddDeptOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold cursor-pointer w-full sm:w-auto">+ מחלקה חדשה</Button>
+                <Button onClick={() => setIsAddUserOpen(true)} variant="outline" className="border-border bg-card text-foreground hover:bg-secondary font-bold cursor-pointer w-full sm:w-auto"> + איש צוות חדש</Button>
+              </div>
+
+              {/* Department Management Table Block */}
+              <div className="bg-card rounded-xl p-4 md:p-5 text-card-foreground shadow-sm border border-border">
+                <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">מחלקות המרכז הרפואי</h2>
+                <div className="overflow-x-auto w-full pb-2">
+                  <table className="w-full text-right border-collapse min-w-[500px]">
+                    <thead>
+                      <tr className="text-muted-foreground text-sm border-b border-border"><th className="pb-3 font-semibold">שם מחלקה</th><th className="pb-3 w-32 font-semibold">פעולות</th></tr>
+                    </thead>
+                    <tbody>
+                      {departments.map(d => (
+                        <tr key={d.id} className="border-b border-secondary last:border-0 hover:bg-secondary/80 transition-colors">
+                          <td className="py-3.5 font-medium text-card-foreground">{d.name}</td>
+                          <td className="py-3.5 flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setEditDept(d)} className="border-border text-card-foreground hover:bg-secondary cursor-pointer">ערוך</Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => { if(confirm('למחוק מחלקה זו?')) deleteDepartment(d.id).then(() => loadData(currentUser!.email)) }}>מחק</Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* System Admin / Staff Management Table Block */}
+              <div className="bg-card rounded-xl p-4 md:p-5 text-card-foreground shadow-sm border border-border">
+                <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">אנשי צוות וניהול מערכת</h2>
+                <div className="overflow-x-auto w-full pb-2">
+                  <table className="w-full text-right border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="text-muted-foreground text-sm border-b border-border">
+                        <th className="pb-3 font-semibold">שם מלא</th>
+                        <th className="pb-3 font-semibold">שיוך מחלקתי</th>
+                        <th className="pb-3 font-semibold">הרשאת גישה</th>
+                        <th className="pb-3 w-32 font-semibold">פעולות</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedUsers.map(u => (
+                        <tr key={u.id} className="border-b border-secondary last:border-0 hover:bg-secondary/80 transition-colors">
+                          <td className="py-3.5 font-semibold text-card-foreground">{u.fullName}</td>
+                          <td className="py-3.5 text-muted-foreground">{u.role === 'super_admin' ? 'כל המרכז הרפואי' : departments.find(d => d.id === u.departmentId)?.name || 'ללא שיוך'}</td>
+                          <td className="py-3.5">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                              u.role === 'super_admin' ? 'bg-primary text-primary-foreground' : u.role === 'admin' ? 'bg-accent text-accent-foreground border border-primary/20' : 'bg-secondary text-muted-foreground'
+                            }`}>
+                              {u.role === 'super_admin' ? 'סופר אדמין' : u.role === 'admin' ? 'מנהל' : 'צוות'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setEditUser(u)} className="border-border text-card-foreground hover:bg-secondary cursor-pointer">ערוך</Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => { if(confirm('למחוק משתמש זה?')) deleteAdminUser(u.id).then(() => loadData(currentUser!.email)) }}>מחק</Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+      
+      {/* Configuration Dialogs */}
+      <Dialog open={!!editDept} onOpenChange={(open) => !open && setEditDept(null)}>
+        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-card-foreground text-right">עריכת מחלקה</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-4">
+            <Input className="bg-input text-card-foreground border-border" value={editDept?.name || ''} onChange={e => setEditDept(prev => prev ? {...prev, name: e.target.value} : null)} placeholder="שם המחלקה" />
+            <Button onClick={handleUpdateDept} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer">שמור שינויים</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
+        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle className="text-card-foreground text-right">עריכת פרטי משתמש</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-muted-foreground">שם מלא</label>
+              <Input className="bg-input text-card-foreground border-border" value={editUser?.fullName || ''} onChange={e => setEditUser(prev => prev ? {...prev, fullName: e.target.value} : null)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-muted-foreground">אימייל (לצורך זיהוי בלבד)</label>
+              <Input className="bg-input text-card-foreground border-border" value={editUser?.email || ''} onChange={e => setEditUser(prev => prev ? {...prev, email: e.target.value} : null)} dir="ltr" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-muted-foreground">תפקיד</label>
+              <Select value={editUser?.role || ''} onValueChange={r => setEditUser(prev => prev ? {...prev, role: r as any} : null)}>
+                <SelectTrigger className="bg-input text-card-foreground border-border cursor-pointer"><SelectValue /></SelectTrigger>
+                <SelectContent dir="rtl" className="bg-popover border-border">
+                  <SelectItem value="staff" className="text-popover-foreground cursor-pointer">איש צוות (צפייה בלבד)</SelectItem>
+                  <SelectItem value="admin" className="text-popover-foreground cursor-pointer">מנהל מחלקה</SelectItem>
+                  <SelectItem value="super_admin" className="text-popover-foreground cursor-pointer">סופר אדמין</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {editUser?.role !== 'super_admin' && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-muted-foreground">שיוך למחלקה</label>
+                <Select value={editUser?.departmentId || ''} onValueChange={d => setEditUser(prev => prev ? {...prev, departmentId: d} : null)}>
+                  <SelectTrigger className="bg-input text-card-foreground border-border cursor-pointer"><SelectValue placeholder="בחר מחלקה" /></SelectTrigger>
+                  <SelectContent dir="rtl" className="bg-popover border-border">
+                    {departments.map(d => <SelectItem key={d.id} value={d.id} className="text-popover-foreground cursor-pointer">{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <Button onClick={handleUpdateUser} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer">שמור שינויים</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddDeptOpen} onOpenChange={setIsAddDeptOpen}>
+        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground max-w-sm rounded-2xl">
+          <DialogHeader><DialogTitle className="text-card-foreground text-right">הוספת מחלקה חדשה</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-4">
+            <Input className="bg-input text-card-foreground border-border" placeholder="שם המחלקה" value={newDeptName} onChange={e => setNewDeptName(e.target.value)} />
+            <Button onClick={handleAddDept} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer">צור מחלקה</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle className="text-card-foreground text-right">הוספת איש צוות חדש</DialogTitle></DialogHeader>
+          <div className="space-y-4 mt-4">
+            <Input className="bg-input text-card-foreground border-border" placeholder="שם מלא" value={newUser.fullName} onChange={e => setNewUser({...newUser, fullName: e.target.value})} />
+            <Input className="bg-input text-card-foreground border-border" placeholder="אימייל" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} dir="ltr" />
+            <Select value={newUser.role} onValueChange={r => setNewUser({...newUser, role: r as any})}>
+              <SelectTrigger className="bg-input text-card-foreground border-border cursor-pointer"><SelectValue placeholder="בחר תפקיד" /></SelectTrigger>
+              <SelectContent dir="rtl" className="bg-popover border-border">
+                <SelectItem value="staff" className="text-popover-foreground cursor-pointer">איש צוות (צפייה בלבד)</SelectItem>
+                <SelectItem value="admin" className="text-popover-foreground cursor-pointer">מנהל מחלקה</SelectItem>
+                <SelectItem value="super_admin" className="text-popover-foreground cursor-pointer">סופר אדמין</SelectItem>
+              </SelectContent>
+            </Select>
+            {newUser.role !== 'super_admin' && (
+              <Select value={newUser.deptId} onValueChange={d => setNewUser({...newUser, deptId: d})}>
+                <SelectTrigger className="bg-input text-card-foreground border-border cursor-pointer"><SelectValue placeholder="בחר מחלקה" /></SelectTrigger>
+                <SelectContent dir="rtl" className="bg-popover border-border">
+                  {departments.map(d => <SelectItem key={d.id} value={d.id} className="text-popover-foreground cursor-pointer">{d.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            <Button onClick={handleAddUser} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold cursor-pointer">צור משתמש</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
