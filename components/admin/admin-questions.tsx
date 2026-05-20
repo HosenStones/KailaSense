@@ -218,8 +218,22 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         ) : (
           (() => {
             let questionCounter = 0;
+            
+            // Define strict chronological order weights for categories
+            const categoryOrder: Record<string, number> = {
+              admission: 1,
+              during: 2,
+              discharge: 3,
+              general: 4
+            };
+
             return questions
-              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .sort((a, b) => {
+                const weightA = categoryOrder[a.category || 'general'] || 4;
+                const weightB = categoryOrder[b.category || 'general'] || 4;
+                if (weightA !== weightB) return weightA - weightB;
+                return (a.displayOrder || 0) - (b.displayOrder || 0);
+              })
               .map((q) => {
                 const isContent = q.questionType === 'content';
                 if (!isContent) {
@@ -238,7 +252,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                           <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded font-bold uppercase">
                             {q.category === 'admission' ? 'קבלה' : q.category === 'during' ? 'אשפוז' : q.category === 'discharge' ? 'שחרור' : 'כללי'}
                           </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${isContent ? 'bg-[#f0f9f9] text-[#1a5c5c]' : 'bg-[#f7f7fc] text-[#6b6890]'}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold border uppercase ${isContent ? 'bg-[#f0f9f9] text-[#1a5c5c] border-[#1a5c5c]/10' : 'bg-green-50 text-green-700 border-green-200/60'}`}>
                             {isContent ? 'שקף מידע' : 'שאלת משוב'}
                           </span>
                         </div>
