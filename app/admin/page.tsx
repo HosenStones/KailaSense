@@ -1,10 +1,3 @@
-הבנתי אותך לחלוטין. אין צורך לשחזר שום דבר ואין צורך להתעסק עם פיירבייס. טעות שלי, אני הוספתי בקוד הקודם תנאי הגבלה (שבדק אם יש למשתמש הגדרת `super_admin` במסד הנתונים), וזה מה שהסתיר ממך את העמודים וחסם את שליפת הנתונים של בנק השאלות.
-
-הסרתי עכשיו את כל ההגבלות האלו מהקוד. המערכת תחזור להיות פתוחה ונגישה במלואה בדיוק כמו שהייתה לך, בלי שתצטרכי לשנות שום דבר בדאטה בייס.
-
-הנה הקובץ `app/admin/page.tsx` המלא והמתוקן. פשוט תעתיקי אותו ותוכלי להמשיך לעבוד מאותה נקודה:
-
-```tsx
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -16,8 +9,11 @@ import {
   getAllDepartments, 
   getGlobalQuestions,
   createDepartment,
-  deleteDepartment
+  deleteDepartment,
+  addGlobalQuestion,
+  deleteGlobalQuestion
 } from '@/lib/firebase/firestore'
+import { PREDEFINED_QUESTION_BANK } from '@/lib/question-bank'
 import type { AdminUser, Department } from '@/lib/types'
 import { AdminInsights } from '@/components/admin/admin-insights'
 import { AdminQuestions } from '@/components/admin/admin-questions'
@@ -29,7 +25,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Trash2, Plus, Layers, BookOpen } from 'lucide-react'
+import { Trash2, Plus, Layers, BookOpen, Download } from 'lucide-react'
 
 type TabId = 'insights' | 'questions' | 'comments' | 'scheduling' | 'settings' | 'system' | 'bank'
 
@@ -45,6 +41,7 @@ export default function AdminDashboardPage() {
   const [isAddDeptOpen, setIsAddDeptOpen] = useState(false)
   const [newDeptName, setNewDeptName] = useState('')
   const [isSubmittingDept, setIsSubmittingDept] = useState(false)
+  const [isSeedingBank, setIsSeedingBank] = useState(false)
 
   const loadData = async (email: string) => {
     try {
@@ -58,7 +55,6 @@ export default function AdminDashboardPage() {
       const allDepts = await getAllDepartments();
       setDepartments(allDepts);
       
-      // שליפת בנק השאלות ללא תנאי הגבלה
       const bankData = await getGlobalQuestions();
       setGlobalBank(bankData);
       
@@ -110,6 +106,41 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // פונקציה שמייבאת את השאלות מהקובץ למסד הנתונים
+  const handleSeedGlobalBank = async () => {
+    if (!confirm('פעולה זו תעתיק את כל השאלות מהקובץ המקומי לתוך מסד הנתונים. להמשיך?')) return;
+    setIsSeedingBank(true);
+    try {
+      for (const [category, items] of Object.entries(PREDEFINED_QUESTION_BANK)) {
+        for (const item of items) {
+          await addGlobalQuestion({
+            ...item,
+            category,
+            createdAt: new Date().toISOString()
+          });
+        }
+      }
+      const bankData = await getGlobalQuestions();
+      setGlobalBank(bankData);
+      alert('השאלות נטענו בהצלחה למסד הנתונים!');
+    } catch (error) {
+      console.error("Error seeding bank:", error);
+      alert('אירעה שגיאה בטעינת השאלות.');
+    } finally {
+      setIsSeedingBank(false);
+    }
+  };
+
+  const handleDeleteGlobalQuestion = async (id: string) => {
+    if (!confirm('למחוק שאלה זו מהמאגר הגלובלי? הפעולה לא תמחק אותה ממחלקות שכבר משתמשות בה.')) return;
+    try {
+      await deleteGlobalQuestion(id);
+      setGlobalBank(prev => prev.filter(q => q.id !== id));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 text-sm font-medium text-slate-500">
@@ -155,7 +186,6 @@ export default function AdminDashboardPage() {
       </div>
 
       <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
-        {/* בחירת מחלקה גלובלית ללא הגבלה */}
         <div className="bg-white border border-border p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary" />
@@ -181,7 +211,6 @@ export default function AdminDashboardPage() {
         {activeTab === 'scheduling' && <AdminScheduling departmentId={selectedDepartment} />}
         {activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
         
-        {/* פאנל ניהול מערכת ללא הגבלה */}
         {activeTab === 'system' && (
           <div className="bg-white border border-border rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex justify-between items-center border-b border-slate-100 pb-4">
@@ -228,14 +257,22 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* פאנל בנק שאלות ללא הגבלה */}
         {activeTab === 'bank' && (
           <div className="bg-white border border-border rounded-2xl p-6 shadow-sm space-y-4">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" /> מאגר שאלות קליני גלובלי
-              </h2>
-              <p className="text-xs text-muted-foreground mb-4">צפייה בכלל השאלות המובנות המוגדרות כברירת מחדל במערכת</p>
+            <div className="flex justify-between items-start border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-primary" /> מאגר שאלות קליני גלובלי
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">צפייה ועריכה של כלל השאלות המוגדרות כברירת מחדל במערכת</p>
+              </div>
+              
+              {globalBank.length === 0 && (
+                <Button onClick={handleSeedGlobalBank} disabled={isSeedingBank} className="bg-blue-600 hover:bg-blue-700">
+                  <Download className="w-4 h-4 ml-2" />
+                  {isSeedingBank ? 'מייבא שאלות...' : 'ייבוא שאלות למסד הנתונים'}
+                </Button>
+              )}
             </div>
 
             <div className="overflow-x-auto border border-border rounded-xl">
@@ -246,6 +283,7 @@ export default function AdminDashboardPage() {
                     <th className="px-4 py-3 font-semibold">סוג שאלה</th>
                     <th className="px-4 py-3 font-semibold">קטגוריית שלב</th>
                     <th className="px-4 py-3 font-semibold">תג מחלקתי</th>
+                    <th className="px-4 py-3 font-semibold text-center">פעולות</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -255,12 +293,26 @@ export default function AdminDashboardPage() {
                       <td className="px-4 py-3 text-slate-500 text-xs">{item.type}</td>
                       <td className="px-4 py-3 text-slate-500 text-xs">{item.category}</td>
                       <td className="px-4 py-3 text-slate-600 text-xs font-semibold">{item.tag || 'כללי'}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleDeleteGlobalQuestion(item.id)}
+                          className="text-slate-400 hover:text-destructive hover:bg-red-50 h-8 px-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                   {globalBank.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-muted-foreground">
-                        לא נמצאו שאלות גלובליות במסד הנתונים.
+                      <td colSpan={5} className="text-center py-12 text-slate-500">
+                        <div className="flex flex-col items-center gap-2">
+                          <BookOpen className="w-8 h-8 text-slate-300" />
+                          <span>לא נמצאו שאלות גלובליות במסד הנתונים.</span>
+                          <span>לחצי על "ייבוא שאלות למסד הנתונים" כדי לטעון אותן מהקובץ.</span>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -273,5 +325,3 @@ export default function AdminDashboardPage() {
     </div>
   )
 }
-
-```
