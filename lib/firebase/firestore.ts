@@ -215,3 +215,32 @@ export async function completeSurveySession(sessionId: string): Promise<void> {
     completedAt: new Date().toISOString() 
   });
 }
+
+// Patient Sync & Scheduling API Data Handling
+export async function syncPatientData(patientData: any): Promise<void> {
+  const { patientId, fullName, phoneNumber, departmentId, status } = patientData;
+  const patientDocRef = doc(db, 'patients', patientId);
+  
+  await setDoc(patientDocRef, {
+    patientId,
+    fullName,
+    phoneNumber,
+    departmentId,
+    status,
+    lastStatusUpdate: new Date().toISOString(),
+  }, { merge: true }); // Merges fields if patient exists, creates if not
+}
+
+export async function markMessageAsSent(patientId: string, category: string): Promise<void> {
+  const patientDocRef = doc(db, 'patients', patientId);
+  // Using an array union conceptually (we just append to the list in actual Firebase SDK)
+  // For basic client compatibility without importing arrayUnion, we read and update.
+  const docSnap = await getDocs(query(collection(db, 'patients'), where('patientId', '==', patientId)));
+  if (!docSnap.empty) {
+    const patientData = docSnap.docs[0].data();
+    const sentMessages = patientData.sentMessages || [];
+    if (!sentMessages.includes(category)) {
+      await updateDoc(patientDocRef, { sentMessages: [...sentMessages, category] });
+    }
+  }
+}
