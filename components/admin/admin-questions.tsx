@@ -13,7 +13,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [departmentName, setDepartmentName] = useState('')
   
-  // States for form
   const [newQuestionText, setNewQuestionText] = useState('')
   const [newQuestionType, setNewQuestionType] = useState<QuestionType>('emoji')
   const [newCategory, setNewCategory] = useState<QuestionCategory>('general')
@@ -203,13 +202,17 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   }
 
   const renderCategoryLabel = (cat: string) => {
-    const catName = cat === 'admission' ? 'קבלה' : 
-                    cat === 'during' ? 'אשפוז' : 
-                    cat === 'discharge' ? 'לקראת שחרור' : 
-                    cat === 'after_discharge' ? 'שחרור (24ש\')' : 'כללי';
+    const catMap: Record<string, string> = {
+      admission: '👋 שלב קבלה',
+      during: '🛏️ מהלך אשפוז',
+      discharge: '🏠 לקראת שחרור',
+      after_discharge: '⏱️ 24 שעות לאחר שחרור',
+      general: '⭐ כללי'
+    };
+    
     return (
       <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-slate-100 text-slate-600 border border-slate-200">
-        {catName}
+        {catMap[cat] || catMap['general']}
       </span>
     )
   }
@@ -219,15 +222,15 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     let text = '';
     
     if (type === 'content') {
-      text = 'שקף מידע';
+      text = '📺 שקף מידע';
       if (contentType === 'video') icon = <Video className="w-3 h-3 mr-1 inline" />;
       if (contentType === 'image') icon = <ImageIcon className="w-3 h-3 mr-1 inline" />;
     } else {
-      if (type === 'emoji') text = "אימוג'י";
-      if (type === 'stars') text = "כוכבים";
-      if (type === 'choice') text = "בחירה יחידה";
-      if (type === 'multi_choice') text = "בחירה מרובה";
-      if (type === 'open_text') text = "טקסט חופשי";
+      if (type === 'emoji') text = "😊 אימוג'י";
+      if (type === 'stars') text = "⭐ כוכבים";
+      if (type === 'choice') text = "🔘 בחירה יחידה";
+      if (type === 'multi_choice') text = "✅ בחירה מרובה";
+      if (type === 'open_text') text = "📝 טקסט חופשי";
     }
 
     return (
@@ -254,7 +257,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         </div>
       )}
 
-      {/* Global Question Bank Drawer with smart matching filter */}
+      {/* Global Question Bank Drawer */}
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <button 
           onClick={() => setShowBank(!showBank)}
@@ -294,27 +297,32 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                   </div>
                   
                   <div className="space-y-2">
-                    {filteredItems.map((item, idx) => (
-                      <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg bg-secondary/40 border border-transparent hover:border-primary/20 transition-all group">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1.5">
-                              {renderCategoryLabel(cat)}
-                              {renderTypeLabel(item.type, item.contentType)}
+                    {filteredItems.map((item, idx) => {
+                      const isAdded = questions.some(q => q.questionText === item.text);
+                      
+                      return (
+                        <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg bg-secondary/40 border border-transparent hover:border-primary/20 transition-all group">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                {renderCategoryLabel(cat)}
+                                {renderTypeLabel(item.type, item.contentType)}
+                              </div>
+                              <span className="text-foreground text-sm font-medium leading-tight">{item.text}</span>
                             </div>
-                            <span className="text-foreground text-sm font-medium leading-tight">{item.text}</span>
+                            <Button 
+                              size="sm" 
+                              variant={isAdded ? "secondary" : "ghost"}
+                              disabled={isAdded}
+                              onClick={() => handleAddFromBank(item, cat)}
+                              className={`h-8 text-xs px-3 font-bold shrink-0 rounded-lg ${isAdded ? 'text-slate-400 bg-slate-100' : 'text-primary hover:bg-primary/10 cursor-pointer'}`}
+                            >
+                              {isAdded ? '✓ נוסף' : '+ הוסף'}
+                            </Button>
                           </div>
-                          <Button 
-                            size="sm" 
-                            variant="ghost"
-                            onClick={() => handleAddFromBank(item, cat)}
-                            className="h-8 text-xs text-primary hover:bg-primary/10 px-3 cursor-pointer font-bold shrink-0 rounded-lg"
-                          >
-                            + הוסף
-                          </Button>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               );
@@ -324,11 +332,11 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       </div>
 
       {/* Primary Questionnaire Creator Form */}
-      <div className={`p-5 rounded-2xl border shadow-sm space-y-4 transition-all ${editingQuestionId ? 'bg-primary/5 border-primary' : 'bg-card border-border'}`}>
+      <div className={`p-5 rounded-2xl border shadow-sm space-y-4 transition-all ${editingQuestionId ? 'bg-white border-2 border-primary shadow-md' : 'bg-card border-border'}`}>
         {editingQuestionId && (
           <div className="flex items-center justify-between text-primary font-bold mb-2">
             <span>✏️ מצב עריכה לשאלה קיימת</span>
-            <Button variant="ghost" size="sm" onClick={resetForm} className="h-8 text-xs cursor-pointer">
+            <Button variant="ghost" size="sm" onClick={resetForm} className="h-8 text-xs cursor-pointer bg-slate-100 hover:bg-slate-200">
               <X className="w-4 h-4 ml-1" /> ביטול עריכה
             </Button>
           </div>
@@ -381,8 +389,8 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         )}
 
         {newQuestionType === 'content' && (
-          <div className="p-4 bg-accent rounded-xl border border-dashed border-primary/40 animate-in fade-in slide-in-from-top-2 space-y-4">
-            <div className="flex items-center gap-2 mb-2 text-primary">
+          <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 animate-in fade-in slide-in-from-top-2 space-y-4">
+            <div className="flex items-center gap-2 mb-2 text-slate-700">
               <Info className="w-4 h-4" />
               <span className="text-sm font-bold">הגדרות שקף מידע והנחיות למטופל</span>
             </div>
