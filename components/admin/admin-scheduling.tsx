@@ -5,31 +5,33 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Edit2, Save, X, Info } from 'lucide-react'
+import { Edit2, Save, X, Sliders } from 'lucide-react'
 
 interface PatientRow {
   id: string;
   name: string;
   phone: string;
   escortPhone: string;
-  role: string;
   status: string;
   activeMinutes: number;
-  sent: string[];
 }
 
 export function AdminScheduling({ departmentId }: { departmentId: string }) {
-  // Mock data representing database synchronization for tracking dashboard
+  const [timingSettings, setTimingSettings] = useState({
+    admissionDelay: '30 דק\'', // חצי שעה אחרי הקבלה
+    duringInterval: '2 שעות',  // שעתיים אחרי אשפוז כל יום
+    dischargeDelay: '24 שעות'  // 24 שעות אחרי שחרור
+  });
+
   const [patients, setPatients] = useState<PatientRow[]>([
-    { id: '1', name: 'ישראל ישראלי', phone: '050-1234567', escortPhone: '', role: 'מטופל', status: 'התקבל', activeMinutes: 45, sent: ['קבלה'] },
-    { id: '2', name: 'רונית כהן', phone: '052-7654321', escortPhone: '054-1112222', role: 'מלווה', status: 'באשפוז', activeMinutes: 180, sent: [] },
-    { id: '3', name: 'יוסי לוי', phone: '053-9998888', escortPhone: '', role: 'מטופל', status: 'לקראת שחרור', activeMinutes: 4320, sent: ['קבלה', 'מהלך אשפוז'] }
+    { id: '1', name: 'ישראל ישראלי', phone: '050-1234567', escortPhone: '', status: 'התקבל', activeMinutes: 45 },
+    { id: '2', name: 'רונית כהן', phone: '052-7654321', escortPhone: '054-1112222', status: 'באשפוז', activeMinutes: 180 },
+    { id: '3', name: 'יוסי לוי', phone: '053-9998888', escortPhone: '', status: 'לקראת שחרור', activeMinutes: 4320 }
   ]);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempData, setTempData] = useState<Partial<PatientRow>>({});
 
-  // Strictly formats active duration into pure minutes, hours, or days
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
       return `${minutes} דק'`;
@@ -42,19 +44,16 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
     return `${days} ימים`;
   };
 
-  // Instantiates the inline workspace data for the selected row
   const handleEditClick = (p: PatientRow) => {
     setEditingId(p.id);
     setTempData({ ...p });
   };
 
-  // Discards inline changes and clears memory trace
   const handleCancelClick = () => {
     setEditingId(null);
     setTempData({});
   };
 
-  // Synchronizes changes back into the state layout
   const handleSaveClick = () => {
     if (!tempData.id) return;
     setPatients(prev => prev.map(p => p.id === tempData.id ? (tempData as PatientRow) : p));
@@ -65,33 +64,77 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
   return (
     <div className="space-y-6" dir="rtl">
       
-      {/* Dynamic automated monitoring functional key visual description */}
-      <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 p-4 rounded-xl flex gap-3 items-start">
-        <Info className="w-5 h-5 shrink-0 text-emerald-600 mt-0.5" />
-        <div>
-          <strong className="block text-sm font-bold mb-1">חיווי אוטומציה פעילה (נקודה ירוקה מהבהבת):</strong>
-          <p className="text-xs text-emerald-800 leading-relaxed">
-            הסימון הירוק המהבהב בשורת המטופל מעיד על כך שמנגנון הניטור האוטומטי פועל כסדרו בזמן אמת. 
-            כל עוד הרשומה מסומנת, המערכת תבצע שליחה אוטומטית של הודעות ושאלוני משוב ייעודיים לטלפון הנייד בהתאם לשלב האשפוז והסטטוס המעודכן.
-          </p>
+      {/* Configuration layout panel for automation schedules */}
+      <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 border-b border-slate-50 pb-2">
+          <Sliders className="w-4 h-4 text-primary" />
+          <h3 className="text-sm font-bold text-slate-800">הגדרות תזמוני אוטומציה מחלקתיים</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="border border-slate-100 rounded-xl p-3 bg-slate-50/50 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold text-slate-700">שלב קבלה והתמצאות</span>
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">פעיל</Badge>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <span>שליחה אוטומטית כעבור:</span>
+              <Input 
+                type="text" 
+                value={timingSettings.admissionDelay} 
+                onChange={e => setTimingSettings({...timingSettings, admissionDelay: e.target.value})}
+                className="h-7 w-20 text-center text-xs bg-white font-medium" 
+              />
+            </div>
+          </div>
+          
+          <div className="border border-slate-100 rounded-xl p-3 bg-slate-50/50 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold text-slate-700">מהלך אשפוז שוטף</span>
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">פעיל</Badge>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <span>שליחה חוזרת כל פעימה של:</span>
+              <Input 
+                type="text" 
+                value={timingSettings.duringInterval} 
+                onChange={e => setTimingSettings({...timingSettings, duringInterval: e.target.value})}
+                className="h-7 w-20 text-center text-xs bg-white font-medium" 
+              />
+            </div>
+          </div>
+
+          <div className="border border-slate-100 rounded-xl p-3 bg-slate-50/50 space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold text-slate-700">לאחר השחרור מהמחלקה</span>
+              <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]">פעיל</Badge>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <span>שליחה סופית כעבור:</span>
+              <Input 
+                type="text" 
+                value={timingSettings.dischargeDelay} 
+                onChange={e => setTimingSettings({...timingSettings, dischargeDelay: e.target.value})}
+                className="h-7 w-20 text-center text-xs bg-white font-medium" 
+              />
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-right">
-            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200">
+            <thead className="bg-slate-50 text-slate-600 border-b border-slate-200 text-xs">
               <tr>
                 <th className="px-4 py-3 font-semibold">שם מלא</th>
-                <th className="px-4 py-3 font-semibold">מספר טלפון</th>
+                <th className="px-4 py-3 font-semibold">טלפון מטופל/ת</th>
                 <th className="px-4 py-3 font-semibold">טלפון מלווה</th>
-                <th className="px-4 py-3 font-semibold">תפקיד</th>
                 <th className="px-4 py-3 font-semibold">סטטוס נוכחי</th>
                 <th className="px-4 py-3 font-semibold">זמן בסטטוס</th>
                 <th className="px-4 py-3 font-semibold text-center">פעולות עריכה</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 text-xs">
               {patients.map((patient) => {
                 const isEditing = editingId === patient.id;
                 return (
@@ -124,20 +167,6 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
                         </td>
                         <td className="px-4 py-2">
                           <Select 
-                            value={tempData.role || ''} 
-                            onValueChange={val => setTempData(prev => ({ ...prev, role: val }))}
-                          >
-                            <SelectTrigger className="h-9 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent dir="rtl">
-                              <SelectItem value="מטופל">מטופל</SelectItem>
-                              <SelectItem value="מלווה">מלווה</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-4 py-2">
-                          <Select 
                             value={tempData.status || ''} 
                             onValueChange={val => setTempData(prev => ({ ...prev, status: val }))}
                           >
@@ -145,14 +174,14 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent dir="rtl">
-                              <SelectItem value="התקבל">התקבל</SelectItem>
                               <SelectItem value="באשפוז">באשפוז</SelectItem>
+                              <SelectItem value="התקבל">התקבל</SelectItem>
                               <SelectItem value="לקראת שחרור">לקראת שחרור</SelectItem>
                               <SelectItem value="שוחרר">שוחרר</SelectItem>
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-4 py-2 text-slate-400 text-xs">
+                        <td className="px-4 py-2 text-slate-400">
                           {formatDuration(patient.activeMinutes)}
                         </td>
                         <td className="px-4 py-2">
@@ -186,13 +215,8 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
                         </td>
                         <td className="px-4 py-3 text-slate-600">{patient.phone}</td>
                         <td className="px-4 py-3 text-slate-500">{patient.escortPhone || '-'}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant={patient.role === 'מטופל' ? 'default' : 'secondary'} className="text-[11px] px-2 py-0">
-                            {patient.role}
-                          </Badge>
-                        </td>
                         <td className="px-4 py-3 text-slate-700 font-medium">{patient.status}</td>
-                        <td className="px-4 py-3 text-slate-400 text-xs">{formatDuration(patient.activeMinutes)}</td>
+                        <td className="px-4 py-3 text-slate-400">{formatDuration(patient.activeMinutes)}</td>
                         <td className="px-4 py-3 text-center">
                           <Button 
                             variant="ghost" 
