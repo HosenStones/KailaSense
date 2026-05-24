@@ -8,6 +8,14 @@ import { getQuestionsByDepartment, addQuestion, deleteQuestion, getAllDepartment
 import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
 import { Plus, Trash2, ListPlus, Image as ImageIcon, Video, AlignLeft, Info, BookOpen, Pencil, X } from 'lucide-react'
 
+const CATEGORY_MAP: Record<string, string> = {
+  admission: '👋 קבלה למחלקה',
+  during: '🛏️ מהלך אשפוז',
+  discharge: '🏠 לקראת שחרור',
+  after_discharge: '⏱️ לאחר שחרור',
+  general: '⭐ כללי'
+};
+
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [departmentName, setDepartmentName] = useState('')
@@ -29,9 +37,9 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     if (!departmentId) return;
     try {
       const data = await getQuestionsByDepartment(departmentId)
-      setQuestions(data)
+      setQuestions(data.sort((a,b) => a.questionText.localeCompare(b.questionText, 'he')))
       const bankData = await getGlobalQuestions()
-      setGlobalBank(bankData)
+      setGlobalBank(bankData.sort((a,b) => a.text.localeCompare(b.text, 'he')))
       const allDepts = await getAllDepartments()
       const currentDept = allDepts.find(d => d.id === departmentId)
       if (currentDept) setDepartmentName(currentDept.name)
@@ -128,13 +136,14 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     }
     setNewOptionsText(q.options && q.options.length > 0 ? q.options.map(o => o.label).join(', ') : '');
     
-    // גלילה אוטומטית לאזור העריכה
-    setTimeout(() => { document.getElementById('question-creator-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
-  }
-
-  const renderCategoryLabel = (cat: string) => {
-    const catMap: Record<string, string> = { admission: '👋 קבלה למחלקה', during: '🛏️ מהלך אשפוז', discharge: '🏠 לקראת שחרור', after_discharge: '⏱️ לאחר שחרור', general: '⭐ כללי' };
-    return <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">{catMap[cat] || catMap['general']}</span>
+    // חישוב מדויק לגלילה מעלה לאזור העריכה
+    setTimeout(() => { 
+      const el = document.getElementById('question-creator-form');
+      if (el) {
+        const y = el.getBoundingClientRect().top + window.scrollY - 100;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }, 100);
   }
 
   const renderTypeLabel = (type: string, contentType?: string) => {
@@ -175,9 +184,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
               return (
                 <div key={cat} className="space-y-2 bg-card p-3 rounded-xl border border-border shadow-sm">
                   <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
-                    <h4 className="text-xs font-bold text-primary">
-                      {cat === 'admission' ? '👋 קבלה למחלקה' : cat === 'during' ? '🛏️ מהלך אשפוז' : cat === 'discharge' ? '🏠 לקראת שחרור' : cat === 'after_discharge' ? '⏱️ לאחר שחרור' : '⭐ כללי'}
-                    </h4>
+                    <h4 className="text-xs font-bold text-primary">{CATEGORY_MAP[cat]}</h4>
                     <div className="flex gap-1">
                       <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleAddAllInCategory(filteredItems, cat)}>הוסף הכל</Button>
                       <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleRemoveAllInCategory(cat)}>הסר הכל</Button>
@@ -190,7 +197,10 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                         <div key={item.id || idx} className="flex flex-col gap-2 p-2.5 rounded-lg bg-secondary/40 border hover:border-primary/20 transition-all">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <div className="flex items-center gap-1.5 mb-1">{renderCategoryLabel(cat)}{renderTypeLabel(item.type, item.contentType)}</div>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">{CATEGORY_MAP[cat]}</span>
+                                {renderTypeLabel(item.type, item.contentType)}
+                              </div>
                               <span className="text-slate-800 text-xs font-medium leading-tight">{item.text}</span>
                             </div>
                             <Button size="sm" variant={isAdded ? "secondary" : "ghost"} disabled={isAdded} onClick={() => handleAddFromBank(item, cat)} className={`h-7 text-[11px] px-2 rounded ${isAdded ? 'text-slate-400 bg-slate-100' : 'text-primary hover:bg-primary/10'}`}>
@@ -271,7 +281,10 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold bg-slate-100 text-slate-500">{q.questionType === 'content' ? <Info className="w-3.5 h-3.5" /> : idx + 1}</div>
                 <div>
                   <span className="font-bold text-slate-800 block">{q.questionText}</span>
-                  <div className="flex items-center gap-1.5 mt-0.5">{renderCategoryLabel(q.category || 'general')}{renderTypeLabel(q.questionType, q.contentType)}</div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">{CATEGORY_MAP[q.category || 'general']}</span>
+                    {renderTypeLabel(q.questionType, q.contentType)}
+                  </div>
                 </div>
               </div>
               <div className="flex gap-1">
