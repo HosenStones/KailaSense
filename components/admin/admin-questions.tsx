@@ -98,7 +98,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           if (newContentBody.trim()) baseData.contentBody = newContentBody.trim()
         } else if (newQuestionType === 'choice' || newQuestionType === 'multi_choice') {
           if (!newOptionsText.trim()) {
-            alert('חובה להזין אפשרויות תשובה מופרדות בפסיק.')
+            alert('Please enter choice options separated by comma.')
             setIsSubmitting(false)
             return
           }
@@ -120,7 +120,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       }
     } catch (error) {
       console.error("Error saving question:", error)
-      alert('שגיאה בשמירת הנתונים במערכת.')
+      alert('Failed to save data.')
     } finally {
       setIsSubmitting(false)
     }
@@ -163,7 +163,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   }
 
   const handleRemoveAllInCategory = async (category: string) => {
-    if (!confirm('האם את בטוחה שברצונך למחוק את כל השאלות שהוספו מקטגוריה זו?')) return;
+    if (!confirm('Are you sure you want to remove all questions added from this category?')) return;
     setIsSubmitting(true)
     try {
       const toRemove = questions.filter(q => q.category === category)
@@ -198,7 +198,13 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       setNewOptionsText('')
     }
     
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Scroll to the edit form section instead of top of the page
+    setTimeout(() => {
+      const formElement = document.getElementById('question-creator-form');
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 50);
   }
 
   const renderCategoryLabel = (cat: string) => {
@@ -331,7 +337,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
             })}
             {globalBank.length === 0 && (
               <div className="col-span-1 lg:col-span-2 text-center py-6 text-muted-foreground">
-                הבנק ריק. ניתן לטעון שאלות ברירת מחדל ממסך ניהול המערכת (סופר אדמין).
+                The bank is empty. Default questions can be loaded from the system management screen.
               </div>
             )}
           </div>
@@ -339,7 +345,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       </div>
 
       {/* Manual question creation form */}
-      <div className={`p-5 rounded-2xl border shadow-sm space-y-4 transition-all ${editingQuestionId ? 'bg-white border-2 border-primary shadow-md' : 'bg-card border-border'}`}>
+      <div id="question-creator-form" className={`p-5 rounded-2xl border shadow-sm space-y-4 transition-all ${editingQuestionId ? 'bg-white border-2 border-primary shadow-md' : 'bg-card border-border'}`}>
         {editingQuestionId && (
           <div className="flex items-center justify-between text-primary font-bold mb-2">
             <span>✏️ מצב עריכה לשאלה קיימת</span>
