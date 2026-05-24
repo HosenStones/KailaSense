@@ -93,6 +93,10 @@ export async function addQuestion(data: Partial<Question>): Promise<void> {
   });
 }
 
+export async function updateQuestion(id: string, data: Partial<Question>): Promise<void> {
+  await updateDoc(doc(db, 'questions', id), sanitizeData(data));
+}
+
 export async function deleteQuestion(id: string): Promise<void> {
   await deleteDoc(doc(db, 'questions', id));
 }
