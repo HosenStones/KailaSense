@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/lib/firebase/config'
+import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { db, auth } from '@/lib/firebase/config'
 import { 
   getAdminUserByEmail, 
   getAllDepartments, 
@@ -12,10 +13,7 @@ import {
   deleteDepartment,
   addGlobalQuestion,
   deleteGlobalQuestion,
-  updateGlobalQuestion,
-  getAllAdminUsersSorted,
-  updateAdminUser,
-  deleteAdminUser
+  updateGlobalQuestion
 } from '@/lib/firebase/firestore'
 import { PREDEFINED_QUESTION_BANK } from '@/lib/question-bank'
 import type { AdminUser, Department } from '@/lib/types'
@@ -42,12 +40,12 @@ const CATEGORY_MAP: Record<string, string> = {
 };
 
 const TYPE_MAP: Record<string, string> = {
-  emoji: '😊 אימוג׳י',
-  stars: '⭐ כוכבים',
+  emoji: '😊 אימוג׳י (1 עד 5)',
+  stars: '⭐ כוכבים (1 עד 5)',
   choice: '🔘 בחירה יחידה',
   multi_choice: '✅ בחירה מרובה',
   open_text: '📝 טקסט חופשי',
-  content: '📺 שקף מידע'
+  content: '📺 שקף מידע ותוכן'
 };
 
 const ROLE_MAP: Record<string, string> = {
@@ -61,7 +59,7 @@ export default function AdminDashboardPage() {
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null)
   const [departments, setDepartments] = useState<Department[]>([])
-  const [allUsers, setAllUsers] = useState<AdminUser[]>([])
+  const [allUsers, setAllUsers] = useState<any[]>([])
   const [globalBank, setGlobalBank] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<TabId>('insights')
   const [selectedDepartment, setSelectedDepartment] = useState('')
@@ -80,17 +78,16 @@ export default function AdminDashboardPage() {
   const loadData = async (email: string) => {
     try {
       const adminData = await getAdminUserByEmail(email);
-      if (!adminData) { 
-        setStatus('error'); 
-        return; 
-      }
+      if (!adminData) { setStatus('error'); return; }
       setCurrentUser(adminData);
       
       const allDepts = await getAllDepartments();
       const sortedDepts = [...allDepts].sort((a, b) => a.name.localeCompare(b.name, 'he'));
       setDepartments(sortedDepts);
       
-      const usersData = await getAllAdminUsersSorted(sortedDepts);
+      // שליפה ישירה של המשתמשים מהדאטה בייס האמיתי
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const usersData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAllUsers(usersData);
       
       const bankData = await getGlobalQuestions();
@@ -127,9 +124,7 @@ export default function AdminDashboardPage() {
       setIsAddDeptOpen(false);
     } catch (e) {
       console.error(e);
-    } finally {
-      setIsSubmittingDept(false);
-    }
+    } finally { setIsSubmittingDept(false); }
   };
 
   const handleDeleteDept = async (id: string) => {
@@ -137,9 +132,7 @@ export default function AdminDashboardPage() {
     try {
       await deleteDepartment(id);
       setDepartments(prev => prev.filter(d => d.id !== id));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleSeedGlobalBank = async () => {
@@ -152,11 +145,8 @@ export default function AdminDashboardPage() {
       }
       const bankData = await getGlobalQuestions();
       setGlobalBank([...bankData].sort((a, b) => a.text.localeCompare(b.text, 'he')));
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsSeedingBank(false);
-    }
+    } catch (error) { console.error(error); } 
+    finally { setIsSeedingBank(false); }
   };
 
   const handleSaveBankEdit = async (id: string) => {
@@ -166,9 +156,7 @@ export default function AdminDashboardPage() {
       const updated = globalBank.map(q => q.id === id ? { ...q, text: editingBankText.trim() } : q);
       setGlobalBank([...updated].sort((a, b) => a.text.localeCompare(b.text, 'he')));
       setEditingBankId(null);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleDeleteGlobalQuestion = async (id: string) => {
@@ -176,29 +164,23 @@ export default function AdminDashboardPage() {
     try {
       await deleteGlobalQuestion(id);
       setGlobalBank(prev => prev.filter(q => q.id !== id));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleSaveUserEdit = async (id: string) => {
     try {
-      await updateAdminUser(id, { role: editUserRole });
+      await updateDoc(doc(db, 'users', id), { role: editUserRole });
       setAllUsers(prev => prev.map(u => u.id === id ? { ...u, role: editUserRole } : u));
       setEditingUserId(null);
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleDeleteUser = async (id: string) => {
     if (!confirm('למחוק משתמש זה מהמערכת?')) return;
     try {
-      await deleteAdminUser(id);
+      await deleteDoc(doc(db, 'users', id));
       setAllUsers(prev => prev.filter(u => u.id !== id));
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   if (status === 'loading') return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-sm font-medium text-slate-500">טוען את נתוני המערכת...</div>;
@@ -280,7 +262,7 @@ export default function AdminDashboardPage() {
                     
                     <div className="bg-white rounded-lg border border-slate-100 divide-y divide-slate-50">
                       {deptUsers.length > 0 ? deptUsers.map(user => (
-                        <div key={user.id} className="p-2.5 flex justify-between items-center text-xs group">
+                        <div key={user.id} className="p-2 flex justify-between items-center text-xs group hover:bg-slate-50">
                           {editingUserId === user.id ? (
                             <div className="flex items-center gap-2 w-full">
                               <Select value={editUserRole} onValueChange={setEditUserRole}>
@@ -297,14 +279,13 @@ export default function AdminDashboardPage() {
                           ) : (
                             <>
                               <div>
-                                <span className="font-semibold text-slate-700 block">{user.name}</span>
-                                <span className="text-slate-400">{user.email}</span>
+                                <span className="font-semibold text-slate-700 block">{user.name || user.email}</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-medium">
                                   {ROLE_MAP[user.role || 'staff']}
                                 </span>
-                                <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button variant="ghost" size="sm" onClick={() => {setEditingUserId(user.id); setEditUserRole(user.role || 'staff');}} className="h-6 w-6 p-0 text-slate-400 hover:text-primary"><Pencil className="w-3 h-3"/></Button>
                                   <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)} className="h-6 w-6 p-0 text-slate-400 hover:text-destructive"><Trash2 className="w-3 h-3"/></Button>
                                 </div>
@@ -312,7 +293,7 @@ export default function AdminDashboardPage() {
                             </>
                           )}
                         </div>
-                      )) : <div className="p-3 text-center text-xs text-slate-400">אין משתמשים במחלקה זו.</div>}
+                      )) : <div className="p-3 text-center text-xs text-slate-400">אין משתמשים במחלקה.</div>}
                     </div>
                   </div>
                 );
