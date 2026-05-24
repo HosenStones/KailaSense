@@ -4,25 +4,27 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { getQuestionsByDepartment, addQuestion, deleteQuestion, getAllDepartments } from '@/lib/firebase/firestore'
+import { getQuestionsByDepartment, addQuestion, deleteQuestion, getAllDepartments, updateQuestion } from '@/lib/firebase/firestore'
 import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
-import { Plus, Trash2, ListPlus, Image as ImageIcon, Video, AlignLeft, Info, BookOpen } from 'lucide-react'
+import { Plus, Trash2, ListPlus, Image as ImageIcon, Video, AlignLeft, Info, BookOpen, Pencil, X } from 'lucide-react'
 import { PREDEFINED_QUESTION_BANK, type BankItem } from '@/lib/question-bank'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
   const [departmentName, setDepartmentName] = useState('')
+  
+  // States for form
   const [newQuestionText, setNewQuestionText] = useState('')
   const [newQuestionType, setNewQuestionType] = useState<QuestionType>('emoji')
   const [newCategory, setNewCategory] = useState<QuestionCategory>('general')
   const [newOptionsText, setNewOptionsText] = useState('')
-  
   const [newContentType, setNewContentType] = useState<ContentType>('info_text')
   const [newContentUrl, setNewContentUrl] = useState('')
   const [newContentBody, setNewContentBody] = useState('')
   
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showBank, setShowBank] = useState(false)
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
 
   const loadQuestions = async () => {
     if (!departmentId) return;
@@ -48,7 +50,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const totalQuestionsCount = questions.filter(q => q.questionType !== 'content').length;
   const showWarning = totalQuestionsCount > 3 || openQuestionsCount > 1;
 
-  // Extract core keyword for department auto matching
   const getMatchedTag = (name: string): string => {
     if (!name) return 'כללי';
     if (name.includes('יולדות')) return 'יולדות';
@@ -62,7 +63,18 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
   const currentTargetTag = getMatchedTag(departmentName)
 
-  const handleAdd = async (overrideData?: any) => {
+  const resetForm = () => {
+    setNewQuestionText('')
+    setNewQuestionType('emoji')
+    setNewCategory('general')
+    setNewOptionsText('')
+    setNewContentType('info_text')
+    setNewContentUrl('')
+    setNewContentBody('')
+    setEditingQuestionId(null)
+  }
+
+  const handleAdd = async (overrideData?: any, skipReload = false) => {
     if (!overrideData && (!newQuestionText.trim() || !departmentId)) return
     setIsSubmitting(true)
 
@@ -87,32 +99,35 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
             setIsSubmitting(false)
             return
           }
-          baseData.options = newOptionsText.split(',').map(opt => ({
+          baseData.options = newOptionsText.split(',').map((opt: string) => ({
             label: opt.trim(), value: opt.trim()
-          })).filter(opt => opt.label !== '')
+          })).filter((opt: {label: string, value: string}) => opt.label !== '')
         }
       }
 
-      await addQuestion(baseData)
+      if (editingQuestionId && !overrideData) {
+        if (typeof updateQuestion === 'function') {
+          await updateQuestion(editingQuestionId, baseData)
+        } else {
+          alert('Update function is not defined in the system.')
+        }
+      } else {
+        await addQuestion(baseData)
+      }
       
-      setNewQuestionText('')
-      setNewQuestionType('emoji')
-      setNewCategory('general')
-      setNewOptionsText('')
-      setNewContentType('info_text')
-      setNewContentUrl('')
-      setNewContentBody('')
-      
-      await loadQuestions()
+      resetForm()
+      if (!skipReload) {
+        await loadQuestions()
+      }
     } catch (error) {
-      console.error("Error adding item:", error)
+      console.error("Error adding/updating item:", error)
       alert('שגיאה בשמירת הנתונים במערכת.')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleAddFromBank = async (bankItem: BankItem, category: QuestionCategory) => {
+  const handleAddFromBank = async (bankItem: BankItem, category: QuestionCategory, skipReload = false) => {
     if (!departmentId) return
     
     const baseData: any = {
@@ -132,7 +147,95 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       baseData.options = bankItem.options.map(opt => ({ label: opt, value: opt }))
     }
 
-    await handleAdd(baseData)
+    await handleAdd(baseData, skipReload)
+  }
+
+  const handleAddAllInCategory = async (items: BankItem[], category: QuestionCategory) => {
+    setIsSubmitting(true)
+    try {
+      const toAdd = items.filter(item => !questions.some(q => q.questionText === item.text))
+      for (const item of toAdd) {
+        await handleAddFromBank(item, category, true)
+      }
+      await loadQuestions()
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleRemoveAllInCategory = async (category: QuestionCategory) => {
+    if (!confirm('האם את בטוחה שברצונך למחוק את כל השאלות שהוספו מקטגוריה זו?')) return;
+    setIsSubmitting(true)
+    try {
+      const toRemove = questions.filter(q => q.category === category)
+      for (const q of toRemove) {
+        await deleteQuestion(q.id)
+      }
+      await loadQuestions()
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleEditClick = (q: Question) => {
+    setEditingQuestionId(q.id)
+    setNewQuestionText(q.questionText)
+    setNewQuestionType(q.questionType)
+    setNewCategory(q.category || 'general')
+    
+    if (q.questionType === 'content') {
+      setNewContentType(q.contentType || 'info_text')
+      setNewContentUrl(q.contentUrl || '')
+      setNewContentBody(q.contentBody || '')
+    } else {
+      setNewContentType('info_text')
+      setNewContentUrl('')
+      setNewContentBody('')
+    }
+    
+    if (q.options && q.options.length > 0) {
+      setNewOptionsText(q.options.map(o => o.label).join(', '))
+    } else {
+      setNewOptionsText('')
+    }
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const renderCategoryLabel = (cat: string) => {
+    const catName = cat === 'admission' ? 'קבלה' : 
+                    cat === 'during' ? 'אשפוז' : 
+                    cat === 'discharge' ? 'לקראת שחרור' : 
+                    cat === 'after_discharge' ? 'שחרור (24ש\')' : 'כללי';
+    return (
+      <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-slate-100 text-slate-600 border border-slate-200">
+        {catName}
+      </span>
+    )
+  }
+
+  const renderTypeLabel = (type: string, contentType?: string) => {
+    let icon = null;
+    let text = '';
+    
+    if (type === 'content') {
+      text = 'שקף מידע';
+      if (contentType === 'video') icon = <Video className="w-3 h-3 mr-1 inline" />;
+      if (contentType === 'image') icon = <ImageIcon className="w-3 h-3 mr-1 inline" />;
+    } else {
+      if (type === 'emoji') text = "אימוג'י";
+      if (type === 'stars') text = "כוכבים";
+      if (type === 'choice') text = "בחירה יחידה";
+      if (type === 'multi_choice') text = "בחירה מרובה";
+      if (type === 'open_text') text = "טקסט חופשי";
+    }
+
+    return (
+      <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase bg-slate-100 text-slate-600 border border-slate-200 flex items-center">
+        {text}
+        {icon}
+      </span>
+    )
   }
 
   return (
@@ -169,7 +272,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         {showBank && (
           <div className="p-4 bg-secondary/30 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto animate-in fade-in duration-200">
             {(Object.keys(PREDEFINED_QUESTION_BANK) as QuestionCategory[]).map((cat) => {
-              // Automatically filter bank items based on generalized vs matched specific tags
               const filteredItems = PREDEFINED_QUESTION_BANK[cat].filter(
                 item => item.tag === 'כללי' || item.tag === currentTargetTag
               );
@@ -178,24 +280,27 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
               return (
                 <div key={cat} className="space-y-2 bg-card p-3 rounded-xl border border-border shadow-sm">
-                  <h4 className="text-sm font-bold text-primary uppercase tracking-wider border-b border-border pb-2 mb-3">
-                    {cat === 'admission' ? '👋 קבלה והתמצאות' : 
-                     cat === 'during' ? '🛏️ יחס, תקשורת ואשפוז' : 
-                     cat === 'discharge' ? '🏠 תחושת מוכנות וארגון לשחרור' : 
-                     cat === 'after_discharge' ? '⏱️ 24 שעות לאחר שחרור' : '⭐ חוויה כוללת והמשכיות'}
-                  </h4>
+                  <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
+                    <h4 className="text-sm font-bold text-primary uppercase tracking-wider">
+                      {cat === 'admission' ? '👋 קבלה והתמצאות' : 
+                       cat === 'during' ? '🛏️ יחס, תקשורת ואשפוז' : 
+                       cat === 'discharge' ? '🏠 תחושת מוכנות וארגון לשחרור' : 
+                       cat === 'after_discharge' ? '⏱️ 24 שעות לאחר שחרור' : '⭐ חוויה כוללת והמשכיות'}
+                    </h4>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleAddAllInCategory(filteredItems, cat)}>הוסף הכל</Button>
+                      <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleRemoveAllInCategory(cat)}>הסר הכל</Button>
+                    </div>
+                  </div>
+                  
                   <div className="space-y-2">
                     {filteredItems.map((item, idx) => (
                       <div key={idx} className="flex flex-col gap-2 p-3 rounded-lg bg-secondary/40 border border-transparent hover:border-primary/20 transition-all group">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1.5">
-                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${item.type === 'content' ? 'bg-accent text-accent-foreground' : 'bg-white text-muted-foreground border border-border'}`}>
-                                {item.tag}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground font-semibold">
-                                {item.type === 'content' ? 'שקף מידע' : 'שאלת משוב'}
-                              </span>
+                              {renderCategoryLabel(cat)}
+                              {renderTypeLabel(item.type, item.contentType)}
                             </div>
                             <span className="text-foreground text-sm font-medium leading-tight">{item.text}</span>
                           </div>
@@ -219,7 +324,15 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       </div>
 
       {/* Primary Questionnaire Creator Form */}
-      <div className="bg-card p-5 rounded-2xl border border-border shadow-sm space-y-4">
+      <div className={`p-5 rounded-2xl border shadow-sm space-y-4 transition-all ${editingQuestionId ? 'bg-primary/5 border-primary' : 'bg-card border-border'}`}>
+        {editingQuestionId && (
+          <div className="flex items-center justify-between text-primary font-bold mb-2">
+            <span>✏️ מצב עריכה לשאלה קיימת</span>
+            <Button variant="ghost" size="sm" onClick={resetForm} className="h-8 text-xs cursor-pointer">
+              <X className="w-4 h-4 ml-1" /> ביטול עריכה
+            </Button>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           <Input 
             type="text" 
@@ -307,7 +420,11 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           disabled={isSubmitting || !newQuestionText} 
           className="bg-primary hover:bg-primary/95 text-primary-foreground w-full h-12 font-bold transition-all cursor-pointer rounded-xl"
         >
-          <Plus className="w-5 h-5 ml-2" /> {isSubmitting ? 'שומר נתונים...' : 'הוסף פריט למחלקה'}
+          {editingQuestionId ? (
+            <>שמור שינויים</>
+          ) : (
+            <><Plus className="w-5 h-5 ml-2" /> {isSubmitting ? 'שומר נתונים...' : 'הוסף פריט למחלקה'}</>
+          )}
         </Button>
       </div>
 
@@ -344,32 +461,37 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                 return (
                   <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between bg-card p-4 rounded-xl border border-border shadow-sm group hover:border-primary transition-all">
                     <div className="flex items-start md:items-center gap-4">
-                      <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold ${isContent ? 'bg-accent text-primary' : 'bg-secondary text-muted-foreground'}`}>
+                      <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-sm font-bold bg-slate-100 text-slate-500">
                         {isContent ? <Info className="w-4 h-4" /> : currentNumber}
                       </div>
                       <div>
                         <span className="font-bold text-foreground block">{q.questionText}</span>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className="text-[10px] bg-secondary text-muted-foreground px-2 py-0.5 rounded font-bold uppercase">
-                            {q.category === 'admission' ? 'קבלה' : 
-                             q.category === 'during' ? 'אשפוז' : 
-                             q.category === 'discharge' ? 'לקראת שחרור' : 
-                             q.category === 'after_discharge' ? 'שחרור (24ש\')' : 'כללי'}
-                          </span>
-                          <span className={`text-[10px] px-2 py-0.5 rounded font-bold border uppercase ${isContent ? 'bg-accent text-primary border-primary/10' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
-                            {isContent ? 'שקף מידע' : 'שאלת משוב'}
-                          </span>
+                          {renderCategoryLabel(q.category || 'general')}
+                          {renderTypeLabel(q.questionType, q.contentType)}
                         </div>
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => { if(confirm('למחוק פריט זה מהרשימה?')) deleteQuestion(q.id).then(loadQuestions) }}
-                      className="text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 self-end md:self-auto mt-2 md:mt-0 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1 self-end md:self-auto mt-2 md:mt-0">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleEditClick(q)}
+                        className="text-muted-foreground hover:text-blue-600 hover:bg-blue-50 cursor-pointer"
+                        title="ערוך שאלה"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => { if(confirm('למחוק פריט זה מהרשימה?')) deleteQuestion(q.id).then(loadQuestions) }}
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
+                        title="מחק שאלה"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 );
               });
