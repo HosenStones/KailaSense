@@ -16,6 +16,7 @@ import {
   updateGlobalQuestion
 } from '@/lib/firebase/firestore'
 import { PREDEFINED_QUESTION_BANK } from '@/lib/question-bank'
+import { CATEGORIES, QUESTION_TYPES, ROLES, getCategoryLabel, getTypeLabel, getRoleLabel } from '@/lib/constants'
 import type { AdminUser, Department } from '@/lib/types'
 import { AdminInsights } from '@/components/admin/admin-insights'
 import { AdminQuestions } from '@/components/admin/admin-questions'
@@ -31,29 +32,6 @@ import { Trash2, Plus, Layers, BookOpen, Download, Pencil, Save, X, UserCog } fr
 
 type TabId = 'insights' | 'questions' | 'comments' | 'scheduling' | 'settings' | 'system' | 'bank'
 
-const CATEGORY_MAP: Record<string, string> = {
-  admission: '👋 קבלה למחלקה',
-  during: '🛏️ מהלך אשפוז',
-  discharge: '🏠 לקראת שחרור',
-  after_discharge: '⏱️ לאחר שחרור',
-  general: '⭐ כללי'
-};
-
-const TYPE_MAP: Record<string, string> = {
-  emoji: '😊 אימוג׳י (1 עד 5)',
-  stars: '⭐ כוכבים (1 עד 5)',
-  choice: '🔘 בחירה יחידה',
-  multi_choice: '✅ בחירה מרובה',
-  open_text: '📝 טקסט חופשי',
-  content: '📺 שקף מידע ותוכן'
-};
-
-const ROLE_MAP: Record<string, string> = {
-  super_admin: 'סופר אדמין',
-  manager: 'מנהל מחלקה',
-  staff: 'צוות'
-};
-
 export default function AdminDashboardPage() {
   const router = useRouter()
   const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading')
@@ -67,7 +45,6 @@ export default function AdminDashboardPage() {
   const [isAddDeptOpen, setIsAddDeptOpen] = useState(false)
   const [newDeptName, setNewDeptName] = useState('')
   const [isSubmittingDept, setIsSubmittingDept] = useState(false)
-  const [isSeedingBank, setIsSeedingBank] = useState(false)
 
   const [editingBankId, setEditingBankId] = useState<string | null>(null)
   const [editingBankText, setEditingBankText] = useState('')
@@ -85,7 +62,6 @@ export default function AdminDashboardPage() {
       const sortedDepts = [...allDepts].sort((a, b) => a.name.localeCompare(b.name, 'he'));
       setDepartments(sortedDepts);
       
-      // שליפה ישירה של המשתמשים מהדאטה בייס האמיתי
       const usersSnap = await getDocs(collection(db, 'users'));
       const usersData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setAllUsers(usersData);
@@ -122,9 +98,8 @@ export default function AdminDashboardPage() {
       setDepartments([...allDepts].sort((a, b) => a.name.localeCompare(b.name, 'he')));
       setNewDeptName('');
       setIsAddDeptOpen(false);
-    } catch (e) {
-      console.error(e);
-    } finally { setIsSubmittingDept(false); }
+    } catch (e) { console.error(e); } 
+    finally { setIsSubmittingDept(false); }
   };
 
   const handleDeleteDept = async (id: string) => {
@@ -136,7 +111,6 @@ export default function AdminDashboardPage() {
   };
 
   const handleSeedGlobalBank = async () => {
-    setIsSeedingBank(true);
     try {
       for (const [category, items] of Object.entries(PREDEFINED_QUESTION_BANK)) {
         for (const item of items) {
@@ -145,8 +119,7 @@ export default function AdminDashboardPage() {
       }
       const bankData = await getGlobalQuestions();
       setGlobalBank([...bankData].sort((a, b) => a.text.localeCompare(b.text, 'he')));
-    } catch (error) { console.error(error); } 
-    finally { setIsSeedingBank(false); }
+    } catch (error) { console.error(error); }
   };
 
   const handleSaveBankEdit = async (id: string) => {
@@ -260,40 +233,52 @@ export default function AdminDashboardPage() {
                       </Button>
                     </div>
                     
-                    <div className="bg-white rounded-lg border border-slate-100 divide-y divide-slate-50">
-                      {deptUsers.length > 0 ? deptUsers.map(user => (
-                        <div key={user.id} className="p-2 flex justify-between items-center text-xs group hover:bg-slate-50">
-                          {editingUserId === user.id ? (
-                            <div className="flex items-center gap-2 w-full">
-                              <Select value={editUserRole} onValueChange={setEditUserRole}>
-                                <SelectTrigger className="h-7 text-xs w-full"><SelectValue /></SelectTrigger>
-                                <SelectContent dir="rtl">
-                                  <SelectItem value="staff">צוות</SelectItem>
-                                  <SelectItem value="manager">מנהל מחלקה</SelectItem>
-                                  <SelectItem value="super_admin">סופר אדמין</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <Button size="sm" onClick={() => handleSaveUserEdit(user.id)} className="h-7 px-2 bg-emerald-600"><Save className="w-3 h-3"/></Button>
-                              <Button size="sm" variant="outline" onClick={() => setEditingUserId(null)} className="h-7 px-2"><X className="w-3 h-3"/></Button>
-                            </div>
-                          ) : (
-                            <>
-                              <div>
-                                <span className="font-semibold text-slate-700 block">{user.name || user.email}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-medium">
-                                  {ROLE_MAP[user.role || 'staff']}
-                                </span>
-                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button variant="ghost" size="sm" onClick={() => {setEditingUserId(user.id); setEditUserRole(user.role || 'staff');}} className="h-6 w-6 p-0 text-slate-400 hover:text-primary"><Pencil className="w-3 h-3"/></Button>
-                                  <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)} className="h-6 w-6 p-0 text-slate-400 hover:text-destructive"><Trash2 className="w-3 h-3"/></Button>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )) : <div className="p-3 text-center text-xs text-slate-400">אין משתמשים במחלקה.</div>}
+                    <div className="bg-white rounded-lg border border-slate-100 overflow-hidden">
+                      <table className="w-full text-right text-xs">
+                        <thead className="bg-slate-50 border-b border-slate-100 text-slate-500">
+                          <tr>
+                            <th className="py-2 px-3 font-semibold">צוות</th>
+                            <th className="py-2 px-3 font-semibold text-center">פעולות</th>
+                            <th className="py-2 px-3 font-semibold">שם מלא</th>
+                            <th className="py-2 px-3 font-semibold">אימייל</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-50">
+                          {deptUsers.length > 0 ? deptUsers.map(user => (
+                            <tr key={user.id} className="hover:bg-slate-50">
+                              <td className="py-2 px-3">
+                                {editingUserId === user.id ? (
+                                  <Select value={editUserRole} onValueChange={setEditUserRole}>
+                                    <SelectTrigger className="h-7 text-[10px] w-24"><SelectValue /></SelectTrigger>
+                                    <SelectContent dir="rtl">
+                                      {ROLES.map(r => <SelectItem key={r.id} value={r.id} className="text-[10px]">{r.label}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[10px] font-medium">
+                                    {getRoleLabel(user.role || 'staff')}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2 px-3 text-center">
+                                {editingUserId === user.id ? (
+                                  <div className="flex gap-1 justify-center">
+                                    <Button size="sm" onClick={() => handleSaveUserEdit(user.id)} className="h-6 w-6 p-0 bg-emerald-600"><Save className="w-3 h-3"/></Button>
+                                    <Button size="sm" variant="outline" onClick={() => setEditingUserId(null)} className="h-6 w-6 p-0"><X className="w-3 h-3"/></Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex gap-1 justify-center">
+                                    <Button variant="ghost" size="sm" onClick={() => {setEditingUserId(user.id); setEditUserRole(user.role || 'staff');}} className="h-6 w-6 p-0 text-slate-400 hover:text-primary"><Pencil className="w-3 h-3"/></Button>
+                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(user.id)} className="h-6 w-6 p-0 text-slate-400 hover:text-destructive"><Trash2 className="w-3 h-3"/></Button>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-2 px-3 font-medium text-slate-700">{user.name || '-'}</td>
+                              <td className="py-2 px-3 text-slate-500">{user.email}</td>
+                            </tr>
+                          )) : <tr><td colSpan={4} className="p-3 text-center text-xs text-slate-400">אין משתמשים במחלקה.</td></tr>}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 );
@@ -319,7 +304,7 @@ export default function AdminDashboardPage() {
                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> מאגר שאלות</h2>
               </div>
               {globalBank.length === 0 && (
-                <Button onClick={handleSeedGlobalBank} disabled={isSeedingBank} className="bg-blue-600 hover:bg-blue-700 text-xs h-9">
+                <Button onClick={handleSeedGlobalBank} className="bg-blue-600 hover:bg-blue-700 text-xs h-9">
                   <Download className="w-4 h-4 ml-2" /> ייבוא התחלתי
                 </Button>
               )}
@@ -332,7 +317,7 @@ export default function AdminDashboardPage() {
                     <th className="px-4 py-3 font-semibold">טקסט השאלה / התוכן</th>
                     <th className="px-4 py-3 font-semibold">סוג שאלה</th>
                     <th className="px-4 py-3 font-semibold">סטטוס</th>
-                    <th className="px-4 py-3 font-semibold">תג מחלקתי</th>
+                    <th className="px-4 py-3 font-semibold">מחלקה</th>
                     <th className="px-4 py-3 font-semibold text-center">פעולות</th>
                   </tr>
                 </thead>
@@ -344,8 +329,8 @@ export default function AdminDashboardPage() {
                           <Input value={editingBankText} onChange={e => setEditingBankText(e.target.value)} className="h-8 text-xs w-full" />
                         ) : item.text}
                       </td>
-                      <td className="px-4 py-3 text-slate-600">{TYPE_MAP[item.type] || item.type}</td>
-                      <td className="px-4 py-3 text-slate-600">{CATEGORY_MAP[item.category] || item.category}</td>
+                      <td className="px-4 py-3 text-slate-600">{getTypeLabel(item.type)}</td>
+                      <td className="px-4 py-3 text-slate-600">{getCategoryLabel(item.category)}</td>
                       <td className="px-4 py-3 text-slate-600 font-semibold">{item.tag || 'כללי'}</td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
