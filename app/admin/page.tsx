@@ -144,8 +144,8 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-transparent" dir="rtl">
       <AdminHeader user={currentUser} title="ממשק ניהול" onProfileClick={() => setActiveTab(currentUser?.role === 'super_admin' ? 'system' : 'settings')} />
 
-      <div className="bg-white border-b border-border px-6 flex justify-between items-center h-14">
-        <nav className="flex gap-1 h-full">
+      <div className="bg-white border-b border-border px-4 md:px-6 flex flex-col md:flex-row md:justify-between items-start md:items-center min-h-[56px] gap-2 md:gap-0 pt-2 md:pt-0">
+        <nav className="flex gap-1 h-14 overflow-x-auto whitespace-nowrap hide-scrollbar w-full md:w-auto">
           {[
             { id: 'insights', label: 'תובנות', icon: '📊' },
             { id: 'comments', label: 'תגובות', icon: '💬' },
@@ -158,7 +158,7 @@ export default function AdminDashboardPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as TabId)}
-              className={`px-5 h-full text-sm font-semibold border-b-[3px] transition-colors flex items-center gap-2 cursor-pointer ${
+              className={`px-4 md:px-5 h-full text-sm font-semibold border-b-[3px] transition-colors flex items-center gap-2 cursor-pointer shrink-0 ${
                 activeTab === tab.id ? 'text-primary border-primary' : 'text-muted-foreground border-transparent hover:text-card-foreground'
               }`}
             >
@@ -168,7 +168,7 @@ export default function AdminDashboardPage() {
         </nav>
 
         {currentUser?.role === 'super_admin' && (
-          <div className={`flex items-center gap-3 transition-opacity ${activeTab === 'system' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <div className={`flex items-center gap-3 transition-opacity mb-2 md:mb-0 ${activeTab === 'system' ? 'opacity-0 pointer-events-none hidden md:flex' : 'opacity-100'}`}>
             <span className="text-sm font-bold text-card-foreground">מחלקה:</span>
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
               <SelectTrigger className="w-48 h-9 text-right bg-background border-border text-foreground cursor-pointer"><SelectValue /></SelectTrigger>
@@ -180,8 +180,8 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-     <main className="p-6 max-w-6xl mx-auto">
-        <div className="bg-transparent p-6 min-h-[500px]">
+     <main className="p-4 md:p-6 max-w-6xl mx-auto">
+        <div className="bg-transparent md:p-6 min-h-[500px]">
           {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
           {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
           {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
@@ -189,62 +189,66 @@ export default function AdminDashboardPage() {
           
           {activeTab === 'system' && (
             <div className="space-y-6 animate-in fade-in duration-300">
-              <div className="flex gap-4">
+              <div className="flex flex-wrap gap-4">
                 <Button onClick={() => setIsAddDeptOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold cursor-pointer">+ מחלקה חדשה</Button>
                 <Button onClick={() => setIsAddUserOpen(true)} variant="outline" className="border-border bg-card text-foreground hover:bg-secondary font-bold cursor-pointer"> + איש צוות חדש</Button>
               </div>
 
               <div className="bg-card rounded-xl p-5 text-card-foreground shadow-sm">
                 <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">מחלקות המרכז הרפואי</h2>
-                <table className="w-full text-right border-collapse">
-                  <thead>
-                    <tr className="text-muted-foreground text-sm border-b border-border"><th className="pb-3 font-semibold">שם מחלקה</th><th className="pb-3 w-32 font-semibold">פעולות</th></tr>
-                  </thead>
-                  <tbody>
-                    {departments.map(d => (
-                      <tr key={d.id} className="border-b border-secondary last:border-0 hover:bg-secondary/80 transition-colors">
-                        <td className="py-3.5 font-medium text-card-foreground">{d.name}</td>
-                        <td className="py-3.5 flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setEditDept(d)} className="border-border text-card-foreground hover:bg-secondary cursor-pointer">ערוך</Button>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => deleteDepartment(d.id).then(() => loadData(currentUser!.email))}>מחק</Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-right border-collapse min-w-[400px]">
+                    <thead>
+                      <tr className="text-muted-foreground text-sm border-b border-border"><th className="pb-3 font-semibold">שם מחלקה</th><th className="pb-3 w-32 font-semibold">פעולות</th></tr>
+                    </thead>
+                    <tbody>
+                      {departments.map(d => (
+                        <tr key={d.id} className="border-b border-secondary last:border-0 hover:bg-secondary/80 transition-colors">
+                          <td className="py-3.5 font-medium text-card-foreground">{d.name}</td>
+                          <td className="py-3.5 flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setEditDept(d)} className="border-border text-card-foreground hover:bg-secondary cursor-pointer">ערוך</Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => deleteDepartment(d.id).then(() => loadData(currentUser!.email))}>מחק</Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="bg-card rounded-xl p-5 text-card-foreground shadow-sm">
                 <h2 className="font-bold text-card-foreground mb-4 text-lg border-b border-border pb-2">אנשי צוות וניהול מערכת</h2>
-                <table className="w-full text-right border-collapse">
-                  <thead>
-                    <tr className="text-muted-foreground text-sm border-b border-border">
-                      <th className="pb-3 font-semibold">שם מלא</th>
-                      <th className="pb-3 font-semibold">שיוך מחלקתי</th>
-                      <th className="pb-3 font-semibold">הרשאת גישה</th>
-                      <th className="pb-3 w-32 font-semibold">פעולות</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedUsers.map(u => (
-                      <tr key={u.id} className="border-b border-secondary last:border-0 hover:bg-secondary/80 transition-colors">
-                        <td className="py-3.5 font-semibold text-card-foreground">{u.fullName}</td>
-                        <td className="py-3.5 text-muted-foreground">{u.role === 'super_admin' ? 'כל המרכז הרפואי' : departments.find(d => d.id === u.departmentId)?.name || 'ללא שיוך'}</td>
-                        <td className="py-3.5">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                            u.role === 'super_admin' ? 'bg-primary text-primary-foreground' : u.role === 'admin' ? 'bg-accent text-accent-foreground border border-primary/20' : 'bg-secondary text-muted-foreground'
-                          }`}>
-                            {u.role === 'super_admin' ? 'סופר אדמין' : u.role === 'admin' ? 'מנהל' : 'צוות'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setEditUser(u)} className="border-border text-card-foreground hover:bg-secondary cursor-pointer">ערוך</Button>
-                          <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => deleteAdminUser(u.id).then(() => loadData(currentUser!.email))}>מחק</Button>
-                        </td>
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full text-right border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="text-muted-foreground text-sm border-b border-border">
+                        <th className="pb-3 font-semibold">שם מלא</th>
+                        <th className="pb-3 font-semibold">שיוך מחלקתי</th>
+                        <th className="pb-3 font-semibold">הרשאת גישה</th>
+                        <th className="pb-3 w-32 font-semibold">פעולות</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {sortedUsers.map(u => (
+                        <tr key={u.id} className="border-b border-secondary last:border-0 hover:bg-secondary/80 transition-colors">
+                          <td className="py-3.5 font-semibold text-card-foreground">{u.fullName}</td>
+                          <td className="py-3.5 text-muted-foreground">{u.role === 'super_admin' ? 'כל המרכז הרפואי' : departments.find(d => d.id === u.departmentId)?.name || 'ללא שיוך'}</td>
+                          <td className="py-3.5">
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+                              u.role === 'super_admin' ? 'bg-primary text-primary-foreground' : u.role === 'admin' ? 'bg-accent text-accent-foreground border border-primary/20' : 'bg-secondary text-muted-foreground'
+                            }`}>
+                              {u.role === 'super_admin' ? 'סופר אדמין' : u.role === 'admin' ? 'מנהל' : 'צוות'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 flex gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setEditUser(u)} className="border-border text-card-foreground hover:bg-secondary cursor-pointer">ערוך</Button>
+                            <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => deleteAdminUser(u.id).then(() => loadData(currentUser!.email))}>מחק</Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -262,7 +266,7 @@ export default function AdminDashboardPage() {
       </Dialog>
 
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground">
+        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground w-[90vw] max-w-md">
           <DialogHeader><DialogTitle className="text-card-foreground">עריכת פרטי משתמש</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <div className="space-y-1">
@@ -301,7 +305,7 @@ export default function AdminDashboardPage() {
       </Dialog>
 
       <Dialog open={isAddDeptOpen} onOpenChange={setIsAddDeptOpen}>
-        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground">
+        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground w-[90vw] max-w-md">
           <DialogHeader><DialogTitle className="text-card-foreground">הוספת מחלקה חדשה</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <Input className="bg-input text-card-foreground border-border" placeholder="שם המחלקה" value={newDeptName} onChange={e => setNewDeptName(e.target.value)} />
@@ -311,7 +315,7 @@ export default function AdminDashboardPage() {
       </Dialog>
 
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground">
+        <DialogContent dir="rtl" className="bg-card border-border text-card-foreground w-[90vw] max-w-md">
           <DialogHeader><DialogTitle className="text-card-foreground">הוספת איש צוות חדש</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <Input className="bg-input text-card-foreground border-border" placeholder="שם מלא" value={newUser.fullName} onChange={e => setNewUser({...newUser, fullName: e.target.value})} />
