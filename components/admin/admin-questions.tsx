@@ -30,215 +30,124 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     try {
       const data = await getQuestionsByDepartment(departmentId)
       setQuestions(data)
-
       const bankData = await getGlobalQuestions()
       setGlobalBank(bankData)
-
       const allDepts = await getAllDepartments()
       const currentDept = allDepts.find(d => d.id === departmentId)
-      if (currentDept) {
-        setDepartmentName(currentDept.name)
-      }
+      if (currentDept) setDepartmentName(currentDept.name)
     } catch (e) {
       console.error(e)
     }
   }
 
-  useEffect(() => {
-    loadQuestions()
-  }, [departmentId])
+  useEffect(() => { loadQuestions() }, [departmentId])
 
   const openQuestionsCount = questions.filter(q => q.questionType === 'open_text').length;
   const totalQuestionsCount = questions.filter(q => q.questionType !== 'content').length;
   const showWarning = totalQuestionsCount > 3 || openQuestionsCount > 1;
 
-  const getMatchedTag = (name: string): string => {
-    if (!name) return 'כללי';
-    if (name.includes('יולדות')) return 'יולדות';
-    if (name.includes('מיון')) return 'מיון';
-    if (name.includes('אורתופדיה')) return 'אורתופדיה';
-    if (name.includes('קרדיולוגיה')) return 'קרדיולוגיה';
-    if (name.includes('עיניים')) return 'עיניים';
-    if (name.includes('נשים')) return 'נשים';
-    return 'כללי';
-  }
-
-  const currentTargetTag = getMatchedTag(departmentName)
+  const currentTargetTag = departmentName ? (
+    departmentName.includes('יולדות') ? 'יולדות' :
+    departmentName.includes('מיון') ? 'מיון' :
+    departmentName.includes('אורתופדיה') ? 'אורתופדיה' :
+    departmentName.includes('קרדיולוגיה') ? 'קרדיולוגיה' :
+    departmentName.includes('עיניים') ? 'עיניים' :
+    departmentName.includes('נשים') ? 'נשים' : 'כללי'
+  ) : 'כללי';
 
   const resetForm = () => {
-    setNewQuestionText('')
-    setNewQuestionType('emoji')
-    setNewCategory('general')
-    setNewOptionsText('')
-    setNewContentType('info_text')
-    setNewContentUrl('')
-    setNewContentBody('')
-    setEditingQuestionId(null)
+    setNewQuestionText(''); setNewQuestionType('emoji'); setNewCategory('general');
+    setNewOptionsText(''); setNewContentType('info_text'); setNewContentUrl('');
+    setNewContentBody(''); setEditingQuestionId(null);
   }
 
   const handleAdd = async (overrideData?: any, skipReload = false) => {
     if (!overrideData && (!newQuestionText.trim() || !departmentId)) return
     setIsSubmitting(true)
-
     try {
       const baseData = overrideData || {
-        departmentId,
-        questionText: newQuestionText,
-        questionType: newQuestionType,
-        category: newCategory,
-        isActive: true,
-        displayOrder: questions.length + 1
+        departmentId, questionText: newQuestionText, questionType: newQuestionType,
+        category: newCategory, isActive: true, displayOrder: questions.length + 1
       }
-
       if (!overrideData) {
         if (newQuestionType === 'content') {
-          baseData.contentType = newContentType
-          if (newContentUrl.trim()) baseData.contentUrl = newContentUrl.trim()
-          if (newContentBody.trim()) baseData.contentBody = newContentBody.trim()
+          baseData.contentType = newContentType;
+          if (newContentUrl.trim()) baseData.contentUrl = newContentUrl.trim();
+          if (newContentBody.trim()) baseData.contentBody = newContentBody.trim();
         } else if (newQuestionType === 'choice' || newQuestionType === 'multi_choice') {
-          if (!newOptionsText.trim()) {
-            alert('נא להזין אפשרויות בחירה מופרדות בפסיקים.')
-            setIsSubmitting(false)
-            return
-          }
-          baseData.options = newOptionsText.split(',').map((opt: string) => ({
-            label: opt.trim(), value: opt.trim()
-          })).filter((opt: any) => opt.label !== '')
+          if (!newOptionsText.trim()) { alert('נא להזין אפשרויות בחירה מופרדות בפסיקים.'); setIsSubmitting(false); return; }
+          baseData.options = newOptionsText.split(',').map((opt: string) => ({ label: opt.trim(), value: opt.trim() })).filter((opt: any) => opt.label !== '');
         }
       }
-
-      if (editingQuestionId && !overrideData) {
-        await updateQuestion(editingQuestionId, baseData)
-      } else {
-        await addQuestion(baseData)
-      }
-      
-      resetForm()
-      if (!skipReload) {
-        await loadQuestions()
-      }
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setIsSubmitting(false)
-    }
+      if (editingQuestionId && !overrideData) await updateQuestion(editingQuestionId, baseData);
+      else await addQuestion(baseData);
+      resetForm();
+      if (!skipReload) await loadQuestions();
+    } catch (error) { console.error(error); } finally { setIsSubmitting(false); }
   }
 
   const handleAddFromBank = async (bankItem: any, category: string, skipReload = false) => {
-    if (!departmentId) return
-    
-    const baseData: any = {
-      departmentId,
-      questionText: bankItem.text,
-      questionType: bankItem.type,
-      category: category,
-      isActive: true,
-      displayOrder: questions.length + 1
-    }
-
+    if (!departmentId) return;
+    const baseData: any = { departmentId, questionText: bankItem.text, questionType: bankItem.type, category: category, isActive: true, displayOrder: questions.length + 1 };
     if (bankItem.type === 'content') {
-      baseData.contentType = bankItem.contentType || 'info_text'
-      if (bankItem.contentBody) baseData.contentBody = bankItem.contentBody
-      if (bankItem.contentUrl) baseData.contentUrl = bankItem.contentUrl
+      baseData.contentType = bankItem.contentType || 'info_text';
+      if (bankItem.contentBody) baseData.contentBody = bankItem.contentBody;
+      if (bankItem.contentUrl) baseData.contentUrl = bankItem.contentUrl;
     } else if (bankItem.options) {
-      baseData.options = bankItem.options.map((opt: string) => ({ label: opt, value: opt }))
+      baseData.options = bankItem.options.map((opt: string) => ({ label: opt, value: opt }));
     }
-
-    await handleAdd(baseData, skipReload)
+    await handleAdd(baseData, skipReload);
   }
 
   const handleAddAllInCategory = async (items: any[], category: string) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      const toAdd = items.filter(item => !questions.some(q => q.questionText === item.text))
-      for (const item of toAdd) {
-        await handleAddFromBank(item, category, true)
-      }
-      await loadQuestions()
-    } finally {
-      setIsSubmitting(false)
-    }
+      const toAdd = items.filter(item => !questions.some(q => q.questionText === item.text));
+      for (const item of toAdd) await handleAddFromBank(item, category, true);
+      await loadQuestions();
+    } finally { setIsSubmitting(false); }
   }
 
   const handleRemoveAllInCategory = async (category: string) => {
     if (!confirm('האם את בטוחה שברצונך להסיר את כל השאלות מקטגוריה זו?')) return;
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      const toRemove = questions.filter(q => q.category === category)
-      for (const q of toRemove) {
-        await deleteQuestion(q.id)
-      }
-      await loadQuestions()
-    } finally {
-      setIsSubmitting(false)
-    }
+      const toRemove = questions.filter(q => q.category === category);
+      for (const q of toRemove) await deleteQuestion(q.id);
+      await loadQuestions();
+    } finally { setIsSubmitting(false); }
   }
 
   const handleEditClick = (q: Question) => {
-    setEditingQuestionId(q.id)
-    setNewQuestionText(q.questionText)
-    setNewQuestionType(q.questionType)
-    setNewCategory(q.category || 'general')
-    
+    setEditingQuestionId(q.id); setNewQuestionText(q.questionText);
+    setNewQuestionType(q.questionType); setNewCategory(q.category || 'general');
     if (q.questionType === 'content') {
-      setNewContentType(q.contentType || 'info_text')
-      setNewContentUrl(q.contentUrl || '')
-      setNewContentBody(q.contentBody || '')
+      setNewContentType(q.contentType || 'info_text'); setNewContentUrl(q.contentUrl || ''); setNewContentBody(q.contentBody || '');
     } else {
-      setNewContentType('info_text')
-      setNewContentUrl('')
-      setNewContentBody('')
+      setNewContentType('info_text'); setNewContentUrl(''); setNewContentBody('');
     }
+    setNewOptionsText(q.options && q.options.length > 0 ? q.options.map(o => o.label).join(', ') : '');
     
-    if (q.options && q.options.length > 0) {
-      setNewOptionsText(q.options.map(o => o.label).join(', '))
-    } else {
-      setNewOptionsText('')
-    }
+    // גלילה אוטומטית לאזור העריכה
+    setTimeout(() => { document.getElementById('question-creator-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50);
   }
 
   const renderCategoryLabel = (cat: string) => {
-    const catMap: Record<string, string> = {
-      admission: '👋 שקף קבלה',
-      during: '🛏️ מהלך אשפוז',
-      discharge: '🏠 לקראת שחרור',
-      after_discharge: '⏱️ לאחר שחרור',
-      general: '⭐ כללי'
-    };
-    return (
-      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">
-        {catMap[cat] || catMap['general']}
-      </span>
-    )
+    const catMap: Record<string, string> = { admission: '👋 קבלה למחלקה', during: '🛏️ מהלך אשפוז', discharge: '🏠 לקראת שחרור', after_discharge: '⏱️ לאחר שחרור', general: '⭐ כללי' };
+    return <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">{catMap[cat] || catMap['general']}</span>
   }
 
   const renderTypeLabel = (type: string, contentType?: string) => {
-    let icon = null;
-    let text = '';
-    if (type === 'content') {
-      text = '📺 שקף מידע';
-      if (contentType === 'video') icon = <Video className="w-3 h-3 mr-1 inline" />;
-      if (contentType === 'image') icon = <ImageIcon className="w-3 h-3 mr-1 inline" />;
-    } else {
-      if (type === 'emoji') text = "😊 אימוג'י";
-      if (type === 'stars') text = "⭐ כוכבים";
-      if (type === 'choice') text = "🔘 בחירה יחידה";
-      if (type === 'multi_choice') text = "✅ בחירה מרובה";
-      if (type === 'open_text') text = "📝 טקסט חופשי";
+    let icon = null, text = '';
+    if (type === 'content') { text = '📺 שקף מידע'; if (contentType === 'video') icon = <Video className="w-3 h-3 mr-1 inline" />; if (contentType === 'image') icon = <ImageIcon className="w-3 h-3 mr-1 inline" />; }
+    else {
+      if (type === 'emoji') text = "😊 אימוג'י"; if (type === 'stars') text = "⭐ כוכבים"; if (type === 'choice') text = "🔘 בחירה יחידה"; if (type === 'multi_choice') text = "✅ בחירה מרובה"; if (type === 'open_text') text = "📝 טקסט חופשי";
     }
-    return (
-      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center">
-        {text}
-        {icon}
-      </span>
-    )
+    return <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center">{text}{icon}</span>
   }
-
-  const categoriesToRender = ['admission', 'during', 'discharge', 'after_discharge', 'general'];
 
   return (
     <div className="space-y-6" dir="rtl">
-      
       {showWarning && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex gap-3 items-start text-xs">
           <Info className="w-4 h-4 shrink-0 mt-0.5" />
@@ -252,70 +161,39 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         </div>
       )}
 
-      {/* Reusable Data Bank */}
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-        <button 
-          onClick={() => setShowBank(!showBank)}
-          className="w-full flex items-center justify-between p-4 font-bold text-foreground hover:bg-secondary/50 transition-colors cursor-pointer text-sm"
-        >
-          <div className="flex items-center gap-2 text-primary">
-            <BookOpen className="w-4 h-4" />
-            <span>מאגר שאלות</span>
-          </div>
-          <span className="text-xs bg-secondary px-2.5 py-1 rounded-full text-muted-foreground">
-            {showBank ? 'סגור מאגר שאלות' : 'פתח ובחר פריט מוכן'}
-          </span>
+        <button onClick={() => setShowBank(!showBank)} className="w-full flex items-center justify-between p-4 font-bold text-foreground hover:bg-secondary/50 transition-colors cursor-pointer text-sm">
+          <div className="flex items-center gap-2 text-primary"><BookOpen className="w-4 h-4" /><span>מאגר שאלות</span></div>
+          <span className="text-xs bg-secondary px-2.5 py-1 rounded-full text-muted-foreground">{showBank ? 'סגור' : 'פתח'}</span>
         </button>
 
         {showBank && (
           <div className="p-4 bg-secondary/30 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto">
-            {categoriesToRender.map((cat) => {
-              const filteredItems = globalBank.filter(
-                item => item.category === cat && (item.tag === 'כללי' || item.tag === currentTargetTag)
-              );
-
+            {['admission', 'during', 'discharge', 'after_discharge', 'general'].map((cat) => {
+              const filteredItems = globalBank.filter(item => item.category === cat && (item.tag === 'כללי' || item.tag === currentTargetTag));
               if (filteredItems.length === 0) return null;
-
               return (
                 <div key={cat} className="space-y-2 bg-card p-3 rounded-xl border border-border shadow-sm">
                   <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
                     <h4 className="text-xs font-bold text-primary">
-                      {cat === 'admission' ? '👋 קבלה והתמצאות' : 
-                       cat === 'during' ? '🛏️ יחס, תקשורת ואשפוז' : 
-                       cat === 'discharge' ? '🏠 תחושת מוכנות וארגון לשחרור' : 
-                       cat === 'after_discharge' ? '⏱️ לאחר שחרור' : '⭐ חוויה כוללת והמשכיות'}
+                      {cat === 'admission' ? '👋 קבלה למחלקה' : cat === 'during' ? '🛏️ מהלך אשפוז' : cat === 'discharge' ? '🏠 לקראת שחרור' : cat === 'after_discharge' ? '⏱️ לאחר שחרור' : '⭐ כללי'}
                     </h4>
                     <div className="flex gap-1">
                       <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleAddAllInCategory(filteredItems, cat)}>הוסף הכל</Button>
                       <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleRemoveAllInCategory(cat)}>הסר הכל</Button>
                     </div>
                   </div>
-                  
                   <div className="space-y-2">
                     {filteredItems.map((item, idx) => {
-                      // Checks structural changes to allow re-adding edited questions
-                      const isAdded = questions.some(q => 
-                        q.questionText === item.text && 
-                        JSON.stringify(q.options || []) === JSON.stringify(item.options?.map((o: any) => ({ label: o, value: o })) || [])
-                      );
-                      
+                      const isAdded = questions.some(q => q.questionText === item.text && JSON.stringify(q.options || []) === JSON.stringify(item.options?.map((o: any) => ({ label: o, value: o })) || []));
                       return (
-                        <div key={item.id || idx} className="flex flex-col gap-2 p-2.5 rounded-lg bg-secondary/40 border border-transparent hover:border-primary/20 transition-all">
+                        <div key={item.id || idx} className="flex flex-col gap-2 p-2.5 rounded-lg bg-secondary/40 border hover:border-primary/20 transition-all">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                              <div className="flex items-center gap-1.5 mb-1">
-                                {renderCategoryLabel(cat)}
-                                {renderTypeLabel(item.type, item.contentType)}
-                              </div>
+                              <div className="flex items-center gap-1.5 mb-1">{renderCategoryLabel(cat)}{renderTypeLabel(item.type, item.contentType)}</div>
                               <span className="text-slate-800 text-xs font-medium leading-tight">{item.text}</span>
                             </div>
-                            <Button 
-                              size="sm" 
-                              variant={isAdded ? "secondary" : "ghost"}
-                              disabled={isAdded}
-                              onClick={() => handleAddFromBank(item, cat)}
-                              className={`h-7 text-[11px] px-2 rounded ${isAdded ? 'text-slate-400 bg-slate-100' : 'text-primary hover:bg-primary/10'}`}
-                            >
+                            <Button size="sm" variant={isAdded ? "secondary" : "ghost"} disabled={isAdded} onClick={() => handleAddFromBank(item, cat)} className={`h-7 text-[11px] px-2 rounded ${isAdded ? 'text-slate-400 bg-slate-100' : 'text-primary hover:bg-primary/10'}`}>
                               {isAdded ? '✓ נוסף' : '+ הוסף'}
                             </Button>
                           </div>
@@ -330,28 +208,19 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         )}
       </div>
 
-      {/* Workspace Entry Fields */}
-      <div className={`p-5 rounded-2xl border shadow-sm space-y-4 ${editingQuestionId ? 'bg-white border-2 border-primary' : 'bg-card border-border'}`}>
+      <div id="question-creator-form" className={`p-5 rounded-2xl border shadow-sm space-y-4 ${editingQuestionId ? 'bg-white border-2 border-primary' : 'bg-card border-border'}`}>
         {editingQuestionId && (
           <div className="flex items-center justify-between text-primary text-xs font-bold mb-2">
             <span>✏️ מצב עריכה לשאלה קיימת במחלקה</span>
-            <Button variant="ghost" size="sm" onClick={resetForm} className="h-7 text-[11px] bg-slate-100">
-              ביטול עריכה
-            </Button>
+            <Button variant="ghost" size="sm" onClick={resetForm} className="h-7 text-[11px] bg-slate-100">ביטול עריכה</Button>
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          <Input 
-            type="text" 
-            value={newQuestionText}
-            onChange={(e) => setNewQuestionText(e.target.value)}
-            placeholder={newQuestionType === 'content' ? "כותרת שקף המידע" : "הזינו שאלה חדשה באופן עצמאי..."}
-            className="h-11 md:col-span-6 bg-background text-xs"
-          />
+          <Input type="text" value={newQuestionText} onChange={(e) => setNewQuestionText(e.target.value)} placeholder={newQuestionType === 'content' ? "כותרת שקף המידע" : "הזינו שאלה חדשה באופן עצמאי..."} className="h-11 md:col-span-6 text-xs" />
           <Select value={newCategory} onValueChange={(v: QuestionCategory) => setNewCategory(v)}>
             <SelectTrigger className="h-11 md:col-span-3 text-xs"><SelectValue placeholder="בחר קטגוריה" /></SelectTrigger>
             <SelectContent dir="rtl">
-              <SelectItem value="admission" className="text-xs">👋 שקף קבלה</SelectItem>
+              <SelectItem value="admission" className="text-xs">👋 קבלה למחלקה</SelectItem>
               <SelectItem value="during" className="text-xs">🛏️ מהלך אשפוז</SelectItem>
               <SelectItem value="discharge" className="text-xs">🏠 לקראת שחרור</SelectItem>
               <SelectItem value="after_discharge" className="text-xs">⏱️ לאחר שחרור</SelectItem>
@@ -373,100 +242,45 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
         {(newQuestionType === 'choice' || newQuestionType === 'multi_choice') && (
           <div className="p-3 bg-secondary rounded-xl border border-dashed border-primary/30 space-y-2">
-            <div className="flex items-center gap-2 text-primary text-xs font-bold">
-              <ListPlus className="w-4 h-4" />
-              <span>הגדרת אפשרויות תשובה שיוצגו למטופל</span>
-            </div>
-            <Input 
-              type="text" 
-              value={newOptionsText}
-              onChange={(e) => setNewOptionsText(e.target.value)}
-              placeholder="הכניסו אפשרויות מופרדות בפסיק (למשל: תזונאית, עובדת סוציאלית)"
-              className="w-full bg-background text-xs"
-            />
+            <div className="flex items-center gap-2 text-primary text-xs font-bold"><ListPlus className="w-4 h-4" /><span>הגדרת אפשרויות תשובה שיוצגו למטופל</span></div>
+            <Input type="text" value={newOptionsText} onChange={(e) => setNewOptionsText(e.target.value)} placeholder="הכניסו אפשרויות מופרדות בפסיק" className="w-full text-xs" />
           </div>
         )}
 
         {newQuestionType === 'content' && (
           <div className="p-4 bg-slate-50 rounded-xl border border-dashed border-slate-300 space-y-3">
             <Select value={newContentType} onValueChange={(v: ContentType) => setNewContentType(v)}>
-              <SelectTrigger className="w-full bg-background text-xs"><SelectValue placeholder="סוג התוכן" /></SelectTrigger>
-              <SelectContent dir="rtl">
-                <SelectItem value="info_text" className="text-xs">טקסט בלבד</SelectItem>
-                <SelectItem value="image" className="text-xs">תמונה + טקסט</SelectItem>
-                <SelectItem value="video" className="text-xs">סרטון וידאו</SelectItem>
-              </SelectContent>
+              <SelectTrigger className="w-full text-xs"><SelectValue placeholder="סוג התוכן" /></SelectTrigger>
+              <SelectContent dir="rtl"><SelectItem value="info_text" className="text-xs">טקסט בלבד</SelectItem><SelectItem value="image" className="text-xs">תמונה + טקסט</SelectItem><SelectItem value="video" className="text-xs">סרטון וידאו</SelectItem></SelectContent>
             </Select>
-
-            {(newContentType === 'image' || newContentType === 'video') && (
-              <Input 
-                type="url" 
-                value={newContentUrl}
-                onChange={(e) => setNewContentUrl(e.target.value)}
-                placeholder="הדביקו קישור ישיר למדיה (URL)"
-                className="w-full bg-background text-xs"
-              />
-            )}
-
-            <textarea 
-              value={newContentBody}
-              onChange={(e) => setNewContentBody(e.target.value)}
-              placeholder="טקסט הנחיות מורחב למטופל"
-              className="w-full min-h-[80px] p-2.5 rounded-xl border text-xs focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+            {(newContentType === 'image' || newContentType === 'video') && ( <Input type="url" value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} placeholder="קישור ישיר למדיה (URL)" className="w-full text-xs" /> )}
+            <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="טקסט הנחיות מורחב למטופל" className="w-full min-h-[80px] p-2.5 rounded-xl border text-xs" />
           </div>
         )}
 
-        <Button 
-          onClick={() => handleAdd()} 
-          disabled={isSubmitting || !newQuestionText} 
-          className="bg-primary hover:bg-primary/95 text-white w-full h-11 text-xs font-bold rounded-xl"
-        >
+        <Button onClick={() => handleAdd()} disabled={isSubmitting || !newQuestionText} className="bg-primary hover:bg-primary/95 text-white w-full h-11 text-xs font-bold rounded-xl">
           {editingQuestionId ? 'שמור שינויים' : 'הוסף פריט למחלקה'}
         </Button>
       </div>
 
-      {/* Render Questions */}
       <div className="space-y-2">
-        {questions.length === 0 ? (
-          <div className="text-center p-8 text-slate-400 text-xs">אין עדיין פריטים מוגדרים במחלקה זו.</div>
-        ) : (
-          (() => {
-            let questionCounter = 0;
-            const categoryOrder: Record<string, number> = { admission: 1, during: 2, discharge: 3, after_discharge: 4, general: 5 };
-
-            return questions
-              .sort((a, b) => (categoryOrder[a.category || 'general'] || 5) - (categoryOrder[b.category || 'general'] || 5))
-              .map((q) => {
-                const isContent = q.questionType === 'content';
-                if (!isContent) questionCounter++;
-                return (
-                  <div key={q.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-border text-xs shadow-sm hover:border-primary transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold bg-slate-100 text-slate-500">
-                        {isContent ? <Info className="w-3.5 h-3.5" /> : questionCounter}
-                      </div>
-                      <div>
-                        <span className="font-bold text-slate-800 block">{q.questionText}</span>
-                        <div className="flex items-center gap-1.5 mt-0.5">
-                          {renderCategoryLabel(q.category || 'general')}
-                          {renderTypeLabel(q.questionType, q.contentType)}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(q)} className="text-slate-400 hover:text-slate-700 h-8 px-2">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => { if(confirm('למחוק פריט זה?')) deleteQuestion(q.id).then(loadQuestions) }} className="text-slate-400 hover:text-destructive h-8 px-2">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              });
-          })()
-        )}
+        {questions.length === 0 ? <div className="text-center p-8 text-slate-400 text-xs">אין פריטים במחלקה.</div> : 
+          questions.sort((a, b) => (({ admission: 1, during: 2, discharge: 3, after_discharge: 4, general: 5 }[a.category || 'general'] || 5) - ({ admission: 1, during: 2, discharge: 3, after_discharge: 4, general: 5 }[b.category || 'general'] || 5))).map((q, idx) => (
+            <div key={q.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-border text-xs shadow-sm hover:border-primary transition-all">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold bg-slate-100 text-slate-500">{q.questionType === 'content' ? <Info className="w-3.5 h-3.5" /> : idx + 1}</div>
+                <div>
+                  <span className="font-bold text-slate-800 block">{q.questionText}</span>
+                  <div className="flex items-center gap-1.5 mt-0.5">{renderCategoryLabel(q.category || 'general')}{renderTypeLabel(q.questionType, q.contentType)}</div>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button variant="ghost" size="sm" onClick={() => handleEditClick(q)} className="text-slate-400 hover:text-slate-700 h-8 px-2"><Pencil className="w-3.5 h-3.5" /></Button>
+                <Button variant="ghost" size="sm" onClick={() => { if(confirm('למחוק פריט זה?')) deleteQuestion(q.id).then(loadQuestions) }} className="text-slate-400 hover:text-destructive h-8 px-2"><Trash2 className="w-3.5 h-3.5" /></Button>
+              </div>
+            </div>
+          ))
+        }
       </div>
     </div>
   )
