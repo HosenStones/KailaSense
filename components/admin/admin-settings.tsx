@@ -15,7 +15,6 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
 
-  // ניהול משתמשים
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
   const [editUser, setEditUser] = useState<AdminUser | null>(null)
   const [newUser, setNewUser] = useState({ email: '', fullName: '', role: 'staff' as any })
@@ -68,11 +67,11 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
   if (!department) return <div className="p-4 text-center">טוען...</div>
 
   return (
-    <div className="max-w-3xl bg-white rounded-2xl border border-[#e8e7f5] p-6 space-y-8" dir="rtl">
+    <div className="max-w-3xl bg-white rounded-2xl border border-[#e8e7f5] p-4 md:p-6 space-y-8" dir="rtl">
       <div>
         <h3 className="text-lg font-bold text-[#1e1c4a] mb-4">עריכת שם המחלקה</h3>
-        <div className="flex gap-4">
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="max-w-xs" />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Input value={name} onChange={(e) => setName(e.target.value)} className="w-full sm:max-w-xs" />
           <Button onClick={handleSaveName} disabled={isSaving} className="bg-[#2a7c7c] hover:bg-[#236969] text-white">
             {isSaving ? 'שומר...' : 'שמור שינויים'}
           </Button>
@@ -90,35 +89,36 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
           {users.length === 0 ? (
             <p className="text-sm text-[#6b6890] text-center p-4">אין אנשי צוות משויכים למחלקה זו.</p>
           ) : (
-            <table className="w-full text-right text-sm">
-              <thead className="border-b border-[#e8e7f5] text-[#a8a6c4]">
-                <tr><th className="pb-2">שם מלא</th><th className="pb-2">אימייל</th><th className="pb-2">תפקיד</th><th className="pb-2">פעולות</th></tr>
-              </thead>
-              <tbody>
-                {users.map(u => (
-                  <tr key={u.id} className="border-b border-[#e8e7f5] last:border-0 hover:bg-white">
-                    <td className="py-3 font-medium text-[#1e1c4a]">{u.fullName}</td>
-                    <td className="py-3 text-[#6b6890]" dir="ltr">{u.email}</td>
-                    <td className="py-3">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${u.role === 'admin' ? 'bg-[#7dd3d3] text-[#1a5c5c]' : 'bg-gray-200 text-gray-700'}`}>
-                        {u.role === 'admin' ? 'מנהל' : 'צוות'}
-                      </span>
-                    </td>
-                    <td className="py-3 flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setEditUser(u)}>ערוך</Button>
-                      <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => deleteAdminUser(u.id).then(loadData)}>מחק</Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-right text-sm min-w-[500px]">
+                <thead className="border-b border-[#e8e7f5] text-[#a8a6c4]">
+                  <tr><th className="pb-2">שם מלא</th><th className="pb-2">אימייל</th><th className="pb-2">תפקיד</th><th className="pb-2 w-32">פעולות</th></tr>
+                </thead>
+                <tbody>
+                  {users.map(u => (
+                    <tr key={u.id} className="border-b border-[#e8e7f5] last:border-0 hover:bg-white">
+                      <td className="py-3 font-medium text-[#1e1c4a]">{u.fullName}</td>
+                      <td className="py-3 text-[#6b6890]" dir="ltr">{u.email}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${u.role === 'admin' ? 'bg-[#7dd3d3] text-[#1a5c5c]' : 'bg-gray-200 text-gray-700'}`}>
+                          {u.role === 'admin' ? 'מנהל' : 'צוות'}
+                        </span>
+                      </td>
+                      <td className="py-3 flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditUser(u)}>ערוך</Button>
+                        <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => deleteAdminUser(u.id).then(loadData)}>מחק</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
 
-      {/* דיאלוגים למנהל מחלקה */}
       <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className="w-[90vw] max-w-md">
           <DialogHeader><DialogTitle>הוספת איש צוות למחלקה</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <Input placeholder="שם מלא" value={newUser.fullName} onChange={e => setNewUser({...newUser, fullName: e.target.value})} />
@@ -136,7 +136,7 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
       </Dialog>
 
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className="w-[90vw] max-w-md">
           <DialogHeader><DialogTitle>עריכת משתמש</DialogTitle></DialogHeader>
           <div className="space-y-4 mt-4">
             <Input placeholder="שם מלא" value={editUser?.fullName || ''} onChange={e => setEditUser({...editUser!, fullName: e.target.value})} />
