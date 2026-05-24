@@ -5,14 +5,14 @@ import {
 import { db } from './config';
 import { AdminUser, Department, Question, Response } from '../types';
 
-// Utility function to remove undefined fields from objects before Firestore operations
+// Helper function to remove undefined fields before saving to DB
 const sanitizeData = (data: any) => {
   return Object.fromEntries(
     Object.entries(data).filter(([_, v]) => v !== undefined)
   );
 };
 
-// Admin Auth and User Management
+// Admin users and permissions management
 export async function getAdminUserByEmail(email: string): Promise<AdminUser | null> {
   try {
     const q = query(collection(db, 'users'), where('email', '==', email), limit(1));
@@ -21,7 +21,7 @@ export async function getAdminUserByEmail(email: string): Promise<AdminUser | nu
     const userDoc = querySnapshot.docs[0];
     return { id: userDoc.id, ...userDoc.data() } as AdminUser;
   } catch (error) {
-    console.error("Firestore Auth Error:", error);
+    console.error("Error fetching user:", error);
     return null;
   }
 }
@@ -38,7 +38,7 @@ export async function getUsersByDepartment(departmentId: string): Promise<AdminU
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as AdminUser));
 }
 
-// Department Management
+// Department management
 export async function getAllDepartments(): Promise<Department[]> {
   const querySnapshot = await getDocs(collection(db, 'departments'));
   const depts = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Department));
@@ -61,7 +61,7 @@ export async function deleteDepartment(id: string): Promise<void> {
   await deleteDoc(doc(db, 'departments', id));
 }
 
-// Admin Management
+// Admin users CRUD operations
 export async function createAdminUser(uid: string, data: Partial<AdminUser>): Promise<void> {
   await setDoc(doc(db, 'users', uid), { 
     ...sanitizeData(data), 
@@ -77,7 +77,7 @@ export async function deleteAdminUser(uid: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid));
 }
 
-// Question Management
+// Specific department questions management
 export async function getQuestionsByDepartment(departmentId: string): Promise<Question[]> {
   const q = query(collection(db, 'questions'), where('departmentId', '==', departmentId));
   const snap = await getDocs(q);
@@ -111,24 +111,38 @@ export async function copyDefaultQuestionsToDepartment(departmentId: string): Pr
   await batch.commit();
 }
 
-// Analytics and Real Statistics Calculation
+// Global question bank management (Super Admin)
+export async function getGlobalQuestions(): Promise<any[]> {
+  const snap = await getDocs(collection(db, 'global_questions'));
+  return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+export async function addGlobalQuestion(data: any): Promise<void> {
+  await addDoc(collection(db, 'global_questions'), sanitizeData(data));
+}
+
+export async function updateGlobalQuestion(id: string, data: any): Promise<void> {
+  await updateDoc(doc(db, 'global_questions', id), sanitizeData(data));
+}
+
+export async function deleteGlobalQuestion(id: string): Promise<void> {
+  await deleteDoc(doc(db, 'global_questions', id));
+}
+
+// Stats and live data calculations
 export async function getDepartmentStats(departmentId: string) {
   try {
-    // Get completed sessions
     const sessionsQuery = query(collection(db, 'survey_sessions'), where('departmentId', '==', departmentId), where('isCompleted', '==', true));
     const sessionsSnap = await getDocs(sessionsQuery);
     const totalSessions = sessionsSnap.size;
 
-    // Get all responses for this department
     const responsesQuery = query(collection(db, 'responses'), where('departmentId', '==', departmentId));
     const responsesSnap = await getDocs(responsesQuery);
     const responses = responsesSnap.docs.map(doc => doc.data() as Response);
 
-    // Calculate total text comments
     const textResponses = responses.filter(r => r.answerText && r.answerText.trim().length > 0);
     const totalComments = textResponses.length;
 
-    // Calculate real satisfaction percentage based on numeric ratings (1-5)
     const ratingResponses = responses.filter(r => r.answerValue && !isNaN(Number(r.answerValue)));
     let satisfactionPercentage = 0;
     if (ratingResponses.length > 0) {
@@ -137,7 +151,6 @@ export async function getDepartmentStats(departmentId: string) {
       satisfactionPercentage = Math.round((avg / 5) * 100);
     }
 
-    // Calculate average completion time in seconds
     let avgTimeSeconds = 0;
     if (totalSessions > 0) {
       const times = sessionsSnap.docs.map(doc => {
@@ -160,7 +173,7 @@ export async function getDepartmentStats(departmentId: string) {
       avgTimeSeconds
     };
   } catch (error) {
-    console.error("Failed to calculate stats:", error);
+    console.error("Error calculating stats:", error);
     return { totalResponses: 0, satisfactionPercentage: 0, totalComments: 0, avgTimeSeconds: 0 };
   }
 }
@@ -168,11 +181,10 @@ export async function getDepartmentStats(departmentId: string) {
 export async function getResponsesByDepartment(departmentId: string): Promise<Response[]> {
   const q = query(collection(db, 'responses'), where('departmentId', '==', departmentId));
   const snap = await getDocs(q);
-  // Sort descending by creation date
   return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Response)).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-// Survey Session Logic for Patients
+// Survey sessions logic
 export async function createSurveySession(departmentId: string, source?: string): Promise<string> {
   const docRef = await addDoc(collection(db, 'survey_sessions'), {
     departmentId,
