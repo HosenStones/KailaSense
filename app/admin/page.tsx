@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { 
   getAdminUserByEmail, getAllDepartments, getGlobalQuestions,
@@ -141,6 +141,25 @@ export default function AdminDashboardPage() {
     try { await deleteDepartment(id); setDepartments(prev => prev.filter(d => d.id !== id)); } catch (e) {}
   };
 
+  const handleAddNewUser = async () => {
+    if (!newUser.email || !newUser.fullName) return;
+    try {
+      await addDoc(collection(db, 'users'), {
+        email: newUser.email.trim(),
+        fullName: newUser.fullName.trim(),
+        role: newUser.role,
+        departmentId: newUserDept === 'system' ? null : newUserDept,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      setIsAddUserOpen(false);
+      setNewUser({ email: '', fullName: '', role: 'staff' });
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const usersData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllUsers(usersData.sort((a: any,b: any) => (a.fullName || '').localeCompare(b.fullName || '', 'he')));
+    } catch(e) {}
+  };
+
   const resetBankForm = () => {
     setNewBankQ({ text: '', type: 'emoji', category: 'general', tag: 'כללי', optionsText: '', contentType: 'info_text', contentUrl: '', contentBody: '' });
     setEditingBankId(null);
@@ -269,9 +288,6 @@ export default function AdminDashboardPage() {
             <div className="bg-[#f0f9f9] border border-[#e8e7f5] rounded-xl p-5 flex flex-col items-center justify-center space-y-4 mb-4">
               <div className="flex justify-between items-center w-full max-w-3xl">
                 <h3 className="text-xs font-bold text-[#1e1c4a]">מנהלי מערכת</h3>
-                <Button size="sm" onClick={() => { setIsAddUserOpen(true); setNewUserDept('system'); setNewUser({...newUser, role: 'admin'}); }} className="h-7 text-[10px] gap-1 bg-white border border-[#e8e7f5] text-slate-700 hover:bg-slate-50">
-                  <Plus className="w-3 h-3"/> הוסף מנהל מערכת
-                </Button>
               </div>
               <div className="flex flex-wrap gap-3 justify-center w-full max-w-3xl">
                 {systemAdmins.map(admin => {
@@ -407,159 +423,9 @@ export default function AdminDashboardPage() {
                 </div>
               </DialogContent>
             </Dialog>
-          </div>
-        )}
-
-        {/* Global Question Bank Tab */}
-        {isAdmin && activeTab === 'bank' && (
-          <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#e8e7f5] pb-4">
-              <h3 className="text-[#1e1c4a] font-bold text-lg flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-[#2a7c7c]" /> ניהול מאגר שאלות
-              </h3>
-              <Button onClick={() => { resetBankForm(); setIsAddBankOpen(true); }} className="bg-[#2a7c7c] text-white hover:bg-[#206060] text-xs h-8">
-                <Plus className="w-4 h-4 ml-1" /> הוסף שאלה למאגר
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              {CATEGORIES.map((cat) => {
-                const catItems = globalBank.filter(item => item.category === cat.id);
-                if (catItems.length === 0) return null;
-                const isExpanded = expandedBankCats[cat.id] ?? false; 
-                
-                // Grouping by mapped department name
-                const deptGroups: Record<string, any[]> = {};
-                catItems.forEach(item => {
-                  const rawTag = item.tag || 'כללי';
-                  const deptName = rawTag === 'כללי' ? 'כללי' : (departments.find(d => d.id === rawTag)?.name || rawTag);
-                  if (!deptGroups[deptName]) deptGroups[deptName] = [];
-                  deptGroups[deptName].push(item);
-                });
-                
-                // Sorting departments: 'כללי' first, then A-Z
-                const sortedDepts = Object.keys(deptGroups).sort((a, b) => {
-                  if (a === 'כללי') return -1;
-                  if (b === 'כללי') return 1;
-                  return a.localeCompare(b, 'he');
-                });
-
-                return (
-                  <div key={cat.id} className="bg-white rounded-xl border border-[#e8e7f5] shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between p-4 bg-[#f7f7fc] border-b border-[#e8e7f5] cursor-pointer w-full hover:bg-slate-50 transition-colors" onClick={() => toggleBankCat(cat.id)}>
-                      <h4 className="text-sm font-bold text-[#1e1c4a] flex items-center gap-2">
-                        {isExpanded ? <ChevronUp className="w-4 h-4 text-[#2a7c7c]"/> : <ChevronDown className="w-4 h-4 text-[#2a7c7c]"/>}
-                        {cat.label} ({catItems.length})
-                      </h4>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs px-2 text-slate-500" onClick={(e) => { e.stopPropagation(); toggleBankCat(cat.id); }}>
-                        {isExpanded ? 'סגור' : 'פתח'}
-                      </Button>
-                    </div>
-                    {isExpanded && (
-                      <div className="p-4 space-y-5 bg-white">
-                        {sortedDepts.map(deptName => (
-                          <div key={deptName} className="space-y-3">
-                            <h5 className="text-xs font-bold text-[#2a7c7c] border-b border-[#e8e7f5] pb-2">{deptName}</h5>
-                            <div className="grid grid-cols-1 gap-2">
-                              {deptGroups[deptName].map((item, idx) => (
-                                <div key={item.id || idx} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-white border border-[#e8e7f5]">
-                                  <div className="flex-1">
-                                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-[#e8e7f5]">{renderTypeLabelWithIcon(item.type, item.contentType)}</span>
-                                    </div>
-                                    <span className="text-[#1e1c4a] text-sm font-medium">{item.text}</span>
-                                  </div>
-                                  <div className="flex gap-1 justify-end">
-                                    <Button variant="ghost" size="sm" onClick={() => handleEditBankClick(item)} className="h-8 px-2 text-slate-400 hover:text-[#2a7c7c]"><Pencil className="w-4 h-4" /></Button>
-                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteGlobalQuestion(item.id)} className="h-8 px-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Modal for adding/editing questions in the bank */}
-            <Dialog open={isAddBankOpen} onOpenChange={setIsAddBankOpen}>
-              <DialogContent dir="rtl" className="bg-white w-[95vw] md:max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader><DialogTitle className="text-[#1e1c4a]">{editingBankId ? 'עריכת שאלה במאגר' : 'הוספת שאלה למאגר'}</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-slate-500">טקסט השאלה / כותרת</span>
-                    <Input placeholder="לדוגמה: איך עברה הארוחה?" value={newBankQ.text} onChange={e => setNewBankQ({...newBankQ, text: e.target.value})} className="h-10 text-xs bg-white border-[#e8e7f5]" />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-slate-500">סטטוס (קטגוריה)</span>
-                      <Select value={newBankQ.category} onValueChange={v => setNewBankQ({...newBankQ, category: v})}>
-                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                          {CATEGORIES.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-slate-500">סוג שאלה</span>
-                      <Select value={newBankQ.type} onValueChange={v => setNewBankQ({...newBankQ, type: v})}>
-                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                          {QUESTION_TYPES.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-slate-500">שיוך למחלקה</span>
-                    <Select value={newBankQ.tag} onValueChange={v => setNewBankQ({...newBankQ, tag: v})}>
-                      <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
-                      <SelectContent dir="rtl">
-                        <SelectItem value="כללי" className="text-xs font-bold">כללי (מופיע בכל המחלקות)</SelectItem>
-                        {departments.map(d => <SelectItem key={d.id} value={d.id} className="text-xs">{d.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {(newBankQ.type === 'choice' || newBankQ.type === 'multi_choice') && (
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-slate-500">אפשרויות בחירה (מופרדות בפסיק)</span>
-                      <Input placeholder="רופא, אחות, צוות ניקיון" value={newBankQ.optionsText} onChange={e => setNewBankQ({...newBankQ, optionsText: e.target.value})} className="h-10 text-xs bg-white border-[#e8e7f5]" />
-                    </div>
-                  )}
-
-                  {newBankQ.type === 'content' && (
-                    <div className="p-4 bg-[#f0f9f9]/50 border border-[#e8e7f5] rounded-xl space-y-3">
-                      <Select value={newBankQ.contentType} onValueChange={v => setNewBankQ({...newBankQ, contentType: v})}>
-                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue placeholder="סוג תוכן" /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                          <SelectItem value="info_text" className="text-xs">📝 טקסט בלבד</SelectItem>
-                          <SelectItem value="image" className="text-xs">🖼️ תמונה + טקסט</SelectItem>
-                          <SelectItem value="video" className="text-xs">🎬 סרטון וידאו</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {(newBankQ.contentType === 'image' || newBankQ.contentType === 'video') && (
-                        <Input placeholder="קישור ישיר למדיה (URL)" value={newBankQ.contentUrl} onChange={e => setNewBankQ({...newBankQ, contentUrl: e.target.value})} className="h-10 text-xs text-left bg-white border-[#e8e7f5]" dir="ltr" />
-                      )}
-                      <textarea placeholder="תוכן / טקסט להצגה" value={newBankQ.contentBody} onChange={e => setNewBankQ({...newBankQ, contentBody: e.target.value})} className="w-full min-h-[80px] p-3 text-xs border border-[#e8e7f5] rounded-lg focus:ring-1 focus:ring-[#2a7c7c] outline-none bg-white" />
-                    </div>
-                  )}
-
-                  <Button onClick={handleSaveBankQuestion} disabled={isSubmittingBank || !newBankQ.text.trim()} className="w-full h-10 text-xs font-bold bg-[#2a7c7c] hover:bg-[#206060] text-white">
-                    {editingBankId ? 'שמור שינויים למאגר' : 'הוסף למאגר'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
-      </main>
-    </div>
-  )
-}
+            
+            {/* Modal for adding Staff user */}
+            <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+              <DialogContent dir="rtl" className="bg-white w-[95vw] md:max-w-md">
+                <DialogHeader><DialogTitle className="text-[#1e1c4a]">הוספת איש צוות למחלקה</DialogTitle></DialogHeader>
+                <div className="space
