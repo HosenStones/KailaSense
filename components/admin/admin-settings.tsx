@@ -132,7 +132,7 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
                       {isEditing ? (
                         <div className="flex gap-1 justify-center">
                           <Button size="sm" onClick={() => handleSaveUserEdit(u.id)} className="h-6 w-6 p-0 bg-emerald-600 text-white"><Save className="w-3 h-3"/></Button>
-                          <Button size="sm" variant="outline" onClick={() => setEditingUserId(null)} className="h-6 w-6 p-0 text-slate-500"><X className="w-3 h-3"/></Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingUserId(null)} className="h-6 w-6 p-0 bg-white text-slate-500"><X className="w-3 h-3"/></Button>
                         </div>
                       ) : (
                         <div className="flex gap-1 justify-center">
@@ -161,7 +161,7 @@ export function AdminSettings({ departmentId }: { departmentId: string }) {
                 {ROLES.map(r => <SelectItem key={r.id} value={r.id} className="text-xs">{r.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <Button onClick={handleAddUser} disabled={!newUser.email || !newUser.fullName} className="w-full text-xs h-9">צור משתמש</Button>
+            <Button onClick={handleAddUser} disabled={!newUser.email || !newUser.fullName} className="w-full text-xs h-9 bg-primary text-white">צור משתמש</Button>
           </div>
         </DialogContent>
       </Dialog>
