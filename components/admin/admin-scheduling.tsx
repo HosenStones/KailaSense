@@ -141,6 +141,14 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
 
   const STAGES = CATEGORIES.filter(c => c.id !== 'general');
 
+  if (!departmentId) {
+    return (
+      <div className="bg-white border border-[#e8e7f5] rounded-2xl p-10 text-center text-slate-400 text-sm" dir="rtl">
+        לא נבחרה מחלקה. אנא בחרי מחלקה מהתפריט למעלה.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6" dir="rtl">
       {/* Timings Block */}
@@ -291,7 +299,7 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
                               const isAutoSent = isCurrentStage && liveActiveMinutes >= requiredMins;
                               const isSent = patient.sentMessages?.includes(stage.id) || isAutoSent;
 
-                              if (isSent) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">✓ {stage.label.split(' ')[1]}</span>;
+                              if (isSent) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">✓ {stage.label.replace(/^\S+\s*/, '').split(' ')[0]}</span>;
                               if (isCurrentStage && !isAutoSent) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">בתהליך</span>;
                               return <span key={stage.id} className="text-slate-300">-</span>;
                             })}
