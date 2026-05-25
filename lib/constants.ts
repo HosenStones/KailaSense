@@ -16,7 +16,7 @@ export const QUESTION_TYPES = [
 ];
 
 export const ROLES = [
-  { id: 'super_admin', label: 'מנהל מערכת' },
+  { id: 'admin', label: 'מנהל מערכת' },
   { id: 'manager', label: 'מנהל מחלקה' },
   { id: 'staff', label: 'צוות' }
 ];
