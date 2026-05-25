@@ -10,7 +10,6 @@ import {
   createDepartment, deleteDepartment, addGlobalQuestion,
   deleteGlobalQuestion, updateGlobalQuestion
 } from '@/lib/firebase/firestore'
-import { PREDEFINED_QUESTION_BANK } from '@/lib/question-bank'
 import { CATEGORIES, QUESTION_TYPES, ROLES, getCategoryLabel, getRoleLabel, renderTypeLabelWithIcon, sortQuestions } from '@/lib/constants'
 import type { AdminUser, Department } from '@/lib/types'
 import { AdminInsights } from '@/components/admin/admin-insights'
@@ -62,6 +61,7 @@ export default function AdminDashboardPage() {
   const toggleBankCat = (id: string) => setExpandedBankCats(prev => ({...prev, [id]: !prev[id]}))
   
   const [isAddBankOpen, setIsAddBankOpen] = useState(false)
+  const [isSubmittingBank, setIsSubmittingBank] = useState(false)
   const [newBankQ, setNewBankQ] = useState({
     text: '', type: 'emoji', category: 'general', tag: 'כללי', 
     optionsText: '', contentType: 'info_text', contentUrl: '', contentBody: ''
@@ -102,9 +102,38 @@ export default function AdminDashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Check BOTH strict ID and Hebrew label to prevent access loss
-  const isSuperAdmin = currentUser?.role === 'admin' || currentUser?.role === 'מנהל מערכת';
-  const superAdmins = allUsers.filter(u => u.role === 'admin' || u.role === 'מנהל מערכת');
+  // --- לוגיקת הרשאות חדשה: 3 רמות הרשאה מדויקות ---
+  const userRole = currentUser?.role || 'staff';
+  const isAdmin = userRole === 'admin' || userRole === 'מנהל מערכת';
+  const isManager = userRole === 'manager' || userRole === 'מנהל מחלקה';
+  const isStaff = userRole === 'staff' || userRole === 'צוות';
+  
+  // יכולת לערוך מחלקה (תקף למנהל מערכת ולמנהל מחלקה בלבד)
+  const canManageDepartment = isAdmin || isManager;
+  
+  // רק מנהלי מערכת
+  const systemAdmins = allUsers.filter(u => u.role === 'admin' || u.role === 'מנהל מערכת');
+
+  // בניית טאבים באופן דינמי לפי ההרשאות המדויקות
+  const navTabs = [
+    { id: 'insights', label: 'תובנות', icon: '📊' },
+    { id: 'comments', label: 'תגובות', icon: '💬' },
+    { id: 'scheduling', label: 'בקרה ומעקב', icon: '⏱️' }
+  ];
+
+  if (canManageDepartment) {
+    navTabs.push(
+      { id: 'questions', label: 'תכנים ושאלות', icon: '📋' },
+      { id: 'settings', label: 'הגדרות מחלקה', icon: '⚙️' }
+    );
+  }
+
+  if (isAdmin) {
+    navTabs.push(
+      { id: 'system', label: 'ניהול מערכת', icon: '🛡️' },
+      { id: 'bank', label: 'ניהול מאגר שאלות', icon: '📚' }
+    );
+  }
 
   // Handle operations
   const handleCreateDepartment = async () => {
@@ -132,6 +161,7 @@ export default function AdminDashboardPage() {
 
   const handleSaveBankQuestion = async () => {
     if (!newBankQ.text.trim()) return;
+    setIsSubmittingBank(true);
     try {
       const baseData: any = {
         text: newBankQ.text.trim(), type: newBankQ.type, category: newBankQ.category, tag: newBankQ.tag,
@@ -156,6 +186,7 @@ export default function AdminDashboardPage() {
       const bankData = await getGlobalQuestions();
       setGlobalBank(sortQuestions(bankData));
     } catch (e) {}
+    finally { setIsSubmittingBank(false); }
   };
 
   const handleEditBankClick = (item: any) => {
@@ -191,20 +222,13 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-transparent" dir="rtl">
-      <AdminHeader user={currentUser} title="ממשק ניהול" onProfileClick={() => setActiveTab('settings')} />
+      <AdminHeader user={currentUser} title="ממשק ניהול" onProfileClick={() => canManageDepartment ? setActiveTab('settings') : null} />
       
       {/* Main navigation tabs */}
       <div className="bg-white border-b border-[#e8e7f5] px-4 md:px-6 flex flex-col md:flex-row md:justify-between items-start md:items-center min-h-[56px] gap-2 pt-2">
         <div className="flex flex-col md:flex-row md:justify-between items-center w-full gap-4">
           <nav className="flex gap-1 h-14 overflow-x-auto whitespace-nowrap hide-scrollbar max-w-full">
-            {[
-              { id: 'insights', label: 'תובנות', icon: '📊' },
-              { id: 'comments', label: 'תגובות', icon: '💬' },
-              { id: 'questions', label: 'תכנים ושאלות', icon: '📋' },
-              { id: 'scheduling', label: 'בקרה ומעקב', icon: '⏱️' },
-              { id: 'settings', label: 'הגדרות מחלקה', icon: '⚙️' },
-              ...(isSuperAdmin ? [{ id: 'system', label: 'ניהול מערכת', icon: '🛡️' }, { id: 'bank', label: 'ניהול מאגר שאלות', icon: '📚' }] : [])
-            ].map((tab) => (
+            {navTabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TabId)}
@@ -215,7 +239,7 @@ export default function AdminDashboardPage() {
             ))}
           </nav>
 
-          {isSuperAdmin && (
+          {isAdmin && (
             <div className="flex items-center gap-2 pb-2 md:pb-0">
               <Layers className="w-4 h-4 text-slate-800 shrink-0" />
               <span className="text-xs font-bold text-slate-600 whitespace-nowrap">מחלקה:</span>
@@ -236,13 +260,16 @@ export default function AdminDashboardPage() {
 
       <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
         {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
-        {activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
         {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
-        {activeTab === 'scheduling' && <AdminScheduling departmentId={selectedDepartment} />}
-        {activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
+        
+        {/* העברת המשתנה isReadOnly אם זה צוות */}
+        {activeTab === 'scheduling' && <AdminScheduling departmentId={selectedDepartment} isReadOnly={!canManageDepartment} />}
+        
+        {canManageDepartment && activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
+        {canManageDepartment && activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
         
         {/* System Management Tab */}
-        {activeTab === 'system' && isSuperAdmin && (
+        {isAdmin && activeTab === 'system' && (
           <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#e8e7f5] pb-4">
               <h3 className="text-[#1e1c4a] font-bold text-lg flex items-center gap-2">
@@ -253,7 +280,7 @@ export default function AdminDashboardPage() {
               </Button>
             </div>
 
-            {/* Super Admins Grid */}
+            {/* System Admins Grid */}
             <div className="bg-[#f0f9f9] border border-[#e8e7f5] rounded-xl p-5 flex flex-col items-center justify-center space-y-4 mb-4">
               <div className="flex justify-between items-center w-full max-w-3xl">
                 <h3 className="text-xs font-bold text-[#1e1c4a]">מנהלי מערכת</h3>
@@ -262,7 +289,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-3 justify-center w-full max-w-3xl">
-                {superAdmins.map(admin => {
+                {systemAdmins.map(admin => {
                   const isEditing = editingUserId === admin.id;
                   return (
                     <div key={admin.id} className="bg-white border border-[#e8e7f5] p-3 rounded-xl flex flex-col gap-2 text-xs shadow-sm w-full md:w-[280px]">
@@ -392,7 +419,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Global Question Bank Tab */}
-        {activeTab === 'bank' && isSuperAdmin && (
+        {isAdmin && activeTab === 'bank' && (
           <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#e8e7f5] pb-4">
               <h3 className="text-[#1e1c4a] font-bold text-lg flex items-center gap-2">
@@ -445,101 +472,4 @@ export default function AdminDashboardPage() {
                                 <div key={item.id || idx} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-[#f0f9f9]/50 border border-[#e8e7f5]">
                                   <div className="flex-1">
                                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-white text-slate-600 border border-[#e8e7f5]">{renderTypeLabelWithIcon(item.type, item.contentType)}</span>
-                                    </div>
-                                    <span className="text-[#1e1c4a] text-sm font-medium">{item.text}</span>
-                                  </div>
-                                  <div className="flex gap-1 justify-end">
-                                    <Button variant="ghost" size="sm" onClick={() => handleEditBankClick(item)} className="h-8 px-2 text-slate-400 hover:text-[#2a7c7c]"><Pencil className="w-4 h-4" /></Button>
-                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteGlobalQuestion(item.id)} className="h-8 px-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Modal for adding/editing questions in the bank */}
-            <Dialog open={isAddBankOpen} onOpenChange={setIsAddBankOpen}>
-              <DialogContent dir="rtl" className="bg-white w-[95vw] md:max-w-lg max-h-[90vh] overflow-y-auto">
-                <DialogHeader><DialogTitle className="text-[#1e1c4a]">{editingBankId ? 'עריכת שאלה במאגר' : 'הוספת שאלה למאגר'}</DialogTitle></DialogHeader>
-                <div className="space-y-4 pt-4">
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-slate-500">טקסט השאלה / כותרת</span>
-                    <Input placeholder="לדוגמה: איך עברה הארוחה?" value={newBankQ.text} onChange={e => setNewBankQ({...newBankQ, text: e.target.value})} className="h-10 text-xs bg-white border-[#e8e7f5]" />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-slate-500">סטטוס (קטגוריה)</span>
-                      <Select value={newBankQ.category} onValueChange={v => setNewBankQ({...newBankQ, category: v})}>
-                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                          {CATEGORIES.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-slate-500">סוג שאלה</span>
-                      <Select value={newBankQ.type} onValueChange={v => setNewBankQ({...newBankQ, type: v})}>
-                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                          {QUESTION_TYPES.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-slate-500">שיוך למחלקה בדאטה בייס</span>
-                    <Select value={newBankQ.tag} onValueChange={v => setNewBankQ({...newBankQ, tag: v})}>
-                      <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
-                      <SelectContent dir="rtl">
-                        <SelectItem value="כללי" className="text-xs font-bold">כללי (מופיע בכל המחלקות)</SelectItem>
-                        {departments.map(d => <SelectItem key={d.id} value={d.id} className="text-xs">{d.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {(newBankQ.type === 'choice' || newBankQ.type === 'multi_choice') && (
-                    <div className="space-y-1.5">
-                      <span className="text-xs font-bold text-slate-500">אפשרויות בחירה (מופרדות בפסיק)</span>
-                      <Input placeholder="רופא, אחות, צוות ניקיון" value={newBankQ.optionsText} onChange={e => setNewBankQ({...newBankQ, optionsText: e.target.value})} className="h-10 text-xs bg-white border-[#e8e7f5]" />
-                    </div>
-                  )}
-
-                  {newBankQ.type === 'content' && (
-                    <div className="p-4 bg-[#f0f9f9]/50 border border-[#e8e7f5] rounded-xl space-y-3">
-                      <Select value={newBankQ.contentType} onValueChange={v => setNewBankQ({...newBankQ, contentType: v})}>
-                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue placeholder="סוג תוכן" /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                          <SelectItem value="info_text" className="text-xs">📝 טקסט בלבד</SelectItem>
-                          <SelectItem value="image" className="text-xs">🖼️ תמונה + טקסט</SelectItem>
-                          <SelectItem value="video" className="text-xs">🎬 סרטון וידאו</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {(newBankQ.contentType === 'image' || newBankQ.contentType === 'video') && (
-                        <Input placeholder="קישור ישיר למדיה (URL)" value={newBankQ.contentUrl} onChange={e => setNewBankQ({...newBankQ, contentUrl: e.target.value})} className="h-10 text-xs text-left bg-white border-[#e8e7f5]" dir="ltr" />
-                      )}
-                      <textarea placeholder="תוכן / טקסט להצגה" value={newBankQ.contentBody} onChange={e => setNewBankQ({...newBankQ, contentBody: e.target.value})} className="w-full min-h-[80px] p-3 text-xs border border-[#e8e7f5] rounded-lg focus:ring-1 focus:ring-[#2a7c7c] outline-none bg-white" />
-                    </div>
-                  )}
-
-                  <Button onClick={handleSaveBankQuestion} disabled={isSubmittingBank || !newBankQ.text.trim()} className="w-full h-10 text-xs font-bold bg-[#2a7c7c] hover:bg-[#206060] text-white">
-                    {editingBankId ? 'שמור שינויים למאגר' : 'הוסף למאגר'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        )}
-      </main>
-    </div>
-  )
-}
+                                      <span className="text-[10px] px-2 py-0
