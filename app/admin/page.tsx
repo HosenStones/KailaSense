@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Trash2, Plus, Layers, BookOpen, Pencil, Save, X, UserCog, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trash2, Plus, Layers, BookOpen, Pencil, Save, X, UserCog, ChevronDown, ChevronUp, Library } from 'lucide-react'
 
 type TabId = 'insights' | 'comments' | 'questions' | 'scheduling' | 'settings' | 'system' | 'bank'
 
@@ -67,6 +67,7 @@ export default function AdminDashboardPage() {
     try {
       const adminData = await getAdminUserByEmail(email);
       if (!adminData) { setStatus('error'); return; }
+      console.log('[KailaSense Debug] currentUser role:', adminData.role, '| isAdmin check:', adminData.role === 'admin');
       setCurrentUser(adminData);
       
       const allDepts = await getAllDepartments();
@@ -98,8 +99,8 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   const userRole = currentUser?.role || 'staff';
-  const isAdmin = userRole === 'admin' || userRole === 'מנהל מערכת';
-  const isManager = userRole === 'manager' || userRole === 'מנהל מחלקה';
+  const isAdmin = userRole === 'admin' || userRole === 'מנהל מערכת' || userRole?.toLowerCase() === 'admin';
+  const isManager = userRole === 'manager' || userRole === 'מנהל מחלקה' || userRole?.toLowerCase() === 'manager';
   const canManageDepartment = isAdmin || isManager;
   const systemAdmins = allUsers.filter(u => u.role === 'admin' || u.role === 'מנהל מערכת');
 
