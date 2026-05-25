@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Trash2, Plus, Layers, BookOpen, Download, Pencil, Save, X, UserCog, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trash2, Plus, Layers, BookOpen, Pencil, Save, X, UserCog, ChevronDown, ChevronUp } from 'lucide-react'
 
 type TabId = 'insights' | 'comments' | 'questions' | 'scheduling' | 'settings' | 'system' | 'bank'
 
@@ -36,12 +36,10 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<TabId>('insights')
   const [selectedDepartment, setSelectedDepartment] = useState('')
   
-  // Department modal state
   const [isAddDeptOpen, setIsAddDeptOpen] = useState(false)
   const [newDeptName, setNewDeptName] = useState('')
   const [isSubmittingDept, setIsSubmittingDept] = useState(false)
 
-  // System management states
   const [expandedSystemDepts, setExpandedSystemDepts] = useState<Record<string, boolean>>({})
   const toggleSystemDept = (id: string) => setExpandedSystemDepts(prev => ({...prev, [id]: !prev[id]}))
 
@@ -50,12 +48,10 @@ export default function AdminDashboardPage() {
   const [editUserName, setEditUserName] = useState<string>('')
   const [editUserEmail, setEditUserEmail] = useState<string>('')
 
-  // Add user from system tab
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
   const [newUserDept, setNewUserDept] = useState('')
   const [newUser, setNewUser] = useState({ email: '', fullName: '', role: 'staff' })
 
-  // Question bank states
   const [editingBankId, setEditingBankId] = useState<string | null>(null)
   const [expandedBankCats, setExpandedBankCats] = useState<Record<string, boolean>>({})
   const toggleBankCat = (id: string) => setExpandedBankCats(prev => ({...prev, [id]: !prev[id]}))
@@ -67,7 +63,6 @@ export default function AdminDashboardPage() {
     optionsText: '', contentType: 'info_text', contentUrl: '', contentBody: ''
   })
 
-  // Load all foundational data on mount
   const loadData = async (email: string) => {
     try {
       const adminData = await getAdminUserByEmail(email);
@@ -102,18 +97,12 @@ export default function AdminDashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // לוגיקת הרשאות מבוססת 3 רמות
   const userRole = currentUser?.role || 'staff';
   const isAdmin = userRole === 'admin' || userRole === 'מנהל מערכת';
   const isManager = userRole === 'manager' || userRole === 'מנהל מחלקה';
-  
-  // יכולת לערוך מחלקה (תקף למנהל מערכת ולמנהל מחלקה בלבד)
   const canManageDepartment = isAdmin || isManager;
-  
-  // רק מנהלי מערכת
   const systemAdmins = allUsers.filter(u => u.role === 'admin' || u.role === 'מנהל מערכת');
 
-  // בניית טאבים באופן דינמי לפי ההרשאות המדויקות
   const navTabs = [
     { id: 'insights', label: 'תובנות', icon: '📊' },
     { id: 'comments', label: 'תגובות', icon: '💬' },
@@ -134,7 +123,6 @@ export default function AdminDashboardPage() {
     );
   }
 
-  // Handle operations
   const handleCreateDepartment = async () => {
     if (!newDeptName.trim()) return;
     setIsSubmittingDept(true);
@@ -223,7 +211,6 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-transparent" dir="rtl">
       <AdminHeader user={currentUser} title="ממשק ניהול" onProfileClick={() => canManageDepartment ? setActiveTab('settings') : null} />
       
-      {/* Main navigation tabs */}
       <div className="bg-white border-b border-[#e8e7f5] px-4 md:px-6 flex flex-col md:flex-row md:justify-between items-start md:items-center min-h-[56px] gap-2 pt-2">
         <div className="flex flex-col md:flex-row md:justify-between items-center w-full gap-4">
           <nav className="flex gap-1 h-14 overflow-x-auto whitespace-nowrap hide-scrollbar max-w-full">
@@ -261,7 +248,6 @@ export default function AdminDashboardPage() {
         {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
         {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
         
-        {/* העברת המשתנה isReadOnly אם זה צוות */}
         {activeTab === 'scheduling' && <AdminScheduling departmentId={selectedDepartment} isReadOnly={!canManageDepartment} />}
         
         {canManageDepartment && activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
@@ -272,7 +258,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#e8e7f5] pb-4">
               <h3 className="text-[#1e1c4a] font-bold text-lg flex items-center gap-2">
-                <UserCog className="w-5 h-5 text-[#2a7c7c]"/> ניהול מערכת והרשאות
+                <UserCog className="w-5 h-5 text-[#2a7c7c]"/> ניהול מערכת
               </h3>
               <Button onClick={() => setIsAddDeptOpen(true)} className="gap-2 text-xs h-8 bg-[#2a7c7c] text-white hover:bg-[#206060]">
                 <Plus className="w-3.5 h-3.5" /> הוסף מחלקה
@@ -296,6 +282,12 @@ export default function AdminDashboardPage() {
                         <>
                           <Input value={editUserEmail} onChange={e => setEditUserEmail(e.target.value)} className="h-7 text-[10px] w-full" dir="ltr" />
                           <Input value={editUserName} onChange={e => setEditUserName(e.target.value)} className="h-7 text-[10px] w-full" />
+                          <Select value={editUserRole} onValueChange={setEditUserRole}>
+                            <SelectTrigger className="h-7 text-[10px] w-full bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
+                            <SelectContent dir="rtl">
+                              {ROLES.map(r => <SelectItem key={r.id} value={r.id} className="text-[10px]">{r.label}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
                           <div className="flex gap-1 justify-end mt-1">
                             <Button size="sm" onClick={() => handleSaveUserEdit(admin.id)} className="h-6 px-2 bg-[#2a7c7c] text-white"><Save className="w-3 h-3"/></Button>
                             <Button size="sm" variant="outline" onClick={() => setEditingUserId(null)} className="h-6 px-2"><X className="w-3 h-3"/></Button>
@@ -305,10 +297,11 @@ export default function AdminDashboardPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="font-bold text-[#1e1c4a] block">{admin.fullName || '-'}</span>
-                            <span className="text-slate-500">{admin.email}</span>
+                            <span className="text-slate-500 block">{admin.email}</span>
+                            <span className="text-slate-400 mt-1 inline-block">{getRoleLabel(admin.role)}</span>
                           </div>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => {setEditingUserId(admin.id); setEditUserRole('admin'); setEditUserName(admin.fullName || ''); setEditUserEmail(admin.email || '');}} className="h-6 w-6 p-0 text-slate-400 hover:text-[#2a7c7c]"><Pencil className="w-3.5 h-3.5"/></Button>
+                          <div className="flex gap-1 self-start">
+                            <Button variant="ghost" size="sm" onClick={() => {setEditingUserId(admin.id); setEditUserRole(admin.role || 'admin'); setEditUserName(admin.fullName || ''); setEditUserEmail(admin.email || '');}} className="h-6 w-6 p-0 text-slate-400 hover:text-[#2a7c7c]"><Pencil className="w-3.5 h-3.5"/></Button>
                             <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(admin.id)} className="h-6 w-6 p-0 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></Button>
                           </div>
                         </div>
@@ -433,14 +426,15 @@ export default function AdminDashboardPage() {
               {CATEGORIES.map((cat) => {
                 const catItems = globalBank.filter(item => item.category === cat.id);
                 if (catItems.length === 0) return null;
-                const isExpanded = expandedBankCats[cat.id] ?? false; // Closed by default
+                const isExpanded = expandedBankCats[cat.id] ?? false; 
                 
-                // Grouping by department tags
+                // Grouping by mapped department name
                 const deptGroups: Record<string, any[]> = {};
                 catItems.forEach(item => {
-                  const tag = item.tag || 'כללי';
-                  if (!deptGroups[tag]) deptGroups[tag] = [];
-                  deptGroups[tag].push(item);
+                  const rawTag = item.tag || 'כללי';
+                  const deptName = rawTag === 'כללי' ? 'כללי' : (departments.find(d => d.id === rawTag)?.name || rawTag);
+                  if (!deptGroups[deptName]) deptGroups[deptName] = [];
+                  deptGroups[deptName].push(item);
                 });
                 
                 // Sorting departments: 'כללי' first, then A-Z
@@ -462,16 +456,16 @@ export default function AdminDashboardPage() {
                       </Button>
                     </div>
                     {isExpanded && (
-                      <div className="p-4 space-y-5">
+                      <div className="p-4 space-y-5 bg-white">
                         {sortedDepts.map(deptName => (
                           <div key={deptName} className="space-y-3">
                             <h5 className="text-xs font-bold text-[#2a7c7c] border-b border-[#e8e7f5] pb-2">{deptName}</h5>
                             <div className="grid grid-cols-1 gap-2">
                               {deptGroups[deptName].map((item, idx) => (
-                                <div key={item.id || idx} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-[#f0f9f9]/50 border border-[#e8e7f5]">
+                                <div key={item.id || idx} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-white border border-[#e8e7f5]">
                                   <div className="flex-1">
                                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-white text-slate-600 border border-[#e8e7f5]">{renderTypeLabelWithIcon(item.type, item.contentType)}</span>
+                                      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-[#e8e7f5]">{renderTypeLabelWithIcon(item.type, item.contentType)}</span>
                                     </div>
                                     <span className="text-[#1e1c4a] text-sm font-medium">{item.text}</span>
                                   </div>
@@ -523,7 +517,7 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <span className="text-xs font-bold text-slate-500">שיוך למחלקה בדאטה בייס</span>
+                    <span className="text-xs font-bold text-slate-500">שיוך למחלקה</span>
                     <Select value={newBankQ.tag} onValueChange={v => setNewBankQ({...newBankQ, tag: v})}>
                       <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
                       <SelectContent dir="rtl">
