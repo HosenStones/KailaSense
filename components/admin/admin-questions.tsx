@@ -113,7 +113,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           <BookOpen className="w-5 h-5 text-[#2a7c7c]" /> תכנים ושאלות במחלקה
         </h3>
 
-        {/* Creator Form */}
         <div id="question-creator-form" className={`p-5 rounded-xl border shadow-sm space-y-4 ${editingQuestionId ? 'bg-white border-2 border-[#2a7c7c]' : 'bg-[#f7f7fc] border-[#e8e7f5]'}`}>
           {editingQuestionId && (
             <div className="flex items-center justify-between text-[#2a7c7c] text-xs font-bold mb-2">
@@ -164,7 +163,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           </Button>
         </div>
 
-        {/* Existing Questions Accordion Display */}
         <div className="space-y-4">
           {questions.length === 0 ? <div className="text-center p-8 text-slate-400 text-xs">אין שאלות במחלקה.</div> : 
             CATEGORIES.map((cat) => {
@@ -207,7 +205,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           }
         </div>
 
-        {/* Global Question Bank Import Section */}
         <div className="mt-8 border-t border-[#e8e7f5] pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[#1e1c4a] font-bold flex items-center gap-2">
@@ -229,7 +226,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                     <h5 className="font-bold text-sm text-[#1e1c4a] mb-3">{cat.label}</h5>
                     <div className="grid grid-cols-1 gap-2">
                       {catItems.map(q => {
-                        // בדיקה מדויקת לחלוטין לכל השדות (סוג, סטטוס, אפשרויות, טקסט וכו')
                         const isAlreadyAdded = questions.some(existingQ => {
                           const textMatch = existingQ.questionText === q.text;
                           const categoryMatch = (existingQ.category || 'general') === (q.category || 'general');
@@ -243,7 +239,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                           const contentUrlMatch = (existingQ.contentUrl || '') === (q.contentUrl || '');
                           const contentBodyMatch = (existingQ.contentBody || '') === (q.contentBody || '');
                           
-                          // רק אם *הכל* זהה, השאלה תסומן כ"נוסף"
                           return textMatch && categoryMatch && typeMatch && optionsMatch && contentTypeMatch && contentUrlMatch && contentBodyMatch;
                         });
                         
@@ -254,4 +249,26 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                               <span className="text-sm font-medium text-[#1e1c4a]">{q.text}</span>
                             </div>
                             {isAlreadyAdded ? (
-                              <Button disabled size="sm" className="h-7 px-3 text-[10px] font-bold bg-emerald-100 text-emerald-700
+                              <Button disabled size="sm" className="h-7 px-3 text-[10px] font-bold bg-emerald-100 text-emerald-700 opacity-100">
+                                <Check className="w-3 h-3 ml-1" /> נוסף
+                              </Button>
+                            ) : (
+                              <Button size="sm" onClick={() => handleImportFromBank(q)} disabled={isSubmitting} className="h-7 px-3 text-[10px] font-bold bg-[#2a7c7c] text-white hover:bg-[#206060]">
+                                + הוספה
+                              </Button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+      </div>
+    </div>
+  )
+}
