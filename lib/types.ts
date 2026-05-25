@@ -23,7 +23,7 @@ export interface AdminUser {
   id: string
   email: string
   fullName: string
-  role: 'admin' | 'super_admin' | 'staff'
+  role: 'admin' | 'manager' | 'staff'
   departmentId: string | null
   createdAt: string
   updatedAt: string
