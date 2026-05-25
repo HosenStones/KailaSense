@@ -103,8 +103,8 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   // Check BOTH strict ID and Hebrew label to prevent access loss
-  const isSuperAdmin = currentUser?.role === 'super_admin' || currentUser?.role === 'מנהל מערכת';
-  const superAdmins = allUsers.filter(u => u.role === 'super_admin' || u.role === 'מנהל מערכת');
+  const isSuperAdmin = currentUser?.role === 'admin' || currentUser?.role === 'מנהל מערכת';
+  const superAdmins = allUsers.filter(u => u.role === 'admin' || u.role === 'מנהל מערכת');
 
   // Handle operations
   const handleCreateDepartment = async () => {
@@ -257,7 +257,7 @@ export default function AdminDashboardPage() {
             <div className="bg-[#f0f9f9] border border-[#e8e7f5] rounded-xl p-5 flex flex-col items-center justify-center space-y-4 mb-4">
               <div className="flex justify-between items-center w-full max-w-3xl">
                 <h3 className="text-xs font-bold text-[#1e1c4a]">מנהלי מערכת</h3>
-                <Button size="sm" onClick={() => { setIsAddUserOpen(true); setNewUserDept('system'); setNewUser({...newUser, role: 'super_admin'}); }} className="h-7 text-[10px] gap-1 bg-white border border-[#e8e7f5] text-slate-700 hover:bg-slate-50">
+                <Button size="sm" onClick={() => { setIsAddUserOpen(true); setNewUserDept('system'); setNewUser({...newUser, role: 'admin'}); }} className="h-7 text-[10px] gap-1 bg-white border border-[#e8e7f5] text-slate-700 hover:bg-slate-50">
                   <Plus className="w-3 h-3"/> הוסף מנהל מערכת
                 </Button>
               </div>
@@ -282,7 +282,7 @@ export default function AdminDashboardPage() {
                             <span className="text-slate-500">{admin.email}</span>
                           </div>
                           <div className="flex gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => {setEditingUserId(admin.id); setEditUserRole('super_admin'); setEditUserName(admin.fullName || ''); setEditUserEmail(admin.email || '');}} className="h-6 w-6 p-0 text-slate-400 hover:text-[#2a7c7c]"><Pencil className="w-3.5 h-3.5"/></Button>
+                            <Button variant="ghost" size="sm" onClick={() => {setEditingUserId(admin.id); setEditUserRole('admin'); setEditUserName(admin.fullName || ''); setEditUserEmail(admin.email || '');}} className="h-6 w-6 p-0 text-slate-400 hover:text-[#2a7c7c]"><Pencil className="w-3.5 h-3.5"/></Button>
                             <Button variant="ghost" size="sm" onClick={() => handleDeleteUser(admin.id)} className="h-6 w-6 p-0 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5"/></Button>
                           </div>
                         </div>
@@ -296,7 +296,7 @@ export default function AdminDashboardPage() {
             {/* Department Accordions */}
             <div className="grid grid-cols-1 gap-4">
               {departments.map(dept => {
-                const deptUsers = allUsers.filter(u => u.departmentId === dept.id && u.role !== 'super_admin' && u.role !== 'מנהל מערכת');
+                const deptUsers = allUsers.filter(u => u.departmentId === dept.id && u.role !== 'admin' && u.role !== 'מנהל מערכת');
                 const isExpanded = expandedSystemDepts[dept.id];
                 return (
                   <div key={dept.id} className="border border-[#e8e7f5] rounded-xl bg-white overflow-hidden shadow-sm">
