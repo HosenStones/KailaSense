@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { getQuestionsByDepartment, addQuestion, deleteQuestion, getAllDepartments, updateQuestion, getGlobalQuestions } from '@/lib/firebase/firestore'
 import { CATEGORIES, QUESTION_TYPES, getCategoryLabel, renderTypeLabelWithIcon, sortQuestions } from '@/lib/constants'
 import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
-import { Trash2, ListPlus, Info, BookOpen, Pencil, ChevronDown, ChevronUp, Calendar } from 'lucide-react'
+import { Trash2, ListPlus, Info, BookOpen, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
@@ -25,9 +25,10 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showBank, setShowBank] = useState(false)
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
+  
+  // הכל סגור בדיפולט גם פה
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({})
   const [expandedBankCats, setExpandedBankCats] = useState<Record<string, boolean>>({})
-  const [timeFilter, setTimeFilter] = useState('30d')
 
   const loadQuestions = async () => {
     if (!departmentId) return;
@@ -46,6 +47,19 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
   const toggleCat = (id: string) => setExpandedCats(prev => ({...prev, [id]: !prev[id]}));
   const toggleBankCat = (id: string) => setExpandedBankCats(prev => ({...prev, [id]: !prev[id]}));
+
+  const openQuestionsCount = questions.filter(q => q.questionType === 'open_text').length;
+  const totalQuestionsCount = questions.filter(q => q.questionType !== 'content').length;
+  const showWarning = totalQuestionsCount > 3 || openQuestionsCount > 1;
+
+  const currentTargetTag = departmentName ? (
+    departmentName.includes('יולדות') ? 'יולדות' :
+    departmentName.includes('מיון') ? 'מיון' :
+    departmentName.includes('אורתופדיה') ? 'אורתופדיה' :
+    departmentName.includes('קרדיולוגיה') ? 'קרדיולוגיה' :
+    departmentName.includes('עיניים') ? 'עיניים' :
+    departmentName.includes('נשים') ? 'נשים' : 'כללי'
+  ) : 'כללי';
 
   const resetForm = () => {
     setNewQuestionText(''); setNewQuestionType('emoji'); setNewCategory('general');
@@ -128,30 +142,29 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
   return (
     <div className="space-y-6" dir="rtl">
-      
-      {/* מסנן זמן */}
-      <div className="flex justify-end mb-4">
-        <Select value={timeFilter} onValueChange={setTimeFilter}>
-          <SelectTrigger className="h-8 text-xs w-40 bg-white"><Calendar className="w-3.5 h-3.5 mr-1 ml-2"/><SelectValue placeholder="סנן לפי זמן" /></SelectTrigger>
-          <SelectContent dir="rtl">
-            <SelectItem value="24h" className="text-xs">24 שעות אחרונות</SelectItem>
-            <SelectItem value="7d" className="text-xs">7 ימים אחרונים</SelectItem>
-            <SelectItem value="30d" className="text-xs">30 ימים אחרונים</SelectItem>
-            <SelectItem value="1y" className="text-xs">שנה אחרונה</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {showWarning && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex gap-3 items-start text-xs">
+          <Info className="w-4 h-4 shrink-0 mt-0.5" />
+          <div>
+            <strong>המלצת המערכת למשוב אפקטיבי:</strong>
+            <ul className="list-disc list-inside space-y-1 mt-1">
+              {totalQuestionsCount > 3 && <li>כדאי לשאול מקסימום 3 שאלות כדי לא לעייף את המטופל.</li>}
+              {openQuestionsCount > 1 && <li>מומלץ לכלול מקסימום שאלה פתוחה אחת (טקסט חופשי).</li>}
+            </ul>
+          </div>
+        </div>
+      )}
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <button onClick={() => setShowBank(!showBank)} className="w-full flex items-center justify-between p-4 font-bold text-foreground hover:bg-secondary/50 transition-colors cursor-pointer text-sm">
-          <div className="flex items-center gap-2 text-slate-800"><BookOpen className="w-4 h-4" /><span>מאגר שאלות מהיר</span></div>
+          <div className="flex items-center gap-2 text-slate-800"><BookOpen className="w-4 h-4 text-slate-800" /><span>מאגר שאלות מחלקתי</span></div>
           <span className="text-xs bg-secondary px-2.5 py-1 rounded-full text-muted-foreground">{showBank ? 'סגור' : 'פתח'}</span>
         </button>
 
         {showBank && (
           <div className="p-4 bg-secondary/30 border-t border-border space-y-4 max-h-[600px] overflow-y-auto">
             {CATEGORIES.map((cat) => {
-              const filteredItems = globalBank.filter(item => item.category === cat.id && (item.tag === 'general' || item.tag === departmentId));
+              const filteredItems = globalBank.filter(item => item.category === cat.id && (item.tag === 'כללי' || item.tag === currentTargetTag));
               if (filteredItems.length === 0) return null;
               const isExpanded = expandedBankCats[cat.id];
               return (
@@ -253,7 +266,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           CATEGORIES.map((cat) => {
             const filteredItems = questions.filter(item => item.category === cat.id);
             if (filteredItems.length === 0) return null;
-            const isExpanded = expandedCats[cat.id] ?? true; // Default open
+            const isExpanded = expandedCats[cat.id] ?? false; // סגור בדיפולט
             return (
               <div key={cat.id} className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
                 <div className="flex items-center justify-between p-3 bg-slate-50/50 border-b border-border cursor-pointer w-full hover:bg-slate-100/50 transition-colors" onClick={() => toggleCat(cat.id)}>
