@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { getQuestionsByDepartment, getGlobalQuestions, addQuestion, deleteQuestion, updateQuestion } from '@/lib/firebase/firestore'
-import { CATEGORIES, QUESTION_TYPES, getCategoryLabel, renderTypeLabelWithIcon, sortQuestions } from '@/lib/constants'
+import { CATEGORIES, QUESTION_TYPES, renderTypeLabelWithIcon, sortQuestions } from '@/lib/constants'
 import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
 import { Trash2, ListPlus, BookOpen, Pencil, ChevronDown, ChevronUp, Library, Check } from 'lucide-react'
 
@@ -71,7 +71,11 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       else await addQuestion(baseData);
       resetForm();
       await loadQuestions();
-    } catch (error) {} finally { setIsSubmitting(false); }
+    } catch (error) {
+      console.error(error);
+    } finally { 
+      setIsSubmitting(false); 
+    }
   }
 
   const handleImportFromBank = async (bankQ: any) => {
