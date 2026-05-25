@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot, doc, getDoc, updateDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, addDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { CATEGORIES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Edit2, Save, X, Clock, Settings, CheckCircle2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Edit2, Save, X, Clock, Settings, UserPlus } from 'lucide-react'
 
 interface PatientRow {
   id: string;
@@ -22,18 +23,19 @@ interface PatientRow {
 export function AdminScheduling({ departmentId }: { departmentId: string }) {
   const [patients, setPatients] = useState<PatientRow[]>([]);
   const [isEditingTimings, setIsEditingTimings] = useState(false);
-  const [isSavingTimings, setIsSavingTimings] = useState(false);
   
-  // מבנה שמפריד בבירור בין המספר ליחידה
+  // ערכים התחלתיים מובנים והגיוניים לפי הסדר
   const [timingSettings, setTimingSettings] = useState({
-    admission: { value: '30', unit: 'דקות', isActive: 'פעיל' },
-    during: { value: '2', unit: 'שעות', isActive: 'פעיל' },
-    discharge: { value: '0', unit: 'דקות', isActive: 'פעיל' },
-    after_discharge: { value: '24', unit: 'שעות', isActive: 'פעיל' }
+    admission: { value: '30', unit: 'דקות אחרי', isActive: 'פעיל', recurring: false },
+    during: { value: '12', unit: 'שעות אחרי', isActive: 'פעיל', recurring: true },
+    discharge: { value: '1', unit: 'שעות לפני', isActive: 'פעיל', recurring: false },
+    after_discharge: { value: '24', unit: 'שעות אחרי', isActive: 'פעיל', recurring: false }
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempData, setTempData] = useState<Partial<PatientRow>>({});
+  const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
+  const [newPatient, setNewPatient] = useState({ name: '', phone: '', escortPhone: '', status: 'admission' });
 
   useEffect(() => {
     if (!departmentId) return;
@@ -56,20 +58,26 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
   }, [departmentId]);
 
   const saveTimingSettings = async () => {
-    setIsSavingTimings(true);
     try {
       await updateDoc(doc(db, 'departments', departmentId), { timingSettings });
       setIsEditingTimings(false);
-    } catch (e) { console.error("שגיאה בשמירת התזמונים", e); } 
-    finally { setIsSavingTimings(false); }
+    } catch (e) { console.error("שגיאה בשמירת התזמונים", e); }
   };
 
   const handleSavePatient = async () => {
     if (!tempData.id) return;
+    try { await updateDoc(doc(db, 'patients', tempData.id), { ...tempData }); setEditingId(null); } catch (e) {}
+  };
+
+  const handleAddNewPatient = async () => {
+    if (!newPatient.name.trim() || !departmentId) return;
     try {
-      await updateDoc(doc(db, 'patients', tempData.id), { ...tempData });
-      setEditingId(null);
-    } catch (e) { console.error(e); }
+      await addDoc(collection(db, 'patients'), {
+        ...newPatient, departmentId, activeMinutes: 0, sentMessages: []
+      });
+      setIsAddPatientOpen(false);
+      setNewPatient({ name: '', phone: '', escortPhone: '', status: 'admission' });
+    } catch (e) {}
   };
 
   const formatDuration = (minutes: number): string => {
@@ -85,7 +93,7 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
   return (
     <div className="space-y-6" dir="rtl">
       
-      {/* אזור תזמוני שליחה - ללא טוגלים, עם שדות נפרדים למספר וליחידה */}
+      {/* תזמוני שליחה */}
       <div className="bg-white border border-border rounded-2xl p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-50 pb-2">
           <div className="flex items-center gap-2">
@@ -96,7 +104,6 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
             variant={isEditingTimings ? "default" : "outline"} 
             size="sm" 
             onClick={() => isEditingTimings ? saveTimingSettings() : setIsEditingTimings(true)} 
-            disabled={isSavingTimings}
             className="h-7 text-xs"
           >
             {isEditingTimings ? <><Save className="w-3 h-3 ml-1"/> שמור תזמונים</> : <><Settings className="w-3 h-3 ml-1"/> ערוך תזמונים</>}
@@ -105,16 +112,13 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {STAGES.map(stage => {
-            const setting = timingSettings[stage.id as keyof typeof timingSettings] || { value: '0', unit: 'דקות', isActive: 'פעיל' };
+            const setting = timingSettings[stage.id as keyof typeof timingSettings] || { value: '0', unit: 'דקות אחרי', isActive: 'פעיל', recurring: false };
             return (
               <div key={stage.id} className={`border rounded-xl p-3 space-y-3 transition-colors ${setting.isActive === 'פעיל' ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/50 border-slate-100 opacity-60'}`}>
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-bold text-slate-700">{stage.label}</span>
                   {isEditingTimings ? (
-                    <Select 
-                      value={setting.isActive} 
-                      onValueChange={v => setTimingSettings(prev => ({...prev, [stage.id]: { ...setting, isActive: v }}))}
-                    >
+                    <Select value={setting.isActive} onValueChange={v => setTimingSettings(prev => ({...prev, [stage.id]: { ...setting, isActive: v }}))}>
                       <SelectTrigger className="h-7 w-24 text-[10px]"><SelectValue /></SelectTrigger>
                       <SelectContent dir="rtl">
                         <SelectItem value="פעיל" className="text-[10px]">פעיל</SelectItem>
@@ -128,31 +132,38 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
                   )}
                 </div>
                 
-                <div className="flex items-center gap-2 text-xs text-slate-600">
-                  <span>זמן:</span>
-                  {isEditingTimings ? (
-                    <div className="flex items-center gap-1.5 flex-1">
-                      <Input 
-                        type="number"
-                        min="0"
-                        value={setting.value} 
-                        onChange={e => setTimingSettings(prev => ({...prev, [stage.id]: { ...setting, value: e.target.value }}))}
-                        className="h-8 text-xs w-16 text-center px-1"
+                <div className="flex flex-col gap-2 text-xs text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <span>זמן:</span>
+                    {isEditingTimings ? (
+                      <div className="flex items-center gap-1.5 flex-1">
+                        <Input type="number" min="0" value={setting.value} onChange={e => setTimingSettings(prev => ({...prev, [stage.id]: { ...setting, value: e.target.value }}))} className="h-8 text-xs w-16 text-center px-1" />
+                        <Select value={setting.unit} onValueChange={v => setTimingSettings(prev => ({...prev, [stage.id]: { ...setting, unit: v }}))}>
+                          <SelectTrigger className="h-8 flex-1 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent dir="rtl">
+                            <SelectItem value="דקות אחרי" className="text-xs">דקות אחרי</SelectItem>
+                            <SelectItem value="שעות אחרי" className="text-xs">שעות אחרי</SelectItem>
+                            <SelectItem value="שעות לפני" className="text-xs">שעות לפני</SelectItem>
+                            <SelectItem value="ימים אחרי" className="text-xs">ימים אחרי</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : (
+                      <strong className="text-primary text-sm">{`${setting.value} ${setting.unit}`}</strong>
+                    )}
+                  </div>
+                  {/* אפשרות לשליחה חוזרת רק במהלך אשפוז */}
+                  {stage.id === 'during' && (
+                    <div className="flex items-center gap-2 mt-1 bg-blue-50/50 p-1.5 rounded">
+                      <input 
+                        type="checkbox" 
+                        checked={setting.recurring} 
+                        disabled={!isEditingTimings}
+                        onChange={e => setTimingSettings(prev => ({...prev, [stage.id]: { ...setting, recurring: e.target.checked }}))}
+                        className="rounded border-slate-300 text-primary focus:ring-primary"
                       />
-                      <Select 
-                        value={setting.unit} 
-                        onValueChange={v => setTimingSettings(prev => ({...prev, [stage.id]: { ...setting, unit: v }}))}
-                      >
-                        <SelectTrigger className="h-8 flex-1 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent dir="rtl">
-                          <SelectItem value="דקות" className="text-xs">דקות</SelectItem>
-                          <SelectItem value="שעות" className="text-xs">שעות</SelectItem>
-                          <SelectItem value="ימים" className="text-xs">ימים</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <span className="text-[10px]">שליחה חוזרת מעל יומיים</span>
                     </div>
-                  ) : (
-                    <strong className="text-primary text-sm">{`${setting.value} ${setting.unit}`}</strong>
                   )}
                 </div>
               </div>
@@ -161,10 +172,13 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
         </div>
       </div>
 
-      {/* טבלת מעקב מטופלים */}
+      {/* מעקב מטופלים */}
       <div className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden">
         <div className="p-4 border-b border-slate-100 bg-slate-50/30 flex justify-between items-center">
           <h3 className="text-sm font-bold text-slate-800">מעקב מטופלים</h3>
+          <Button size="sm" onClick={() => setIsAddPatientOpen(true)} className="h-8 text-xs gap-2">
+            <UserPlus className="w-3.5 h-3.5" /> הוסף מטופל
+          </Button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-right">
@@ -175,13 +189,13 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
                 <th className="px-4 py-3 font-semibold text-right">טלפון מלווה</th>
                 <th className="px-4 py-3 font-semibold text-right">סטטוס</th>
                 <th className="px-4 py-3 font-semibold text-right">זמן בסטטוס</th>
-                <th className="px-4 py-3 font-semibold text-center">נשלח</th>
+                <th className="px-4 py-3 font-semibold text-center">נשלח (שלבים)</th>
                 <th className="px-4 py-3 font-semibold text-center">פעולות עריכה</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-xs">
               {patients.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-12 text-slate-400">אין כרגע מטופלים פעילים הרשומים במסד הנתונים למחלקה זו.</td></tr>
+                <tr><td colSpan={7} className="text-center py-12 text-slate-400">אין כרגע מטופלים פעילים הרשומים.</td></tr>
               ) : patients.map((patient) => {
                 const isEditing = editingId === patient.id;
                 const displayStatus = STAGES.find(s => s.id === patient.status)?.label || patient.status;
@@ -218,14 +232,14 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
                         <td className="px-4 py-3 text-slate-700 font-medium text-right">{displayStatus}</td>
                         <td className="px-4 py-3 text-slate-400 text-right">{formatDuration(patient.activeMinutes)}</td>
                         <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
                             {STAGES.map(stage => {
-                              const sent = patient.sentMessages?.includes(stage.id);
-                              return (
-                                <div key={stage.id} title={stage.label} className={`w-5 h-5 rounded-full flex items-center justify-center border ${sent ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
-                                  {sent && <CheckCircle2 className="w-3 h-3" />}
-                                </div>
-                              );
+                              const isSent = patient.sentMessages?.includes(stage.id);
+                              const isCurrentStage = patient.status === stage.id;
+                              
+                              if (isSent) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">✓ {stage.label.split(' ')[1]}</span>;
+                              if (isCurrentStage) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">בתהליך</span>;
+                              return <span key={stage.id} className="text-slate-300">-</span>;
                             })}
                           </div>
                         </td>
@@ -243,6 +257,24 @@ export function AdminScheduling({ departmentId }: { departmentId: string }) {
           </table>
         </div>
       </div>
+
+      <Dialog open={isAddPatientOpen} onOpenChange={setIsAddPatientOpen}>
+        <DialogContent dir="rtl" className="bg-white">
+          <DialogHeader><DialogTitle>רישום מטופל למעקב מחלקתי</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input placeholder="שם מלא" value={newPatient.name} onChange={e => setNewPatient({...newPatient, name: e.target.value})} className="text-xs h-9" />
+            <Input placeholder="טלפון מטופל/ת" value={newPatient.phone} onChange={e => setNewPatient({...newPatient, phone: e.target.value})} className="text-xs h-9" dir="ltr" />
+            <Input placeholder="טלפון מלווה (אופציונלי)" value={newPatient.escortPhone} onChange={e => setNewPatient({...newPatient, escortPhone: e.target.value})} className="text-xs h-9" dir="ltr" />
+            <Select value={newPatient.status} onValueChange={v => setNewPatient({...newPatient, status: v})}>
+              <SelectTrigger className="text-xs h-9"><SelectValue placeholder="בחר סטטוס התחלתי" /></SelectTrigger>
+              <SelectContent dir="rtl">
+                {STAGES.map(s => <SelectItem key={s.id} value={s.id} className="text-xs">{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Button onClick={handleAddNewPatient} disabled={!newPatient.name} className="w-full text-xs h-9 bg-emerald-600 hover:bg-emerald-700">שמור מטופל</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
