@@ -109,14 +109,16 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   return (
     <div className="space-y-6" dir="rtl">
       
-      {/* 1. Global Question Bank Block (Moved to Top) */}
       <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-[#e8e7f5] pb-4">
+        <div 
+          className="flex items-center justify-between border-b border-[#e8e7f5] pb-4 cursor-pointer hover:bg-slate-50 transition-colors"
+          onClick={() => setIsBankOpen(!isBankOpen)}
+        >
           <h3 className="text-[#1e1c4a] font-bold text-lg flex items-center gap-2">
             <Library className="w-5 h-5 text-[#2a7c7c]" /> מאגר השאלות
           </h3>
-          <Button variant="outline" size="sm" onClick={() => setIsBankOpen(!isBankOpen)} className="h-8 text-xs bg-white border-[#e8e7f5]">
-            {isBankOpen ? 'הסתר מאגר' : 'הצג שאלות'}
+          <Button variant="ghost" size="sm" className="h-7 text-xs px-2 text-slate-500 pointer-events-none">
+            {isBankOpen ? 'סגור' : 'פתח'}
           </Button>
         </div>
 
@@ -134,7 +136,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                       {isExpanded ? <ChevronUp className="w-4 h-4 text-[#2a7c7c]"/> : <ChevronDown className="w-4 h-4 text-[#2a7c7c]"/>}
                       {cat.label} ({catItems.length})
                     </h4>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs px-2 text-slate-500" onClick={(e) => { e.stopPropagation(); toggleBankCat(cat.id); }}>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs px-2 text-slate-500 pointer-events-none">
                       {isExpanded ? 'סגור' : 'פתח'}
                     </Button>
                   </div>
@@ -146,9 +148,11 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                           const textMatch = existingQ.questionText === q.text;
                           const categoryMatch = (existingQ.category || 'general') === (q.category || 'general');
                           const typeMatch = existingQ.questionType === q.type;
+                          
                           const qOptions = q.options?.map((opt: string) => ({ label: opt.trim(), value: opt.trim() })) || [];
                           const existingOptions = existingQ.options || [];
                           const optionsMatch = JSON.stringify(existingOptions) === JSON.stringify(qOptions);
+                          
                           const contentTypeMatch = (existingQ.contentType || 'info_text') === (q.contentType || 'info_text');
                           const contentUrlMatch = (existingQ.contentUrl || '') === (q.contentUrl || '');
                           const contentBodyMatch = (existingQ.contentBody || '') === (q.contentBody || '');
@@ -183,13 +187,11 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         )}
       </div>
 
-      {/* 2. Department Questions Block */}
       <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
         <h3 className="text-[#1e1c4a] text-lg font-bold mb-6 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-[#2a7c7c]" /> תכנים ושאלות במחלקה
         </h3>
 
-        {/* Creator Form */}
         <div id="question-creator-form" className={`p-5 rounded-xl border shadow-sm space-y-4 ${editingQuestionId ? 'bg-white border-2 border-[#2a7c7c]' : 'bg-[#f7f7fc] border-[#e8e7f5]'}`}>
           {editingQuestionId && (
             <div className="flex items-center justify-between text-[#2a7c7c] text-xs font-bold mb-2">
@@ -240,7 +242,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
           </Button>
         </div>
 
-        {/* Existing Questions Accordion Display */}
         <div className="space-y-4 pt-2">
           {questions.length === 0 ? <div className="text-center p-8 text-slate-400 text-xs">אין שאלות במחלקה.</div> : 
             CATEGORIES.map((cat) => {
@@ -255,7 +256,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                       {isExpanded ? <ChevronUp className="w-4 h-4 text-[#2a7c7c]"/> : <ChevronDown className="w-4 h-4 text-[#2a7c7c]"/>}
                       {cat.label} ({filteredItems.length})
                     </h4>
-                    <Button size="sm" variant="ghost" className="h-7 text-xs px-2 text-slate-500" onClick={(e) => { e.stopPropagation(); toggleCat(cat.id); }}>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs px-2 text-slate-500 pointer-events-none">
                       {isExpanded ? 'סגור' : 'פתח'}
                     </Button>
                   </div>
@@ -267,7 +268,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                             <div className="flex items-center gap-1.5 mb-1.5">
                               <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-[#e8e7f5] flex items-center">{renderTypeLabelWithIcon(q.questionType, q.contentType)}</span>
                             </div>
-                            {/* שונה מ-font-bold ל-font-medium */}
                             <span className="text-[#1e1c4a] text-sm font-medium">{q.questionText}</span>
                           </div>
                           <div className="flex gap-1 justify-end">
