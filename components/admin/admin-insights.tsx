@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { getDepartmentStats, getResponsesByDepartment, getQuestionsByDepartment } from '@/lib/firebase/firestore'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Response, Question } from '@/lib/types'
-import { Users, Smile, MessageSquare, Clock } from 'lucide-react'
+import { Users, Smile, MessageSquare, Clock, Calendar, BarChart2 } from 'lucide-react'
 
 export function AdminInsights({ departmentId }: { departmentId: string }) {
   const [stats, setStats] = useState<any>(null)
   const [responses, setResponses] = useState<Response[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
+  const [timeFilter, setTimeFilter] = useState('30d')
 
   useEffect(() => {
     async function loadInsights() {
@@ -36,19 +38,30 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
   if (loading) return <div className="p-8 text-center text-[#2a7c7c] font-bold">מחשב תובנות...</div>
   if (!stats) return <div className="p-8 text-center text-gray-500">אין נתונים להצגה.</div>
 
-  // Format Average Time
+  // סינון הנתונים לפי הפילטר
+  const filteredResponses = responses.filter(r => {
+    if (!r.createdAt) return true;
+    const rDate = new Date(r.createdAt).getTime();
+    const now = new Date().getTime();
+    const diff = now - rDate;
+    if (timeFilter === '24h') return diff <= 24 * 60 * 60 * 1000;
+    if (timeFilter === '7d') return diff <= 7 * 24 * 60 * 60 * 1000;
+    if (timeFilter === '30d') return diff <= 30 * 24 * 60 * 60 * 1000;
+    if (timeFilter === '1y') return diff <= 365 * 24 * 60 * 60 * 1000;
+    return true;
+  });
+
   const formatTime = (seconds: number) => {
     if (seconds === 0) return 'לא ידוע';
     const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
+    const s = Math.round(seconds % 60);
     return m > 0 ? `${m} דק' ו-${s} שנ'` : `${s} שנ'`;
   }
 
-  // Calculate Emoji Distribution (Count occurrences of 1 to 5 values)
   const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } as Record<number, number>;
   let totalRatings = 0;
   
-  responses.forEach(r => {
+  filteredResponses.forEach(r => {
     const val = Number(r.answerValue);
     if (!isNaN(val) && val >= 1 && val <= 5) {
       distribution[val]++;
@@ -56,14 +69,32 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
     }
   });
 
-  // Extract recent open text comments
-  const textComments = responses
+  const textComments = filteredResponses
     .filter(r => r.answerText && r.answerText.trim().length > 0)
-    .slice(0, 5); // Take top 5 recent comments
+    .slice(0, 5);
 
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Top Metrics Cards */}
+      
+      {/* פילטר זמנים עליון */}
+      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm">
+        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+          <BarChart2 className="w-4 h-4" /> תובנות מדדים
+        </h3>
+        <Select value={timeFilter} onValueChange={setTimeFilter}>
+          <SelectTrigger className="h-8 text-xs w-44 bg-white">
+            <Calendar className="w-3.5 h-3.5 mr-1 ml-2" />
+            <SelectValue placeholder="סנן לפי זמן" />
+          </SelectTrigger>
+          <SelectContent dir="rtl">
+            <SelectItem value="24h" className="text-xs">24 שעות אחרונות</SelectItem>
+            <SelectItem value="7d" className="text-xs">7 ימים אחרונים</SelectItem>
+            <SelectItem value="30d" className="text-xs">30 ימים אחרונים</SelectItem>
+            <SelectItem value="1y" className="text-xs">שנה אחרונה</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-[#e8e7f5] shadow-sm flex items-center gap-4">
           <div className="w-12 h-12 bg-[#f0f9f9] rounded-full flex items-center justify-center text-[#2a7c7c]">
@@ -71,7 +102,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
           </div>
           <div>
             <p className="text-xs text-[#6b6890] font-bold mb-1">משיבים</p>
-            <h3 className="text-2xl font-bold text-[#1e1c4a]">{stats.totalResponses}</h3>
+            <h3 className="text-2xl font-bold text-[#1e1c4a]">{filteredResponses.length}</h3>
           </div>
         </div>
 
@@ -81,7 +112,9 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
           </div>
           <div>
             <p className="text-xs text-[#6b6890] font-bold mb-1">אחוז שביעות רצון</p>
-            <h3 className="text-2xl font-bold text-[#1e1c4a]">{stats.satisfactionPercentage}%</h3>
+            <h3 className="text-2xl font-bold text-[#1e1c4a]">
+              {totalRatings > 0 ? Math.round(((distribution[4] + distribution[5]) / totalRatings) * 100) : 0}%
+            </h3>
           </div>
         </div>
 
@@ -91,7 +124,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
           </div>
           <div>
             <p className="text-xs text-[#6b6890] font-bold mb-1">תגובות</p>
-            <h3 className="text-2xl font-bold text-[#1e1c4a]">{stats.totalComments}</h3>
+            <h3 className="text-2xl font-bold text-[#1e1c4a]">{filteredResponses.filter(r => r.answerText).length}</h3>
           </div>
         </div>
 
@@ -106,10 +139,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
         </div>
       </div>
 
-      {/* Middle Section: Charts & Data */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Emoji Distribution Chart */}
         <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
           <h3 className="text-[#1e1c4a] font-bold mb-6 flex items-center gap-2">
             <Smile className="w-5 h-5 text-[#2a7c7c]" /> פילוג שביעות רצון
@@ -138,7 +168,6 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
           {totalRatings === 0 && <p className="text-sm text-gray-400 mt-4 text-center">אין עדיין דירוגים להצגה.</p>}
         </div>
 
-        {/* Placeholder for future charts */}
         <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm lg:col-span-2 flex flex-col items-center justify-center text-center">
           <div className="w-16 h-16 bg-[#f0f9f9] rounded-full flex items-center justify-center text-[#2a7c7c] mb-4">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
@@ -148,7 +177,6 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
         </div>
       </div>
 
-      {/* Recent Comments Section */}
       <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
         <h3 className="text-[#1e1c4a] font-bold mb-6 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-[#2a7c7c]" /> תגובות אחרונות
