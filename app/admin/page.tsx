@@ -40,18 +40,23 @@ export default function AdminDashboardPage() {
   const [isAddDeptOpen, setIsAddDeptOpen] = useState(false)
   const [newDeptName, setNewDeptName] = useState('')
   const [isSubmittingDept, setIsSubmittingDept] = useState(false)
+
   const [expandedSystemDepts, setExpandedSystemDepts] = useState<Record<string, boolean>>({})
   const toggleSystemDept = (id: string) => setExpandedSystemDepts(prev => ({...prev, [id]: !prev[id]}))
+
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [editUserRole, setEditUserRole] = useState<string>('')
   const [editUserName, setEditUserName] = useState<string>('')
   const [editUserEmail, setEditUserEmail] = useState<string>('')
+
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
   const [newUserDept, setNewUserDept] = useState('')
   const [newUser, setNewUser] = useState({ email: '', fullName: '', role: 'staff' })
+
   const [editingBankId, setEditingBankId] = useState<string | null>(null)
   const [expandedBankCats, setExpandedBankCats] = useState<Record<string, boolean>>({})
   const toggleBankCat = (id: string) => setExpandedBankCats(prev => ({...prev, [id]: !prev[id]}))
+  
   const [isAddBankOpen, setIsAddBankOpen] = useState(false)
   const [isSubmittingBank, setIsSubmittingBank] = useState(false)
   const [newBankQ, setNewBankQ] = useState({
@@ -59,7 +64,7 @@ export default function AdminDashboardPage() {
     optionsText: '', contentType: 'info_text', contentUrl: '', contentBody: ''
   })
 
-  // Load foundational data
+  // Load data
   const loadData = async (email: string) => {
     try {
       const adminData = await getAdminUserByEmail(email);
@@ -94,7 +99,7 @@ export default function AdminDashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Authorization checks
+  // Auth roles check
   const userRole = currentUser?.role || 'staff';
   const isAdmin = userRole === 'admin' || userRole === 'מנהל מערכת';
   const isManager = userRole === 'manager' || userRole === 'מנהל מחלקה';
@@ -180,8 +185,12 @@ export default function AdminDashboardPage() {
       } else if (newBankQ.type === 'choice' || newBankQ.type === 'multi_choice') {
         baseData.options = newBankQ.optionsText.split(',').map(s => s.trim()).filter(s => s !== '');
       }
-      if (editingBankId) await updateDoc(doc(db, 'global_questions', editingBankId), baseData);
-      else await addGlobalQuestion(baseData);
+
+      if (editingBankId) {
+        await updateDoc(doc(db, 'global_questions', editingBankId), baseData);
+      } else {
+        await addGlobalQuestion(baseData);
+      }
       
       resetBankForm();
       setIsAddBankOpen(false);
@@ -230,11 +239,16 @@ export default function AdminDashboardPage() {
         <div className="flex flex-col md:flex-row md:justify-between items-center w-full gap-4">
           <nav className="flex gap-1 h-14 overflow-x-auto whitespace-nowrap hide-scrollbar max-w-full">
             {navTabs.map((tab) => (
-              <button key={tab.id} onClick={() => setActiveTab(tab.id as TabId)} className={`px-4 h-full text-sm font-semibold border-b-[3px] transition-colors flex items-center gap-2 shrink-0 ${activeTab === tab.id ? 'text-[#2a7c7c] border-[#2a7c7c]' : 'text-slate-400 border-transparent'}`}>
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as TabId)}
+                className={`px-4 h-full text-sm font-semibold border-b-[3px] transition-colors flex items-center gap-2 shrink-0 ${activeTab === tab.id ? 'text-[#2a7c7c] border-[#2a7c7c]' : 'text-slate-400 border-transparent'}`}
+              >
                 {tab.icon} {tab.label}
               </button>
             ))}
           </nav>
+
           {isAdmin && (
             <div className="flex items-center gap-2 pb-2 md:pb-0">
               <Layers className="w-4 h-4 text-slate-800 shrink-0" />
@@ -257,7 +271,10 @@ export default function AdminDashboardPage() {
       <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-4">
         {activeTab === 'insights' && <AdminInsights departmentId={selectedDepartment} />}
         {activeTab === 'comments' && <AdminComments departmentId={selectedDepartment} />}
+        
+        {/* Render Scheduling tracking board */}
         {activeTab === 'scheduling' && <AdminScheduling departmentId={selectedDepartment} isReadOnly={!canManageDepartment} />}
+        
         {canManageDepartment && activeTab === 'questions' && <AdminQuestions departmentId={selectedDepartment} />}
         {canManageDepartment && activeTab === 'settings' && <AdminSettings departmentId={selectedDepartment} />}
         
@@ -332,6 +349,7 @@ export default function AdminDashboardPage() {
                         <Button variant="ghost" size="sm" onClick={() => handleDeleteDept(dept.id)} className="text-slate-400 hover:text-red-500 h-7 w-7 p-0"><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </div>
+                    
                     {isExpanded && (
                       <div className="p-4 bg-white">
                         <div className="flex justify-end mb-3">
@@ -429,7 +447,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Global Question Bank Tab */}
+        {/* Global Question Bank Tab for Admin */}
         {isAdmin && activeTab === 'bank' && (
           <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#e8e7f5] pb-4">
