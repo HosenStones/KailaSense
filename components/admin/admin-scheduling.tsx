@@ -32,7 +32,6 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
   const [isAddPatientOpen, setIsAddPatientOpen] = useState(false);
   const [newPatient, setNewPatient] = useState({ name: '', phone: '', escortPhone: '', status: 'admission' });
   
-  // טיימר לעדכון חי של הזמנים כל דקה
   const [now, setNow] = useState(Date.now());
   useEffect(() => { 
     const timer = setInterval(() => setNow(Date.now()), 60000); 
@@ -44,10 +43,9 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
 
     const fetchTimings = async () => {
       const deptDoc = await getDoc(doc(db, 'departments', departmentId));
-      const dbTimings = deptDoc.exists() ? deptDoc.data().timingSettings || {} : {};
+      const dbTimings = deptDoc.exists() ? (deptDoc.data().timingSettings || {}) : {};
       
       const merged: any = { ...dbTimings };
-      // הבטחה שתוויות ברירת המחדל לא יידרסו לעולם
       Object.keys(DEFAULT_TIMINGS).forEach(key => {
         if (merged[key]) {
           merged[key].label = DEFAULT_TIMINGS[key as keyof typeof DEFAULT_TIMINGS].label;
@@ -129,7 +127,6 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
     return `${Math.floor(hours / 24)} ימים`;
   };
 
-  // פונקציה לחישוב הזמן הדרוש למשלוח אוטומטי (בדקות)
   const getRequiredMinutesForStatus = (statusId: string) => {
     const setting = timingSettings[statusId];
     if (!setting || setting.isActive !== 'פעיל') return Infinity;
@@ -141,17 +138,8 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
 
   const STAGES = CATEGORIES.filter(c => c.id !== 'general');
 
-  if (!departmentId) {
-    return (
-      <div className="bg-white border border-[#e8e7f5] rounded-2xl p-10 text-center text-slate-400 text-sm" dir="rtl">
-        לא נבחרה מחלקה. אנא בחרי מחלקה מהתפריט למעלה.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6" dir="rtl">
-      {/* Timings Block */}
       <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#e8e7f5] pb-4 gap-3">
           <h3 className="text-[#1e1c4a] text-lg font-bold flex items-center gap-2">
@@ -179,7 +167,6 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
                 
                 <div className="flex justify-between items-center gap-2">
                   <div className="flex items-center gap-2 flex-1">
-                    {/* הפח אשפה הועבר לשורת הכותרת כדי שלא יעלה על הטקסט */}
                     {isEditingTimings && setting.isCustom && !isReadOnly && (
                       <Button variant="ghost" size="sm" onClick={() => handleRemoveCustomTiming(key)} className="h-6 w-6 p-0 text-slate-400 hover:text-red-500 shrink-0"><Trash2 className="w-3.5 h-3.5"/></Button>
                     )}
@@ -225,7 +212,6 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
         </div>
       </div>
 
-      {/* Patient Tracking Block */}
       <div className="bg-white rounded-2xl border border-[#e8e7f5] shadow-sm overflow-hidden">
         <div className="p-6 border-b border-[#e8e7f5] bg-[#f7f7fc] flex flex-col sm:flex-row justify-between sm:items-center gap-3">
           <h3 className="text-[#1e1c4a] text-lg font-bold flex items-center gap-2">
@@ -256,8 +242,6 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
               ) : patients.map((patient) => {
                 const isEditing = editingId === patient.id;
                 const displayStatus = STAGES.find(s => s.id === patient.status)?.label || patient.status;
-                
-                // חישוב זמן חי מאז היצירה. אם אין תאריך, לוקח מהדאטהבייס
                 const liveActiveMinutes = patient.createdAt ? Math.floor((now - new Date(patient.createdAt).getTime()) / 60000) : patient.activeMinutes;
 
                 return (
@@ -294,12 +278,10 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
                             {STAGES.map(stage => {
                               const isCurrentStage = patient.status === stage.id;
                               const requiredMins = getRequiredMinutesForStatus(stage.id);
-                              
-                              // אם הזמן במערכת עבר את תזמון המחלקה, זה נחשב כנשלח אוטומטית!
                               const isAutoSent = isCurrentStage && liveActiveMinutes >= requiredMins;
                               const isSent = patient.sentMessages?.includes(stage.id) || isAutoSent;
 
-                              if (isSent) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">✓ {stage.label.replace(/^\S+\s*/, '').split(' ')[0]}</span>;
+                              if (isSent) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded border border-emerald-200">✓ {stage.label.split(' ')[1]}</span>;
                               if (isCurrentStage && !isAutoSent) return <span key={stage.id} title={stage.label} className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded border border-amber-200">בתהליך</span>;
                               return <span key={stage.id} className="text-slate-300">-</span>;
                             })}
