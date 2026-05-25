@@ -1,4 +1,3 @@
-// סדר כרונולוגי של הסטטוסים בדיוק כפי שהתבקש
 export const CATEGORIES = [
   { id: 'admission', label: '👋 קבלה למחלקה' },
   { id: 'during', label: '🛏️ מהלך אשפוז' },
@@ -7,7 +6,6 @@ export const CATEGORIES = [
   { id: 'general', label: '⭐ כללי' }
 ];
 
-// סדר מדויק של סוגי השאלות
 export const QUESTION_TYPES = [
   { id: 'emoji', label: '😊 אימוג׳י 1 עד 5' },
   { id: 'stars', label: '⭐ כוכבים 1 עד 5' },
@@ -18,7 +16,7 @@ export const QUESTION_TYPES = [
 ];
 
 export const ROLES = [
-  { id: 'super_admin', label: 'סופר אדמין' },
+  { id: 'super_admin', label: 'מנהל מערכת' },
   { id: 'manager', label: 'מנהל מחלקה' },
   { id: 'staff', label: 'צוות' }
 ];
@@ -44,13 +42,13 @@ export const sortQuestions = (questions: any[]) => {
 
   return [...questions].sort((a, b) => {
     // 1. מחלקה (תג) - כללי ראשון
-    const tagA = a.tag || 'general';
-    const tagB = b.tag || 'general';
-    if (tagA === 'general' && tagB !== 'general') return -1;
-    if (tagB === 'general' && tagA !== 'general') return 1;
+    const tagA = a.tag || 'כללי';
+    const tagB = b.tag || 'כללי';
+    if (tagA === 'כללי' && tagB !== 'כללי') return -1;
+    if (tagB === 'כללי' && tagA !== 'כללי') return 1;
     if (tagA !== tagB) return tagA.localeCompare(tagB, 'he');
 
-    // 2. סטטוס (קטגוריה) לפי הסדר של CATEGORIES
+    // 2. סטטוס (קטגוריה)
     const catIdxA = catOrder.indexOf(a.category || 'general');
     const catIdxB = catOrder.indexOf(b.category || 'general');
     if (catIdxA !== catIdxB) return (catIdxA === -1 ? 99 : catIdxA) - (catIdxB === -1 ? 99 : catIdxB);
