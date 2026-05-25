@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { onAuthStateChanged } from 'firebase/auth'
-import { collection, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore'
+import { collection, getDocs, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore'
 import { db, auth } from '@/lib/firebase/config'
 import { 
   getAdminUserByEmail, getAllDepartments, getGlobalQuestions,
@@ -141,6 +141,25 @@ export default function AdminDashboardPage() {
     try { await deleteDepartment(id); setDepartments(prev => prev.filter(d => d.id !== id)); } catch (e) {}
   };
 
+  const handleAddNewUser = async () => {
+    if (!newUser.email || !newUser.fullName) return;
+    try {
+      await addDoc(collection(db, 'users'), {
+        email: newUser.email.trim(),
+        fullName: newUser.fullName.trim(),
+        role: newUser.role,
+        departmentId: newUserDept === 'system' ? null : newUserDept,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      setIsAddUserOpen(false);
+      setNewUser({ email: '', fullName: '', role: 'staff' });
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const usersData = usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllUsers(usersData.sort((a: any,b: any) => (a.fullName || '').localeCompare(b.fullName || '', 'he')));
+    } catch(e) {}
+  };
+
   const resetBankForm = () => {
     setNewBankQ({ text: '', type: 'emoji', category: 'general', tag: 'כללי', optionsText: '', contentType: 'info_text', contentUrl: '', contentBody: '' });
     setEditingBankId(null);
@@ -269,9 +288,6 @@ export default function AdminDashboardPage() {
             <div className="bg-[#f0f9f9] border border-[#e8e7f5] rounded-xl p-5 flex flex-col items-center justify-center space-y-4 mb-4">
               <div className="flex justify-between items-center w-full max-w-3xl">
                 <h3 className="text-xs font-bold text-[#1e1c4a]">מנהלי מערכת</h3>
-                <Button size="sm" onClick={() => { setIsAddUserOpen(true); setNewUserDept('system'); setNewUser({...newUser, role: 'admin'}); }} className="h-7 text-[10px] gap-1 bg-white border border-[#e8e7f5] text-slate-700 hover:bg-slate-50">
-                  <Plus className="w-3 h-3"/> הוסף מנהל מערכת
-                </Button>
               </div>
               <div className="flex flex-wrap gap-3 justify-center w-full max-w-3xl">
                 {systemAdmins.map(admin => {
@@ -407,15 +423,34 @@ export default function AdminDashboardPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            
+            {/* Modal for adding Staff user */}
+            <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+              <DialogContent dir="rtl" className="bg-white w-[95vw] md:max-w-md">
+                <DialogHeader><DialogTitle className="text-[#1e1c4a]">הוספת איש צוות למחלקה</DialogTitle></DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <Input placeholder="שם מלא" value={newUser.fullName} onChange={e => setNewUser({...newUser, fullName: e.target.value})} className="bg-white border-[#e8e7f5] text-xs h-10" />
+                  <Input placeholder="אימייל" value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="bg-white border-[#e8e7f5] text-xs h-10" dir="ltr" />
+                  <Select value={newUser.role} onValueChange={v => setNewUser({...newUser, role: v})}>
+                    <SelectTrigger className="bg-white border-[#e8e7f5] text-xs h-10"><SelectValue placeholder="תפקיד" /></SelectTrigger>
+                    <SelectContent dir="rtl">
+                      {ROLES.filter(r => r.id !== 'admin').map(r => <SelectItem key={r.id} value={r.id} className="text-xs">{r.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={handleAddNewUser} disabled={!newUser.email || !newUser.fullName} className="w-full bg-[#2a7c7c] hover:bg-[#206060] text-white font-bold h-10 text-xs">שמור איש צוות</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
           </div>
         )}
 
-        {/* Global Question Bank Tab */}
+        {/* Global Question Bank Tab - for Super Admins only */}
         {isAdmin && activeTab === 'bank' && (
           <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-[#e8e7f5] pb-4">
               <h3 className="text-[#1e1c4a] font-bold text-lg flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-[#2a7c7c]" /> ניהול מאגר שאלות
+                <Library className="w-5 h-5 text-[#2a7c7c]" /> ניהול מאגר שאלות מקיף
               </h3>
               <Button onClick={() => { resetBankForm(); setIsAddBankOpen(true); }} className="bg-[#2a7c7c] text-white hover:bg-[#206060] text-xs h-8">
                 <Plus className="w-4 h-4 ml-1" /> הוסף שאלה למאגר
@@ -485,7 +520,6 @@ export default function AdminDashboardPage() {
               })}
             </div>
 
-            {/* Modal for adding/editing questions in the bank */}
             <Dialog open={isAddBankOpen} onOpenChange={setIsAddBankOpen}>
               <DialogContent dir="rtl" className="bg-white w-[95vw] md:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle className="text-[#1e1c4a]">{editingBankId ? 'עריכת שאלה במאגר' : 'הוספת שאלה למאגר'}</DialogTitle></DialogHeader>
@@ -552,7 +586,7 @@ export default function AdminDashboardPage() {
                   )}
 
                   <Button onClick={handleSaveBankQuestion} disabled={isSubmittingBank || !newBankQ.text.trim()} className="w-full h-10 text-xs font-bold bg-[#2a7c7c] hover:bg-[#206060] text-white">
-                    {editingBankId ? 'שמור שינויים' : 'הוסף למאגר'}
+                    {editingBankId ? 'שמור שינויים למאגר' : 'הוסף למאגר'}
                   </Button>
                 </div>
               </DialogContent>
