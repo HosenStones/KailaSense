@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { getDepartmentStats, getResponsesByDepartment, getQuestionsByDepartment } from '@/lib/firebase/firestore'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import type { Response, Question } from '@/lib/types'
-import { Users, Smile, MessageSquare, Clock, Calendar, BarChart2 } from 'lucide-react'
+import { Users, Smile, MessageSquare, Clock, Calendar } from 'lucide-react'
 
 export function AdminInsights({ departmentId }: { departmentId: string }) {
   const [stats, setStats] = useState<any>(null)
@@ -38,7 +38,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
   if (loading) return <div className="p-8 text-center text-[#2a7c7c] font-bold">מחשב תובנות...</div>
   if (!stats) return <div className="p-8 text-center text-gray-500">אין נתונים להצגה.</div>
 
-  // סינון הנתונים לפי הפילטר
+  // Filter logic based on timestamp
   const filteredResponses = responses.filter(r => {
     if (!r.createdAt) return true;
     const rDate = new Date(r.createdAt).getTime();
@@ -76,21 +76,20 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
   return (
     <div className="space-y-6" dir="rtl">
       
-      {/* פילטר זמנים עליון */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-[#e8e7f5] shadow-sm">
-        <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-          <BarChart2 className="w-4 h-4" /> תובנות מדדים
-        </h3>
+      {/* Time Filter - Aligned exactly RTL */}
+      <div className="flex justify-end mb-6" dir="rtl">
         <Select value={timeFilter} onValueChange={setTimeFilter}>
-          <SelectTrigger className="h-8 text-xs w-44 bg-white">
-            <Calendar className="w-3.5 h-3.5 mr-1 ml-2" />
-            <SelectValue placeholder="סנן לפי זמן" />
+          <SelectTrigger className="w-48 bg-white border-[#e8e7f5] text-right" dir="rtl">
+            <div className="flex items-center gap-2 w-full">
+              <Calendar className="w-4 h-4 text-[#2a7c7c]" />
+              <SelectValue placeholder="סנן לפי זמן" />
+            </div>
           </SelectTrigger>
-          <SelectContent dir="rtl">
-            <SelectItem value="24h" className="text-xs">24 שעות אחרונות</SelectItem>
-            <SelectItem value="7d" className="text-xs">7 ימים אחרונים</SelectItem>
-            <SelectItem value="30d" className="text-xs">30 ימים אחרונים</SelectItem>
-            <SelectItem value="1y" className="text-xs">שנה אחרונה</SelectItem>
+          <SelectContent dir="rtl" className="text-right">
+            <SelectItem value="24h" className="justify-start">24 שעות אחרונות</SelectItem>
+            <SelectItem value="7d" className="justify-start">7 ימים אחרונים</SelectItem>
+            <SelectItem value="30d" className="justify-start">30 ימים אחרונים</SelectItem>
+            <SelectItem value="1y" className="justify-start">שנה אחרונה</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -141,7 +140,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
-          <h3 className="text-[#1e1c4a] font-bold mb-6 flex items-center gap-2">
+          <h3 className="text-[#1e1c4a] text-lg font-bold mb-6 flex items-center gap-2">
             <Smile className="w-5 h-5 text-[#2a7c7c]" /> פילוג שביעות רצון
           </h3>
           <div className="space-y-4">
@@ -178,7 +177,7 @@ export function AdminInsights({ departmentId }: { departmentId: string }) {
       </div>
 
       <div className="bg-white p-6 rounded-2xl border border-[#e8e7f5] shadow-sm">
-        <h3 className="text-[#1e1c4a] font-bold mb-6 flex items-center gap-2">
+        <h3 className="text-[#1e1c4a] text-lg font-bold mb-6 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-[#2a7c7c]" /> תגובות אחרונות
         </h3>
         {textComments.length === 0 ? (
