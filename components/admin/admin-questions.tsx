@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { getQuestionsByDepartment, addQuestion, deleteQuestion, updateQuestion } from '@/lib/firebase/firestore'
+import { getQuestionsByDepartment, getGlobalQuestions, addQuestion, deleteQuestion, updateQuestion } from '@/lib/firebase/firestore'
 import { CATEGORIES, QUESTION_TYPES, getCategoryLabel, renderTypeLabelWithIcon, sortQuestions } from '@/lib/constants'
 import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
-import { Trash2, ListPlus, BookOpen, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
+import { Trash2, ListPlus, BookOpen, Pencil, ChevronDown, ChevronUp, Download } from 'lucide-react'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
+  const [bankQuestions, setBankQuestions] = useState<any[]>([])
   
   const [newQuestionText, setNewQuestionText] = useState('')
   const [newQuestionType, setNewQuestionType] = useState<QuestionType>('emoji')
@@ -23,14 +24,16 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
   
-  // Accordion state - Default closed for all categories
   const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({})
+  const [isBankOpen, setIsBankOpen] = useState(false)
 
   const loadQuestions = async () => {
     if (!departmentId) return;
     try {
       const data = await getQuestionsByDepartment(departmentId)
       setQuestions(sortQuestions(data))
+      const bankData = await getGlobalQuestions()
+      setBankQuestions(sortQuestions(bankData))
     } catch (e) { console.error(e) }
   }
 
@@ -68,6 +71,22 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     } catch (error) {} finally { setIsSubmitting(false); }
   }
 
+  const handleImportFromBank = async (bankQ: any) => {
+    await handleAdd({
+      departmentId,
+      questionText: bankQ.text,
+      questionType: bankQ.type,
+      category: bankQ.category || 'general',
+      options: bankQ.options?.map((opt: string) => ({ label: opt, value: opt })) || [],
+      contentType: bankQ.contentType,
+      contentUrl: bankQ.contentUrl,
+      contentBody: bankQ.contentBody,
+      isActive: true,
+      displayOrder: questions.length + 1
+    });
+    alert('השאלה יובאה בהצלחה למחלקה!');
+  }
+
   const handleEditClick = (q: Question) => {
     setEditingQuestionId(q.id); setNewQuestionText(q.questionText);
     setNewQuestionType(q.questionType); setNewCategory(q.category || 'general');
@@ -80,7 +99,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     }
     setNewOptionsText(q.options && q.options.length > 0 ? q.options.map(o => o.label).join(', ') : '');
     
-    // Smooth scroll to form
     setTimeout(() => { 
       document.getElementById('question-creator-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
@@ -153,7 +171,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
             CATEGORIES.map((cat) => {
               const filteredItems = questions.filter(item => item.category === cat.id);
               if (filteredItems.length === 0) return null;
-              const isExpanded = expandedCats[cat.id] ?? false; // סגור בדיפולט
+              const isExpanded = expandedCats[cat.id] ?? false;
 
               return (
                 <div key={cat.id} className="bg-white rounded-xl border border-[#e8e7f5] shadow-sm overflow-hidden">
@@ -167,9 +185,9 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                     </Button>
                   </div>
                   {isExpanded && (
-                    <div className="p-4 space-y-2">
+                    <div className="p-4 space-y-2 bg-white">
                       {filteredItems.map((q) => (
-                        <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-[#f0f9f9]/50 border border-[#e8e7f5] hover:border-[#b2dfdf] transition-all">
+                        <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-white border border-[#e8e7f5] hover:border-[#b2dfdf] transition-all">
                           <div className="flex-1">
                             <div className="flex items-center gap-1.5 mb-1.5">
                               <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-white text-slate-600 border border-[#e8e7f5] flex items-center">{renderTypeLabelWithIcon(q.questionType, q.contentType)}</span>
@@ -189,6 +207,47 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
             })
           }
         </div>
+
+        {/* Global Question Bank Import Section */}
+        <div className="mt-8 border-t border-[#e8e7f5] pt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[#1e1c4a] font-bold flex items-center gap-2">
+              <Download className="w-5 h-5 text-[#2a7c7c]" /> מאגר השאלות המרכזי
+            </h3>
+            <Button variant="outline" size="sm" onClick={() => setIsBankOpen(!isBankOpen)} className="h-8 text-xs bg-white">
+              {isBankOpen ? 'הסתר מאגר' : 'הצג מאגר ומשיכה'}
+            </Button>
+          </div>
+
+          {isBankOpen && (
+            <div className="space-y-4">
+              {CATEGORIES.map(cat => {
+                const catItems = bankQuestions.filter(q => q.category === cat.id && (q.tag === 'כללי' || q.tag === departmentId));
+                if (catItems.length === 0) return null;
+                
+                return (
+                  <div key={`bank-${cat.id}`} className="bg-[#f7f7fc] rounded-xl border border-[#e8e7f5] p-4">
+                    <h5 className="font-bold text-sm text-[#1e1c4a] mb-3">{cat.label}</h5>
+                    <div className="grid grid-cols-1 gap-2">
+                      {catItems.map(q => (
+                        <div key={q.id} className="flex justify-between items-center p-3 bg-white border border-[#e8e7f5] rounded-lg shadow-sm">
+                          <div className="flex-1">
+                            <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 ml-2 border border-[#e8e7f5]">{renderTypeLabelWithIcon(q.type, q.contentType)}</span>
+                            <span className="text-sm font-medium">{q.text}</span>
+                          </div>
+                          <Button size="sm" onClick={() => handleImportFromBank(q)} className="h-7 px-3 text-[10px] font-bold bg-[#2a7c7c] text-white hover:bg-[#206060]">
+                            ייבוא למחלקה
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   )
