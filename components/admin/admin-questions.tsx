@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { getQuestionsByDepartment, addQuestion, deleteQuestion, getAllDepartments, updateQuestion, getGlobalQuestions } from '@/lib/firebase/firestore'
-import { CATEGORIES, QUESTION_TYPES, getCategoryLabel, getTypeLabel } from '@/lib/constants'
+import { CATEGORIES, QUESTION_TYPES, getCategoryLabel, renderTypeLabelWithIcon, sortQuestions } from '@/lib/constants'
 import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
-import { Plus, Trash2, ListPlus, Image as ImageIcon, Video, AlignLeft, Info, BookOpen, Pencil, X } from 'lucide-react'
+import { Trash2, ListPlus, Info, BookOpen, Pencil, ChevronDown, ChevronUp } from 'lucide-react'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
@@ -25,14 +25,15 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showBank, setShowBank] = useState(false)
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null)
+  const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({})
 
   const loadQuestions = async () => {
     if (!departmentId) return;
     try {
       const data = await getQuestionsByDepartment(departmentId)
-      setQuestions(data.sort((a,b) => a.questionText.localeCompare(b.questionText, 'he')))
+      setQuestions(sortQuestions(data))
       const bankData = await getGlobalQuestions()
-      setGlobalBank(bankData.sort((a,b) => a.text.localeCompare(b.text, 'he')))
+      setGlobalBank(sortQuestions(bankData))
       const allDepts = await getAllDepartments()
       const currentDept = allDepts.find(d => d.id === departmentId)
       if (currentDept) setDepartmentName(currentDept.name)
@@ -40,6 +41,12 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   }
 
   useEffect(() => { loadQuestions() }, [departmentId])
+
+  const toggleCat = (id: string) => setExpandedCats(prev => ({...prev, [id]: !prev[id]}));
+
+  const openQuestionsCount = questions.filter(q => q.questionType === 'open_text').length;
+  const totalQuestionsCount = questions.filter(q => q.questionType !== 'content').length;
+  const showWarning = totalQuestionsCount > 3 || openQuestionsCount > 1;
 
   const currentTargetTag = departmentName ? (
     departmentName.includes('יולדות') ? 'יולדות' :
@@ -117,7 +124,9 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     setEditingQuestionId(q.id); setNewQuestionText(q.questionText);
     setNewQuestionType(q.questionType); setNewCategory(q.category || 'general');
     if (q.questionType === 'content') {
-      setNewContentType(q.contentType || 'info_text'); setNewContentUrl(q.contentUrl || ''); setNewContentBody(q.contentBody || '');
+      setNewContentType(q.contentType || 'info_text'); 
+      setNewContentUrl(q.contentUrl || ''); 
+      setNewContentBody(q.contentBody || '');
     } else {
       setNewContentType('info_text'); setNewContentUrl(''); setNewContentBody('');
     }
@@ -134,6 +143,19 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
 
   return (
     <div className="space-y-6" dir="rtl">
+      {showWarning && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl flex gap-3 items-start text-xs">
+          <Info className="w-4 h-4 shrink-0 mt-0.5" />
+          <div>
+            <strong>המלצת המערכת למשוב אפקטיבי:</strong>
+            <ul className="list-disc list-inside space-y-1 mt-1">
+              {totalQuestionsCount > 3 && <li>כדאי לשאול מקסימום 3 שאלות כדי לא לעייף את המטופל.</li>}
+              {openQuestionsCount > 1 && <li>מומלץ לכלול מקסימום שאלה פתוחה אחת (טקסט חופשי).</li>}
+            </ul>
+          </div>
+        </div>
+      )}
+
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <button onClick={() => setShowBank(!showBank)} className="w-full flex items-center justify-between p-4 font-bold text-foreground hover:bg-secondary/50 transition-colors cursor-pointer text-sm">
           <div className="flex items-center gap-2 text-primary"><BookOpen className="w-4 h-4" /><span>מאגר שאלות</span></div>
@@ -141,40 +163,48 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         </button>
 
         {showBank && (
-          <div className="p-4 bg-secondary/30 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4 max-h-[500px] overflow-y-auto">
+          <div className="p-4 bg-secondary/30 border-t border-border space-y-4 max-h-[600px] overflow-y-auto">
             {CATEGORIES.map((cat) => {
               const filteredItems = globalBank.filter(item => item.category === cat.id && (item.tag === 'כללי' || item.tag === currentTargetTag));
               if (filteredItems.length === 0) return null;
+              const isExpanded = expandedCats[cat.id];
               return (
-                <div key={cat.id} className="space-y-2 bg-card p-3 rounded-xl border border-border shadow-sm">
-                  <div className="flex items-center justify-between border-b border-border pb-2 mb-3">
-                    <h4 className="text-xs font-bold text-primary">{cat.label}</h4>
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleAddAllInCategory(filteredItems, cat.id)}>הוסף הכל</Button>
-                      <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]" onClick={() => handleRemoveAllInCategory(cat.id)}>הסר הכל</Button>
+                <div key={cat.id} className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between p-3 bg-slate-50/50 border-b border-border">
+                    <h4 className="text-sm font-bold text-primary flex items-center gap-2 cursor-pointer" onClick={() => toggleCat(cat.id)}>
+                      {isExpanded ? <ChevronUp className="w-4 h-4"/> : <ChevronDown className="w-4 h-4"/>}
+                      {cat.label} ({filteredItems.length})
+                    </h4>
+                    <div className="flex items-center gap-1.5">
+                      <Button size="sm" variant="ghost" className="h-7 text-xs px-2 text-slate-500" onClick={() => toggleCat(cat.id)}>
+                        {isExpanded ? 'סגור' : 'פתח'}
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => handleAddAllInCategory(filteredItems, cat.id)}>הוסף הכל</Button>
+                      <Button size="sm" variant="outline" className="h-7 px-2 text-[10px]" onClick={() => handleRemoveAllInCategory(cat.id)}>הסר הכל</Button>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    {filteredItems.map((item, idx) => {
-                      const isAdded = questions.some(q => q.questionText === item.text && JSON.stringify(q.options || []) === JSON.stringify(item.options?.map((o: any) => ({ label: o, value: o })) || []));
-                      return (
-                        <div key={item.id || idx} className="flex flex-col gap-2 p-2.5 rounded-lg bg-secondary/40 border hover:border-primary/20 transition-all">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">{cat.label}</span>
-                                <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center">{getTypeLabel(item.type)}</span>
+                  {isExpanded && (
+                    <div className="p-3 grid grid-cols-1 lg:grid-cols-2 gap-2 bg-white">
+                      {filteredItems.map((item, idx) => {
+                        const isAdded = questions.some(q => q.questionText === item.text && JSON.stringify(q.options || []) === JSON.stringify(item.options?.map((o: any) => ({ label: o, value: o })) || []));
+                        return (
+                          <div key={item.id || idx} className="flex flex-col gap-2 p-2.5 rounded-lg bg-secondary/40 border hover:border-primary/20 transition-all">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center">{renderTypeLabelWithIcon(item.type, item.contentType)}</span>
+                                </div>
+                                <span className="text-slate-800 text-xs font-medium leading-tight">{item.text}</span>
                               </div>
-                              <span className="text-slate-800 text-xs font-medium leading-tight">{item.text}</span>
+                              <Button size="sm" variant={isAdded ? "secondary" : "ghost"} disabled={isAdded} onClick={() => handleAddFromBank(item, cat.id)} className={`h-7 text-[11px] px-2 rounded ${isAdded ? 'text-slate-400 bg-slate-100' : 'text-primary hover:bg-primary/10'}`}>
+                                {isAdded ? '✓ נוסף' : '+ הוסף'}
+                              </Button>
                             </div>
-                            <Button size="sm" variant={isAdded ? "secondary" : "ghost"} disabled={isAdded} onClick={() => handleAddFromBank(item, cat.id)} className={`h-7 text-[11px] px-2 rounded ${isAdded ? 'text-slate-400 bg-slate-100' : 'text-primary hover:bg-primary/10'}`}>
-                              {isAdded ? '✓ נוסף' : '+ הוסף'}
-                            </Button>
                           </div>
-                        </div>
-                      )
-                    })}
-                  </div>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -218,7 +248,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
               <SelectTrigger className="w-full text-xs"><SelectValue placeholder="סוג התוכן" /></SelectTrigger>
               <SelectContent dir="rtl"><SelectItem value="info_text" className="text-xs">טקסט בלבד</SelectItem><SelectItem value="image" className="text-xs">תמונה + טקסט</SelectItem><SelectItem value="video" className="text-xs">סרטון וידאו</SelectItem></SelectContent>
             </Select>
-            {(newContentType === 'image' || newContentType === 'video') && ( <Input type="url" value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} placeholder="קישור ישיר למדיה (URL)" className="w-full text-xs" /> )}
+            {(newContentType === 'image' || newContentType === 'video') && ( <Input type="url" value={newContentUrl} onChange={(e) => setNewContentUrl(e.target.value)} placeholder="קישור ישיר למדיה (URL)" className="w-full text-xs text-left" dir="ltr" /> )}
             <textarea value={newContentBody} onChange={(e) => setNewContentBody(e.target.value)} placeholder="טקסט הנחיות מורחב למטופל" className="w-full min-h-[80px] p-2.5 rounded-xl border text-xs" />
           </div>
         )}
@@ -238,7 +268,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                   <span className="font-bold text-slate-800 block">{q.questionText}</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200">{getCategoryLabel(q.category || 'general')}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center">{getTypeLabel(q.questionType)}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center">{renderTypeLabelWithIcon(q.questionType, q.contentType)}</span>
                   </div>
                 </div>
               </div>
