@@ -1,31 +1,31 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, addDoc } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, addDoc, deleteDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase/config'
 import { CATEGORIES } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Edit2, Save, X, Clock, Settings, UserPlus, Activity, CheckCircle2, Plus, Trash2 } from 'lucide-react'
+import { Edit2, Save, X, Clock, Settings, UserPlus, Activity, Plus, Trash2 } from 'lucide-react'
 
 interface AdminSchedulingProps {
   departmentId: string;
   isReadOnly?: boolean;
 }
 
+const DEFAULT_TIMINGS = {
+  admission: { value: '30', unit: 'דקות אחרי', isActive: 'פעיל', label: '👋 קבלה למחלקה' },
+  during: { value: '12', unit: 'שעות אחרי', isActive: 'פעיל', label: '🛏️ מהלך אשפוז' },
+  discharge: { value: '1', unit: 'שעות לפני', isActive: 'פעיל', label: '🏠 לקראת שחרור' },
+  after_discharge: { value: '24', unit: 'שעות אחרי', isActive: 'פעיל', label: '⏱️ לאחר שחרור' }
+};
+
 export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSchedulingProps) {
   const [patients, setPatients] = useState<any[]>([]);
   const [isEditingTimings, setIsEditingTimings] = useState(false);
-  
-  // Custom expandable timings object for the department
-  const [timingSettings, setTimingSettings] = useState<any>({
-    admission: { value: '30', unit: 'דקות אחרי', isActive: 'פעיל', label: '👋 קבלה למחלקה' },
-    during: { value: '12', unit: 'שעות אחרי', isActive: 'פעיל', label: '🛏️ מהלך אשפוז' },
-    discharge: { value: '1', unit: 'שעות לפני', isActive: 'פעיל', label: '🏠 לקראת שחרור' },
-    after_discharge: { value: '24', unit: 'שעות אחרי', isActive: 'פעיל', label: '⏱️ לאחר שחרור' }
-  });
+  const [timingSettings, setTimingSettings] = useState<any>(DEFAULT_TIMINGS);
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempData, setTempData] = useState<any>({});
@@ -38,7 +38,9 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
     const fetchTimings = async () => {
       const deptDoc = await getDoc(doc(db, 'departments', departmentId));
       if (deptDoc.exists() && deptDoc.data().timingSettings) {
-        setTimingSettings(deptDoc.data().timingSettings);
+        setTimingSettings({ ...DEFAULT_TIMINGS, ...deptDoc.data().timingSettings });
+      } else {
+        setTimingSettings(DEFAULT_TIMINGS);
       }
     };
     fetchTimings();
@@ -74,7 +76,20 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
 
   const handleSavePatient = async () => {
     if (!tempData.id) return;
-    try { await updateDoc(doc(db, 'patients', tempData.id), { ...tempData }); setEditingId(null); } catch (e) {}
+    try { 
+      await updateDoc(doc(db, 'patients', tempData.id), { 
+        name: tempData.name,
+        phone: tempData.phone,
+        escortPhone: tempData.escortPhone,
+        status: tempData.status
+      }); 
+      setEditingId(null); 
+    } catch (e) {}
+  };
+
+  const handleDeletePatient = async (id: string) => {
+    if(!confirm('האם למחוק מטופל זה מהמעקב?')) return;
+    try { await deleteDoc(doc(db, 'patients', id)); } catch(e){}
   };
 
   const handleAddNewPatient = async () => {
@@ -98,14 +113,12 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
 
   return (
     <div className="space-y-6" dir="rtl">
-      
       {/* Timings Block */}
       <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-5">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#e8e7f5] pb-4 gap-3">
           <h3 className="text-[#1e1c4a] text-lg font-bold flex items-center gap-2">
             <Clock className="w-5 h-5 text-[#2a7c7c]" /> תזמוני שליחה
           </h3>
-          {/* מוסתר למשתמשי צוות */}
           {!isReadOnly && (
             <div className="flex gap-2">
                {isEditingTimings && (
@@ -120,11 +133,12 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
           )}
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Changed grid layout to 4 columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Object.keys(timingSettings).map(key => {
             const setting = timingSettings[key];
             return (
-              <div key={key} className={`border rounded-xl p-4 space-y-3 transition-colors ${setting.isActive === 'פעיל' ? 'bg-[#f7f7fc] border-[#e8e7f5]' : 'bg-slate-50/50 border-slate-100 opacity-60 relative'}`}>
+              <div key={key} className={`border rounded-xl p-4 space-y-3 transition-colors ${setting.isActive === 'פעיל' ? 'bg-[#f7f7fc] border-[#e8e7f5]' : 'bg-white border-slate-200'} relative`}>
                 {isEditingTimings && setting.isCustom && !isReadOnly && (
                   <Button variant="ghost" size="sm" onClick={() => handleRemoveCustomTiming(key)} className="absolute top-2 left-2 h-6 w-6 p-0 text-slate-400 hover:text-red-500"><Trash2 className="w-3 h-3"/></Button>
                 )}
@@ -142,7 +156,7 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
                       <SelectContent dir="rtl"><SelectItem value="פעיל" className="text-[10px]">פעיל</SelectItem><SelectItem value="לא פעיל" className="text-[10px]">לא פעיל</SelectItem></SelectContent>
                     </Select>
                   ) : (
-                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${setting.isActive === 'פעיל' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-500'}`}>{setting.isActive}</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold border ${setting.isActive === 'פעיל' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-red-100 text-red-700 border-red-200'}`}>{setting.isActive}</span>
                   )}
                 </div>
                 
@@ -177,7 +191,6 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
           <h3 className="text-[#1e1c4a] text-lg font-bold flex items-center gap-2">
             <Activity className="w-5 h-5 text-[#2a7c7c]" /> מעקב מטופלים
           </h3>
-          {/* מוסתר למשתמשי צוות */}
           {!isReadOnly && (
             <Button onClick={() => setIsAddPatientOpen(true)} className="h-9 text-xs gap-2 bg-[#2a7c7c] hover:bg-[#206060] text-white">
               <UserPlus className="w-4 h-4" /> הוסף מטופל
@@ -193,8 +206,7 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
                 <th className="px-4 py-3 font-semibold text-right">טלפון מלווה</th>
                 <th className="px-4 py-3 font-semibold text-right">סטטוס</th>
                 <th className="px-4 py-3 font-semibold text-right">זמן בסטטוס</th>
-                <th className="px-4 py-3 font-semibold text-center w-40">נשלח (שלבים)</th>
-                {/* כותרת מוסתרת למשתמשי צוות */}
+                <th className="px-4 py-3 font-semibold text-right w-40">שליחת הודעה</th>
                 {!isReadOnly && <th className="px-4 py-3 font-semibold text-center w-20">פעולות</th>}
               </tr>
             </thead>
@@ -234,8 +246,8 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
                         <td className="px-4 py-3 text-slate-500 text-right" dir="ltr">{patient.escortPhone || '-'}</td>
                         <td className="px-4 py-3 text-[#1e1c4a] font-medium text-right">{displayStatus}</td>
                         <td className="px-4 py-3 text-slate-500 text-right">{formatDuration(patient.activeMinutes)}</td>
-                        <td className="px-4 py-3 text-center">
-                          <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-start gap-1.5 flex-wrap">
                             {STAGES.map(stage => {
                               const isSent = patient.sentMessages?.includes(stage.id);
                               const isCurrentStage = patient.status === stage.id;
@@ -245,10 +257,12 @@ export function AdminScheduling({ departmentId, isReadOnly = false }: AdminSched
                             })}
                           </div>
                         </td>
-                        {/* עמודת הפעולות מוסתרת למשתמשי צוות */}
                         {!isReadOnly && (
                           <td className="px-4 py-3 text-center">
-                            <Button variant="ghost" size="sm" onClick={() => {setEditingId(patient.id); setTempData({...patient});}} className="h-7 w-7 p-0 text-slate-400 hover:text-[#2a7c7c]"><Edit2 className="w-3.5 h-3.5" /></Button>
+                            <div className="flex items-center justify-center gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => {setEditingId(patient.id); setTempData({...patient});}} className="h-7 w-7 p-0 text-slate-400 hover:text-[#2a7c7c]"><Edit2 className="w-3.5 h-3.5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDeletePatient(patient.id)} className="h-7 w-7 p-0 text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></Button>
+                            </div>
                           </td>
                         )}
                       </>
