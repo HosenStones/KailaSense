@@ -102,11 +102,10 @@ export default function AdminDashboardPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // --- לוגיקת הרשאות חדשה: 3 רמות הרשאה מדויקות ---
+  // לוגיקת הרשאות מבוססת 3 רמות
   const userRole = currentUser?.role || 'staff';
   const isAdmin = userRole === 'admin' || userRole === 'מנהל מערכת';
   const isManager = userRole === 'manager' || userRole === 'מנהל מחלקה';
-  const isStaff = userRole === 'staff' || userRole === 'צוות';
   
   // יכולת לערוך מחלקה (תקף למנהל מערכת ולמנהל מחלקה בלבד)
   const canManageDepartment = isAdmin || isManager;
@@ -472,4 +471,101 @@ export default function AdminDashboardPage() {
                                 <div key={item.id || idx} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-[#f0f9f9]/50 border border-[#e8e7f5]">
                                   <div className="flex-1">
                                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                      <span className="text-[10px] px-2 py-0
+                                      <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-white text-slate-600 border border-[#e8e7f5]">{renderTypeLabelWithIcon(item.type, item.contentType)}</span>
+                                    </div>
+                                    <span className="text-[#1e1c4a] text-sm font-medium">{item.text}</span>
+                                  </div>
+                                  <div className="flex gap-1 justify-end">
+                                    <Button variant="ghost" size="sm" onClick={() => handleEditBankClick(item)} className="h-8 px-2 text-slate-400 hover:text-[#2a7c7c]"><Pencil className="w-4 h-4" /></Button>
+                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteGlobalQuestion(item.id)} className="h-8 px-2 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal for adding/editing questions in the bank */}
+            <Dialog open={isAddBankOpen} onOpenChange={setIsAddBankOpen}>
+              <DialogContent dir="rtl" className="bg-white w-[95vw] md:max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader><DialogTitle className="text-[#1e1c4a]">{editingBankId ? 'עריכת שאלה במאגר' : 'הוספת שאלה למאגר'}</DialogTitle></DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold text-slate-500">טקסט השאלה / כותרת</span>
+                    <Input placeholder="לדוגמה: איך עברה הארוחה?" value={newBankQ.text} onChange={e => setNewBankQ({...newBankQ, text: e.target.value})} className="h-10 text-xs bg-white border-[#e8e7f5]" />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <span className="text-xs font-bold text-slate-500">סטטוס (קטגוריה)</span>
+                      <Select value={newBankQ.category} onValueChange={v => setNewBankQ({...newBankQ, category: v})}>
+                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
+                        <SelectContent dir="rtl">
+                          {CATEGORIES.map(c => <SelectItem key={c.id} value={c.id} className="text-xs">{c.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <span className="text-xs font-bold text-slate-500">סוג שאלה</span>
+                      <Select value={newBankQ.type} onValueChange={v => setNewBankQ({...newBankQ, type: v})}>
+                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
+                        <SelectContent dir="rtl">
+                          {QUESTION_TYPES.map(t => <SelectItem key={t.id} value={t.id} className="text-xs">{t.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold text-slate-500">שיוך למחלקה בדאטה בייס</span>
+                    <Select value={newBankQ.tag} onValueChange={v => setNewBankQ({...newBankQ, tag: v})}>
+                      <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue /></SelectTrigger>
+                      <SelectContent dir="rtl">
+                        <SelectItem value="כללי" className="text-xs font-bold">כללי (מופיע בכל המחלקות)</SelectItem>
+                        {departments.map(d => <SelectItem key={d.id} value={d.id} className="text-xs">{d.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(newBankQ.type === 'choice' || newBankQ.type === 'multi_choice') && (
+                    <div className="space-y-1.5">
+                      <span className="text-xs font-bold text-slate-500">אפשרויות בחירה (מופרדות בפסיק)</span>
+                      <Input placeholder="רופא, אחות, צוות ניקיון" value={newBankQ.optionsText} onChange={e => setNewBankQ({...newBankQ, optionsText: e.target.value})} className="h-10 text-xs bg-white border-[#e8e7f5]" />
+                    </div>
+                  )}
+
+                  {newBankQ.type === 'content' && (
+                    <div className="p-4 bg-[#f0f9f9]/50 border border-[#e8e7f5] rounded-xl space-y-3">
+                      <Select value={newBankQ.contentType} onValueChange={v => setNewBankQ({...newBankQ, contentType: v})}>
+                        <SelectTrigger className="h-10 text-xs bg-white border-[#e8e7f5]"><SelectValue placeholder="סוג תוכן" /></SelectTrigger>
+                        <SelectContent dir="rtl">
+                          <SelectItem value="info_text" className="text-xs">📝 טקסט בלבד</SelectItem>
+                          <SelectItem value="image" className="text-xs">🖼️ תמונה + טקסט</SelectItem>
+                          <SelectItem value="video" className="text-xs">🎬 סרטון וידאו</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {(newBankQ.contentType === 'image' || newBankQ.contentType === 'video') && (
+                        <Input placeholder="קישור ישיר למדיה (URL)" value={newBankQ.contentUrl} onChange={e => setNewBankQ({...newBankQ, contentUrl: e.target.value})} className="h-10 text-xs text-left bg-white border-[#e8e7f5]" dir="ltr" />
+                      )}
+                      <textarea placeholder="תוכן / טקסט להצגה" value={newBankQ.contentBody} onChange={e => setNewBankQ({...newBankQ, contentBody: e.target.value})} className="w-full min-h-[80px] p-3 text-xs border border-[#e8e7f5] rounded-lg focus:ring-1 focus:ring-[#2a7c7c] outline-none bg-white" />
+                    </div>
+                  )}
+
+                  <Button onClick={handleSaveBankQuestion} disabled={isSubmittingBank || !newBankQ.text.trim()} className="w-full h-10 text-xs font-bold bg-[#2a7c7c] hover:bg-[#206060] text-white">
+                    {editingBankId ? 'שמור שינויים למאגר' : 'הוסף למאגר'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}
