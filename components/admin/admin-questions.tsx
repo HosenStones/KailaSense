@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { getQuestionsByDepartment, getGlobalQuestions, addQuestion, deleteQuestion, updateQuestion } from '@/lib/firebase/firestore'
 import { CATEGORIES, QUESTION_TYPES, getCategoryLabel, renderTypeLabelWithIcon, sortQuestions } from '@/lib/constants'
 import type { Question, QuestionType, QuestionCategory, ContentType } from '@/lib/types'
-import { Trash2, ListPlus, BookOpen, Pencil, ChevronDown, ChevronUp, Download } from 'lucide-react'
+import { Trash2, ListPlus, BookOpen, Pencil, ChevronDown, ChevronUp, Download, Check } from 'lucide-react'
 
 export function AdminQuestions({ departmentId }: { departmentId: string }) {
   const [questions, setQuestions] = useState<Question[]>([])
@@ -32,6 +32,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
     try {
       const data = await getQuestionsByDepartment(departmentId)
       setQuestions(sortQuestions(data))
+      
       const bankData = await getGlobalQuestions()
       setBankQuestions(sortQuestions(bankData))
     } catch (e) { console.error(e) }
@@ -84,7 +85,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
       isActive: true,
       displayOrder: questions.length + 1
     });
-    alert('השאלה יובאה בהצלחה למחלקה!');
   }
 
   const handleEditClick = (q: Question) => {
@@ -107,7 +107,6 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
   return (
     <div className="space-y-6" dir="rtl">
       
-      {/* The main workspace block */}
       <div className="bg-white border border-[#e8e7f5] rounded-2xl p-6 shadow-sm space-y-6">
         
         <h3 className="text-[#1e1c4a] text-lg font-bold mb-6 flex items-center gap-2">
@@ -190,7 +189,7 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                         <div key={q.id} className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-white border border-[#e8e7f5] hover:border-[#b2dfdf] transition-all">
                           <div className="flex-1">
                             <div className="flex items-center gap-1.5 mb-1.5">
-                              <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-white text-slate-600 border border-[#e8e7f5] flex items-center">{renderTypeLabelWithIcon(q.questionType, q.contentType)}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 border border-[#e8e7f5] flex items-center">{renderTypeLabelWithIcon(q.questionType, q.contentType)}</span>
                             </div>
                             <span className="text-[#1e1c4a] text-sm font-bold">{q.questionText}</span>
                           </div>
@@ -212,10 +211,10 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
         <div className="mt-8 border-t border-[#e8e7f5] pt-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[#1e1c4a] font-bold flex items-center gap-2">
-              <Download className="w-5 h-5 text-[#2a7c7c]" /> מאגר השאלות המרכזי
+              <Download className="w-5 h-5 text-[#2a7c7c]" /> מאגר השאלות
             </h3>
-            <Button variant="outline" size="sm" onClick={() => setIsBankOpen(!isBankOpen)} className="h-8 text-xs bg-white">
-              {isBankOpen ? 'הסתר מאגר' : 'הצג מאגר ומשיכה'}
+            <Button variant="outline" size="sm" onClick={() => setIsBankOpen(!isBankOpen)} className="h-8 text-xs bg-white border-[#e8e7f5]">
+              {isBankOpen ? 'הסתר מאגר' : 'הצג שאלות לייבוא'}
             </Button>
           </div>
 
@@ -229,26 +228,30 @@ export function AdminQuestions({ departmentId }: { departmentId: string }) {
                   <div key={`bank-${cat.id}`} className="bg-[#f7f7fc] rounded-xl border border-[#e8e7f5] p-4">
                     <h5 className="font-bold text-sm text-[#1e1c4a] mb-3">{cat.label}</h5>
                     <div className="grid grid-cols-1 gap-2">
-                      {catItems.map(q => (
-                        <div key={q.id} className="flex justify-between items-center p-3 bg-white border border-[#e8e7f5] rounded-lg shadow-sm">
-                          <div className="flex-1">
-                            <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 ml-2 border border-[#e8e7f5]">{renderTypeLabelWithIcon(q.type, q.contentType)}</span>
-                            <span className="text-sm font-medium">{q.text}</span>
-                          </div>
-                          <Button size="sm" onClick={() => handleImportFromBank(q)} className="h-7 px-3 text-[10px] font-bold bg-[#2a7c7c] text-white hover:bg-[#206060]">
-                            ייבוא למחלקה
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-      </div>
-    </div>
-  )
-}
+                      {catItems.map(q => {
+                        // בדיקה מדויקת לחלוטין לכל השדות (סוג, סטטוס, אפשרויות, טקסט וכו')
+                        const isAlreadyAdded = questions.some(existingQ => {
+                          const textMatch = existingQ.questionText === q.text;
+                          const categoryMatch = (existingQ.category || 'general') === (q.category || 'general');
+                          const typeMatch = existingQ.questionType === q.type;
+                          
+                          const qOptions = q.options?.map((opt: string) => ({ label: opt.trim(), value: opt.trim() })) || [];
+                          const existingOptions = existingQ.options || [];
+                          const optionsMatch = JSON.stringify(existingOptions) === JSON.stringify(qOptions);
+                          
+                          const contentTypeMatch = (existingQ.contentType || 'info_text') === (q.contentType || 'info_text');
+                          const contentUrlMatch = (existingQ.contentUrl || '') === (q.contentUrl || '');
+                          const contentBodyMatch = (existingQ.contentBody || '') === (q.contentBody || '');
+                          
+                          // רק אם *הכל* זהה, השאלה תסומן כ"נוסף"
+                          return textMatch && categoryMatch && typeMatch && optionsMatch && contentTypeMatch && contentUrlMatch && contentBodyMatch;
+                        });
+                        
+                        return (
+                          <div key={q.id} className="flex justify-between items-center p-3 bg-white border border-[#e8e7f5] rounded-lg shadow-sm">
+                            <div className="flex-1">
+                              <span className="text-[10px] px-2 py-0.5 rounded font-bold bg-slate-100 text-slate-600 ml-2 border border-[#e8e7f5]">{renderTypeLabelWithIcon(q.type, q.contentType)}</span>
+                              <span className="text-sm font-medium text-[#1e1c4a]">{q.text}</span>
+                            </div>
+                            {isAlreadyAdded ? (
+                              <Button disabled size="sm" className="h-7 px-3 text-[10px] font-bold bg-emerald-100 text-emerald-700
